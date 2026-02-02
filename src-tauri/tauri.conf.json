@@ -41,6 +41,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "licenseFile": "../LICENSE",
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "10.13",
@@ -53,8 +54,7 @@
       "nsis": {
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
-        "installMode": "perMachine",
-        "licenseFile": "../LICENSE"
+        "installMode": "perMachine"
       }
     }
   }
