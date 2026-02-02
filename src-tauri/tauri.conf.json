@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Mermaider",
   "version": "1.2.0",
-  "identifier": "com.mermaider.app",
+  "identifier": "com.mermaider.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -54,7 +54,7 @@
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico",
         "installMode": "perMachine",
-        "license": "../LICENSE"
+        "licenseFile": "../LICENSE"
       }
     }
   }
