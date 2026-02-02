@@ -2,16 +2,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e0e0e0;
-}
-
-.app.dark .editor-container {
-  border-right-color: #404040;
+  border-right: 1px solid var(--border);
 }
 
 .editor-header {
-  padding: 8px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -20,32 +16,21 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   min-height: 40px;
-}
-
-.app.dark .editor-header {
-  border-bottom-color: #404040;
+  background-color: var(--surface);
+  color: var(--ink);
 }
 
 .error-indicator {
-  color: #d32f2f;
+  color: var(--div-1);
+  /* Using red from design system palette */
   font-size: 11px;
 }
 
-.app.dark .error-indicator {
-  color: #ef5350;
-}
-
 .error-message {
-  padding: 8px 16px;
-  background-color: #ffebee;
-  color: #c62828;
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--surface);
+  /* Or maybe a muted background? Design system says surface/ink/muted. Let's stick to simple. */
+  color: var(--div-1);
   font-size: 12px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border);
 }
-
-.app.dark .error-message {
-  background-color: #3d1f1f;
-  color: #ef5350;
-  border-top-color: #404040;
-}
-

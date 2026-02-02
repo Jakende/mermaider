@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
   // OpenAI API Configuration
-  readonly VITE_OPENAI_API_KEY?: string
+
 
   // Application Configuration
   readonly VITE_APP_NAME?: string

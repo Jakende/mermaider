@@ -1,6 +1,6 @@
 # Deployment Guide for Appwrite Sites
 
-This guide explains how to deploy Mermalaid to Appwrite Sites.
+This guide explains how to deploy Mermaider to Appwrite Sites.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ When setting up your site in the Appwrite Console, use these settings:
 
 ### Site Settings
 
-1. **Site Name**: `Mermalaid` (or your preferred name)
+1. **Site Name**: `Mermaider` (or your preferred name)
 2. **Framework**: `React` or `Static Site`
 3. **Runtime**: `Node.js 18` or `Node.js 20`
 
@@ -58,7 +58,7 @@ Environment variables are optional for basic functionality but can be configured
 **Available Environment Variables:**
 
 - `VITE_OPENAI_API_KEY` (optional) - OpenAI API key for AI error fixing feature
-- `VITE_APP_NAME` (optional) - Custom application name (defaults to "Mermalaid")
+- `VITE_APP_NAME` (optional) - Custom application name (defaults to "Mermaider")
 - `VITE_APP_VERSION` (optional) - Application version
 - `VITE_ANALYTICS_ID` (optional) - Analytics tracking ID
 - `VITE_ENABLE_AI_FIXER` (optional) - Enable/disable AI fixer feature (default: true)
@@ -75,7 +75,7 @@ Environment variables are optional for basic functionality but can be configured
 **Example:**
 ```
 VITE_OPENAI_API_KEY=sk-...
-VITE_APP_NAME=Mermalaid
+VITE_APP_NAME=Mermaider
 VITE_ENABLE_AI_FIXER=true
 ```
 

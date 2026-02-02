@@ -5,20 +5,13 @@
  * Access them via import.meta.env.VITE_* or use these helper functions
  */
 
-/**
- * Get OpenAI API key from environment variables
- * Returns undefined if not set (feature is optional)
- */
-export function getOpenAIApiKey(): string | undefined {
-  return import.meta.env.VITE_OPENAI_API_KEY
-}
 
 /**
  * Get application name from environment variables
  * Falls back to default if not set
  */
 export function getAppName(): string {
-  return import.meta.env.VITE_APP_NAME || 'Mermalaid'
+  return import.meta.env.VITE_APP_NAME || 'Mermaider'
 }
 
 /**

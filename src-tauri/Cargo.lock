@@ -1682,8 +1682,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "mermalaid"
-version = "1.0.0"
+name = "mermaider"
+version = "1.2.0"
 dependencies = [
  "serde",
  "serde_json",

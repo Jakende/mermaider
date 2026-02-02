@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
-type MermaidTheme = 'default' | 'dark' | 'forest' | 'neutral'
+type MermaidTheme = 'slate' | 'earth' | 'cosmic' | 'sage' | 'royal'
 
 interface ThemeContextType {
   theme: Theme
@@ -14,21 +14,29 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('mermalaid-theme')
-    return (saved as Theme) || 'light'
+    const saved = localStorage.getItem('mermaider-theme')
+    return (saved as Theme) || 'dark'
   })
   const [mermaidTheme, setMermaidThemeState] = useState<MermaidTheme>(() => {
-    const saved = localStorage.getItem('mermalaid-mermaid-theme')
-    return (saved as MermaidTheme) || 'default'
+    const saved = localStorage.getItem('mermaider-mermaid-theme')
+    // Validate saved theme against new valid options
+    if (saved === 'slate' || saved === 'earth' || saved === 'cosmic' || saved === 'sage' || saved === 'royal') {
+      return saved as MermaidTheme
+    }
+    return 'slate'
   })
 
   useEffect(() => {
-    localStorage.setItem('mermalaid-theme', theme)
-    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('mermaider-theme', theme)
+    if (theme === 'light') {
+      document.body.classList.add('theme-invert')
+    } else {
+      document.body.classList.remove('theme-invert')
+    }
   }, [theme])
 
   useEffect(() => {
-    localStorage.setItem('mermalaid-mermaid-theme', mermaidTheme)
+    localStorage.setItem('mermaider-mermaid-theme', mermaidTheme)
   }, [mermaidTheme])
 
   const toggleTheme = () => {

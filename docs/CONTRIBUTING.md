@@ -1,6 +1,6 @@
-# Contributing to Mermalaid
+# Contributing to Mermaider
 
-Thank you for your interest in contributing to Mermalaid! This document provides guidelines and best practices for contributing to the project.
+Thank you for your interest in contributing to Mermaider! This document provides guidelines and best practices for contributing to the project.
 
 ## Getting Started
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing to Mermalaid! This document provides
 
 1. **Fork and clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/mermalaid.git
-   cd mermalaid
+   git clone https://github.com/YOUR_USERNAME/mermaider.git
+   cd mermaider
    ```
 
 2. **Install dependencies:**
@@ -236,7 +236,7 @@ We welcome contributions in these areas:
 ## Project Structure
 
 ```
-mermalaid/
+mermaider/
 ├── src/                    # React frontend
 │   ├── components/         # React components
 │   │   ├── Editor.tsx     # Monaco Editor wrapper
@@ -294,5 +294,5 @@ mermalaid/
 
 By contributing, you agree that your contributions will be licensed under the same license as the project (CC BY-NC-SA 4.0).
 
-Thank you for contributing to Mermalaid! 🎨
+Thank you for contributing to Mermaider! 🎨
 

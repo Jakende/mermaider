@@ -15,6 +15,8 @@ jobs:
         include:
           - platform: 'macos-latest'
             args: ''
+          - platform: 'windows-latest'
+            args: ''
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -34,13 +36,15 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Verify DMG tools
+      - name: Verify DMG tools (macOS only)
+        if: matrix.platform == 'macos-latest'
         run: |
           echo "Checking DMG creation prerequisites..."
           which hdiutil && echo "✓ hdiutil found" || echo "✗ hdiutil not found"
           xcode-select -p && echo "✓ Xcode Command Line Tools found" || echo "✗ Xcode Command Line Tools not found"
 
       - name: Check for existing release
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -73,7 +77,9 @@ jobs:
           releaseDraft: true
           args: ${{ matrix.args }}
 
-      - name: Verify DMG was created
+      - name: Verify DMG was created (macOS only)
+        if: matrix.platform == 'macos-latest'
+        shell: bash
         run: |
           echo "Checking for DMG file..."
           DMG_PATH=$(find src-tauri/target/release/bundle -name "*.dmg" 2>/dev/null | head -n 1)
@@ -85,4 +91,20 @@ jobs:
           else
             echo "✅ DMG file found: $DMG_PATH"
             ls -lh "$DMG_PATH"
+          fi
+
+      - name: Verify EXE/MSI was created (Windows only)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          echo "Checking for Windows installer..."
+          INSTALLER_PATH=$(find src-tauri/target/release/bundle -name "*.exe" -o -name "*.msi" 2>/dev/null | head -n 1)
+          if [ -z "$INSTALLER_PATH" ]; then
+            echo "❌ ERROR: Windows installer not found!"
+            echo "Contents of bundle directory:"
+            ls -R src-tauri/target/release/bundle/ || echo "Bundle directory not found"
+            exit 1
+          else
+            echo "✅ Windows installer found: $INSTALLER_PATH"
+            ls -lh "$INSTALLER_PATH"
           fi

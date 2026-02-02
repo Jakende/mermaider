@@ -2,14 +2,21 @@ import { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import html2canvas from 'html2canvas'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
-import { fixMermaidErrorWithAI, getStoredApiKey } from '../utils/aiErrorFixer'
+import { fixMermaidErrorWithAI, getStoredConfig, convertJsonToMermaidWithAI } from '../utils/aiService'
 import Settings from './Settings'
+import HelpModal from './HelpModal'
+import ExportModal from './ExportModal'
 import './Toolbar.css'
 
 interface ToolbarProps {
   code: string
   setCode: (code: string) => void
   error: string | null
+  onToggleChat: () => void
+  isEditorVisible: boolean
+  onToggleEditor: () => void
+  diagramName: string
+  onUpdateDiagramName: (name: string) => void
 }
 
 export interface ToolbarRef {
@@ -18,15 +25,18 @@ export interface ToolbarRef {
   handleSave: () => void
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName }, ref) => {
   const { theme, toggleTheme, mermaidTheme, setMermaidTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
+  const [showExport, setShowExport] = useState(false)
   const [isFixing, setIsFixing] = useState(false)
 
   const handleNew = () => {
     if (confirm('Create a new diagram? Unsaved changes will be lost.')) {
       setCode('graph TD\n    A[Start] --> B[End]')
+      onUpdateDiagramName('diagram')
     }
   }
 
@@ -51,10 +61,10 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
     }
 
     // Validate file type
-    const validExtensions = ['.mmd', '.txt', '.md', '.markdown']
+    const validExtensions = ['.mmd', '.txt', '.md', '.markdown', '.json']
     const fileName = file.name.toLowerCase()
     const isValid = validExtensions.some(ext => fileName.endsWith(ext))
-    
+
     if (!isValid) {
       alert(`Invalid file type. Please select a file with one of these extensions: ${validExtensions.join(', ')}`)
       e.target.value = ''
@@ -66,14 +76,37 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
       alert('Failed to read file. Please try again.')
       e.target.value = ''
     }
-    
-    reader.onload = (event) => {
+
+    reader.onload = async (event) => {
       try {
         const content = event.target?.result as string
         if (content) {
-          // Extract Mermaid code from potential markdown code blocks
-          const extractedCode = extractMermaidCode(content)
-          setCode(extractedCode)
+          if (fileName.endsWith('.json')) {
+            if (confirm('A JSON file was detected. Should it be automatically converted to Mermaid syntax?')) {
+              setIsFixing(true) // Reuse fixing state for loading indication
+              try {
+                const config = getStoredConfig()
+                const convertedCode = await convertJsonToMermaidWithAI(content, config)
+                setCode(convertedCode)
+              } catch (err) {
+                alert('Conversion failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
+              } finally {
+                setIsFixing(false)
+              }
+            } else {
+              // Just load as plain text if they refuse conversion
+              setCode(content)
+            }
+          } else {
+            // Extract Mermaid code from potential markdown code blocks
+            const extractedCode = extractMermaidCode(content)
+            setCode(extractedCode)
+          }
+
+          // Set diagram name from file name
+          const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, "")
+          onUpdateDiagramName(nameWithoutExtension)
+
           console.log(`Successfully loaded file: ${file.name}`)
         } else {
           alert('File appears to be empty.')
@@ -84,51 +117,88 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
       }
       e.target.value = ''
     }
-    
+
     reader.readAsText(file)
   }
 
-  const handleSave = () => {
+  const handleSaveMMD = (filename: string) => {
     const blob = new Blob([code], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'diagram.mmd'
+    a.download = `${filename}.mmd`
     a.click()
     URL.revokeObjectURL(url)
   }
 
-  const handleExportSVG = async () => {
-    const svgElement = document.querySelector('.preview-content svg')
+  const handleExportSVG = (filename: string) => {
+    const svgElement = document.querySelector('.preview-content svg') as SVGSVGElement | null
     if (!svgElement) {
       alert('No diagram to export')
       return
     }
 
-    const svgCode = svgElement.outerHTML
-    const blob = new Blob([svgCode], { type: 'image/svg+xml' })
-    const url = URL.createObjectURL(blob)
+    // Clone the SVG to avoid modifying the preview
+    const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+
+    // Ensure xmlns is present
+    if (!clonedSvg.getAttribute('xmlns')) {
+      clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    }
+
+    // Collect all Mermaid-related styles from the document
+    // Mermaid often injects styles into the <head> that are needed for the SVG
+    const svgStyles = document.querySelectorAll('style[id^="mermaid-"]');
+    const defs = clonedSvg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    if (!clonedSvg.querySelector('defs')) {
+      clonedSvg.insertBefore(defs, clonedSvg.firstChild);
+    }
+
+    svgStyles.forEach(style => {
+      const styleClone = style.cloneNode(true);
+      defs.appendChild(styleClone);
+    });
+
+    // Fix: Ensure all text has a readable font and explicit fill if possible
+    const texts = clonedSvg.querySelectorAll('text')
+    texts.forEach(text => {
+      const style = window.getComputedStyle(text)
+      if (style.fontFamily === 'inherit' || !style.fontFamily) {
+        text.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
+      }
+
+      // If the color isn't set explicitly, use the computed color to ensure visibility in external viewers
+      if (!text.getAttribute('fill')) {
+        text.setAttribute('fill', style.fill || (theme === 'dark' ? '#ffffff' : '#000000'))
+      }
+    })
+
+    const svgData = new XMLSerializer().serializeToString(clonedSvg)
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(svgBlob)
+
     const a = document.createElement('a')
     a.href = url
-    a.download = 'diagram.svg'
+    a.download = `${filename}.svg`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
 
-  const handleExportPNG = async () => {
+  const handleExportPNG = async (filename: string) => {
     const previewContainer = document.querySelector('.preview-content')
     const svgElement = previewContainer?.querySelector('svg') as SVGSVGElement | null
-    
+
     if (!svgElement || !previewContainer) {
       alert('No diagram to export')
       return
     }
 
     try {
-      // Use html2canvas to capture the SVG as PNG
       const canvas = await html2canvas(previewContainer as HTMLElement, {
         backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
-        scale: 2, // Higher resolution
+        scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: false,
@@ -139,11 +209,11 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
           alert('Failed to generate PNG')
           return
         }
-        
+
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'diagram.png'
+        a.download = `${filename}.png`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -155,6 +225,17 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
     }
   }
 
+  const handleExportClick = () => {
+    setShowExport(true)
+  }
+
+  const onExport = (filename: string, format: 'svg' | 'png' | 'mmd') => {
+    onUpdateDiagramName(filename)
+    if (format === 'svg') handleExportSVG(filename)
+    else if (format === 'png') handleExportPNG(filename)
+    else if (format === 'mmd') handleSaveMMD(filename)
+  }
+
   const handleCopyCode = () => {
     // Extract plain Mermaid code if wrapped, then wrap it for markdown
     const plainCode = extractMermaidCode(code)
@@ -164,12 +245,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
   }
 
   const handleAIFix = async () => {
-    const apiKey = getStoredApiKey()
-    if (!apiKey) {
-      alert('Please add your OpenAI API key in Settings to use AI Fix.')
-      setShowSettings(true)
-      return
-    }
+    const config = getStoredConfig()
 
     if (!error || !code.trim()) {
       alert('No error to fix')
@@ -178,7 +254,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
 
     setIsFixing(true)
     try {
-      const fixedCode = await fixMermaidErrorWithAI(code, error, apiKey)
+      const fixedCode = await fixMermaidErrorWithAI(code, error, config)
       console.log('Setting fixed code:', fixedCode)
       setCode(fixedCode)
       alert('Code fixed! Check if the diagram renders correctly.')
@@ -194,7 +270,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
   useImperativeHandle(ref, () => ({
     handleNew,
     handleOpen,
-    handleSave,
+    handleSave: () => setShowExport(true),
   }))
 
   return (
@@ -204,41 +280,41 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
           <button onClick={handleNew} className="toolbar-btn" title="New (⌘N)">
             New
           </button>
-          <button onClick={handleOpen} className="toolbar-btn" title="Open (⌘O)">
-            Open
+          <button onClick={handleOpen} className="toolbar-btn" title="Import / Open (⌘O)">
+            Import...
+          </button>
+          <button onClick={handleExportClick} className="toolbar-btn button-primary" title="Export Diagram (⌘S)">
+            Export...
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".mmd,.txt,.md,.markdown"
+            accept=".mmd,.txt,.md,.markdown,.json"
             onChange={handleFileChange}
             style={{ display: 'none' }}
           />
-          <button onClick={handleSave} className="toolbar-btn" title="Save (⌘S)">
-            Save
-          </button>
         </div>
 
         <div className="toolbar-section">
-          <button onClick={handleExportSVG} className="toolbar-btn" title="Export SVG">
-            Export SVG
-          </button>
-          <button onClick={handleExportPNG} className="toolbar-btn" title="Export PNG">
-            Export PNG
-          </button>
           <button onClick={handleCopyCode} className="toolbar-btn" title="Copy Code">
             Copy Code
           </button>
           {error && (
-            <button 
-              onClick={handleAIFix} 
-              className="toolbar-btn ai-fix-btn" 
-              title="AI Fix Error (uses OpenAI)"
+            <button
+              onClick={handleAIFix}
+              className="toolbar-btn ai-fix-btn"
+              title="AI Fix Error (uses Ollama)"
               disabled={isFixing}
             >
-              {isFixing ? '🔄 Fixing...' : '🤖 AI Fix'}
+              {isFixing ? '[FIXING...]' : '[AI FIX]'}
             </button>
           )}
+          <button onClick={onToggleChat} className="toolbar-btn text-btn" title="Toggle AI Chat">
+            [CHAT]
+          </button>
+          <button onClick={onToggleEditor} className="toolbar-btn text-btn" title="Toggle Editor / Full Preview">
+            {isEditorVisible ? '[FULL PREVIEW]' : '[SHOW EDITOR]'}
+          </button>
         </div>
 
         <div className="toolbar-section">
@@ -248,34 +324,38 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
             className="toolbar-select"
             title="Mermaid Theme"
           >
-            <option value="default">Default</option>
-            <option value="dark">Dark</option>
-            <option value="forest">Forest</option>
-            <option value="neutral">Neutral</option>
+            <option value="slate">Slate</option>
+            <option value="earth">Earth</option>
+            <option value="cosmic">Cosmic</option>
+            <option value="sage">Sage</option>
+            <option value="royal">Royal</option>
           </select>
-          <button onClick={toggleTheme} className="toolbar-btn" title="Toggle Theme">
-            {theme === 'light' ? '🌙' : '☀️'}
+          <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
+            {theme === 'light' ? '[DARK]' : '[LIGHT]'}
           </button>
-          <button onClick={() => setShowSettings(true)} className="toolbar-btn" title="Settings">
-            ⚙️
+          <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings">
+            [SETTINGS]
           </button>
         </div>
 
         <div className="toolbar-section toolbar-section-right">
-          <a
-            href="https://github.com/highvoltag3/mermalaid"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="toolbar-btn github-btn"
-            title="View source code on GitHub"
+          <button
+            onClick={() => setShowHelp(true)}
+            className="toolbar-btn text-btn"
+            title="App Documentation & Features"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-          </a>
+            [INFO]
+          </button>
         </div>
       </div>
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <ExportModal
+        isOpen={showExport}
+        onClose={() => setShowExport(false)}
+        onExport={onExport}
+        defaultFilename={diagramName}
+      />
     </>
   )
 })
@@ -283,4 +363,3 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error }, 
 Toolbar.displayName = 'Toolbar'
 
 export default Toolbar
-

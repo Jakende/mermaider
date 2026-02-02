@@ -1,14 +1,14 @@
-# Mermalaid - The #1 Free Mermaid Diagram Editor | 100% Open Source & Free
+# Mermaider - Live AI Mermaid Editor with local LLM via Ollama
 
-**Mermalaid** is the premier free, open-source Mermaid diagram editor and chart creator. Create unlimited Mermaid diagrams, flowcharts, sequence diagrams, and more—completely free, no restrictions, no sign-ups required. The best free alternative to paid Mermaid editors.
+**Mermaider** is the premier free, open-source **Live AI Mermaid Editor**. Create and edit diagrams using natural language with built-in **Ollama** support for local LLMs and a powerful visual editor. Completely free, no restrictions, and no sign-ups required.
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![Open Source](https://img.shields.io/badge/Open%20Source-Free%20Beer-success)](LICENSE)
 [![Free Forever](https://img.shields.io/badge/Free-Forever-green)]()
 
-## 🎯 Why Mermalaid? The Best Free Mermaid Editor
+## 🎯 Why Mermaider? The Best Free Mermaid Editor
 
-Looking for a **free Mermaid editor**? Tired of **Mermaid diagram tools** with limits, subscriptions, or hidden costs? **Mermalaid is completely free and open source**—no document limits, no premium features, no credit cards required.
+Looking for a **free Mermaid editor**? Tired of **Mermaid diagram tools** with limits, subscriptions, or hidden costs? **Mermaider is completely free and open source**—no document limits, no premium features, no credit cards required.
 
 ### Key Differentiators
 
@@ -24,17 +24,17 @@ Looking for a **free Mermaid editor**? Tired of **Mermaid diagram tools** with l
 
 ### Use Online (Web Version)
 
-Visit [Mermalaid](https://mermalaid.com) to start creating Mermaid diagrams instantly in your browser—no installation needed.
+Visit [Mermaider](https://mermaider.com) to start creating Mermaid diagrams instantly in your browser—no installation needed.
 
 ### Download Desktop App (macOS)
 
-1. Download the latest release from [GitHub Releases](https://github.com/highvoltag3/mermalaid/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/highvoltag3/mermaider/releases)
 2. Install the `.dmg` file
 3. Start creating unlimited free Mermaid diagrams
 
 ## ✨ Features - Professional Mermaid Editor, Zero Cost
 
-Mermalaid provides professional-grade features typically found in paid Mermaid editors—all completely free:
+Mermaider provides professional-grade features typically found in paid Mermaid editors—all completely free:
 
 ### Editor Features
 
@@ -87,7 +87,7 @@ Create unlimited diagrams of all types:
 
 ### Why Tauri?
 
-Mermalaid uses Tauri instead of Electron for a superior experience:
+Mermaider uses Tauri instead of Electron for a superior experience:
 
 - 🚀 **Much smaller app size** (~10MB vs ~100MB+ for Electron)
 - ⚡ **Better performance** using system webview instead of bundled Chromium
@@ -95,9 +95,9 @@ Mermalaid uses Tauri instead of Electron for a superior experience:
 - 💰 **Lower memory usage** - Runs efficiently on any machine
 - 🎯 **Better native integration** - Feels like a real macOS app
 
-## 📚 Use Cases - When to Use Mermalaid
+## 📚 Use Cases - When to Use Mermaider
 
-Mermalaid is perfect for:
+Mermaider is perfect for:
 
 - **Software Developers** - Document architecture, workflows, and system designs
 - **Technical Writers** - Create diagrams for documentation and tutorials
@@ -108,7 +108,7 @@ Mermalaid is perfect for:
 
 ## 🎨 Example Mermaid Diagrams
 
-Try these examples in Mermalaid:
+Try these examples in Mermaider:
 
 ### Flowchart Example
 
@@ -191,19 +191,19 @@ The built app will be in `src-tauri/target/release/bundle/`:
 **Recommended Installation Method:**
 ```bash
 # 1. Copy the app from the DMG to Applications
-cp -R /Volumes/Mermalaid_*/Mermalaid.app /Applications/
+cp -R /Volumes/Mermaider_*/Mermaider.app /Applications/
 
 # 2. Remove quarantine attribute
-xattr -cr /Applications/Mermalaid.app
+xattr -cr /Applications/Mermaider.app
 
 # 3. Open the app
-open /Applications/Mermalaid.app
+open /Applications/Mermaider.app
 ```
 
 **Alternative: System Settings**
 1. Open **System Settings** → **Privacy & Security**
 2. Scroll down to see the blocked app message
-3. Click **"Open Anyway"** next to the Mermalaid warning
+3. Click **"Open Anyway"** next to the Mermaider warning
 4. Click **"Open"** in the confirmation dialog
 
 ## ⌨️ Keyboard Shortcuts
@@ -214,7 +214,7 @@ open /Applications/Mermalaid.app
 
 ## 🤝 Contributing
 
-Mermalaid is open source and welcomes contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Mermaider is open source and welcomes contributions! See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 Areas where contributions are especially welcome:
 - Additional Mermaid diagram types
@@ -225,9 +225,9 @@ Areas where contributions are especially welcome:
 
 ## 📖 Documentation
 
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute to Mermalaid
-- [Project Structure](PROJECT_STRUCTURE.md) - Codebase organization and file structure
-- [Deployment Guide](DEPLOYMENT.md) - Deploy Mermalaid web version
+- [Contributing Guide](docs/CONTRIBUTING.md) - How to contribute to Mermaider
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Codebase organization and file structure
+- [Deployment Guide](docs/DEPLOYMENT.md) - Deploy Mermaider web version
 - [Appwrite Setup](APPWRITE_SETUP.md) - Step-by-step Appwrite Sites setup
 - [Static Hosting](STATIC_HOSTING.md) - Hosting configuration details
 
@@ -253,9 +253,9 @@ This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareA
 
 **CC BY-NC-SA 4.0** - Free to use, modify, and share (non-commercial)
 
-## 🌟 Why Choose Mermalaid Over Other Mermaid Editors?
+## 🌟 Why Choose Mermaider Over Other Mermaid Editors?
 
-| Feature | Mermalaid | Other Tools |
+| Feature | Mermaider | Other Tools |
 |---------|-----------|-------------|
 | **Cost** | ✅ 100% Free | ❌ Free tier with limits, paid for unlimited |
 | **Open Source** | ✅ Yes, fully open | ❌ Usually closed source |
@@ -268,7 +268,7 @@ This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareA
 
 ## 🎯 SEO Keywords & Search Terms
 
-Mermalaid is optimized for these search terms:
+Mermaider is optimized for these search terms:
 - **free mermaid editor**
 - **mermaid diagram editor free**
 - **open source mermaid editor**
@@ -282,12 +282,12 @@ Mermalaid is optimized for these search terms:
 
 ---
 
-**⭐ Star this repo** if you find Mermalaid useful for creating free, unlimited Mermaid diagrams!
+**⭐ Star this repo** if you find Mermaider useful for creating free, unlimited Mermaid diagrams!
 
-**🔗 Share Mermalaid** with others who need a completely free, open-source Mermaid editor.
+**🔗 Share Mermaider** with others who need a completely free, open-source Mermaid editor.
 
 **💬 Have questions?** Open an issue or check our documentation.
 
 ---
 
-*Mermalaid - The #1 Free Mermaid Diagram Editor. Completely Open Source. 100% Free. Forever.*
+*Mermaider*

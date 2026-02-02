@@ -7,49 +7,49 @@ import './Editor.css'
 // Register Mermaid language
 loader.init().then((monaco) => {
   monaco.languages.register({ id: 'mermaid' })
-  
+
   monaco.languages.setMonarchTokensProvider('mermaid', {
     tokenizer: {
       root: [
         // Diagram type keywords
         [/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitgraph|journey|requirement)/i, 'keyword'],
-        
+
         // Direction keywords
         [/[TDLR][DB]/, 'keyword'],
         [/LR|RL|TD|BT/, 'keyword'],
-        
+
         // Node shapes
         [/\[[^\]]*\]/, 'string'],
         [/\([^)]*\)/, 'string'],
         [/\{[^}]*\}/, 'string'],
         [/[<>]/, 'delimiter'],
-        
+
         // Styling
         [/classDef|style|linkStyle/, 'keyword'],
-        
+
         // Arrows
         [/[-.]+>/g, 'operator'],
         [/[-><]+|==[>=]|--/, 'operator'],
-        
+
         // Comments
         [/%%.*$/, 'comment'],
-        
+
         // Identifiers
         [/[a-zA-Z0-9_]+/, 'identifier'],
-        
+
         // Strings in quotes
         [/"[^"]*"/, 'string'],
         [/('[^']*')/, 'string'],
-        
+
         // Numbers
         [/\d+/, 'number'],
-        
+
         // Special characters
         [/[{}[\]]/, 'delimiter.bracket'],
       ]
     }
   })
-  
+
   monaco.languages.setLanguageConfiguration('mermaid', {
     comments: {
       lineComment: '%%'
@@ -80,9 +80,10 @@ interface EditorProps {
   code: string
   setCode: (code: string) => void
   error: string | null
+  onNodeSelected?: (nodeId: string | null) => void
 }
 
-export default function Editor({ code, setCode, error }: EditorProps) {
+export default function Editor({ code, setCode, error, onNodeSelected }: EditorProps) {
   const { theme } = useTheme()
   const debounceTimer = useRef<NodeJS.Timeout>()
   const editorRef = useRef<any>(null)
@@ -103,7 +104,7 @@ export default function Editor({ code, setCode, error }: EditorProps) {
       clearTimeout(debounceTimer.current)
     }
     debounceTimer.current = setTimeout(() => {
-      localStorage.setItem('mermalaid-draft', code)
+      localStorage.setItem('mermaider-draft', code)
     }, 500)
     return () => {
       if (debounceTimer.current) {
@@ -114,6 +115,25 @@ export default function Editor({ code, setCode, error }: EditorProps) {
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor
+
+    // Sync selection to Preview
+    editor.onDidChangeCursorPosition((e: any) => {
+      if (!onNodeSelected) return
+
+      const model = editor.getModel()
+      const word = model.getWordAtPosition(e.position)
+      if (word && word.word) {
+        // Only report if it looks like an identifier
+        if (/^[a-zA-Z0-9_-]+$/.test(word.word)) {
+          console.log('Cursor at word:', word.word)
+          onNodeSelected(word.word)
+        } else {
+          onNodeSelected(null)
+        }
+      } else {
+        onNodeSelected(null)
+      }
+    })
   }
 
   // Set up paste handler once editor is mounted
@@ -125,7 +145,7 @@ export default function Editor({ code, setCode, error }: EditorProps) {
       try {
         const pastedText = e.clipboardData?.getData('text') || ''
         const extractedCode = extractMermaidCode(pastedText)
-        
+
         // If the pasted text was a code block and we extracted different content
         if (pastedText !== extractedCode) {
           e.preventDefault()
@@ -170,11 +190,7 @@ export default function Editor({ code, setCode, error }: EditorProps) {
           automaticLayout: true,
         }}
       />
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+
     </div>
   )
 }

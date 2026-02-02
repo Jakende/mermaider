@@ -12,9 +12,8 @@
 }
 
 .settings-modal {
-  background: var(--bg-primary);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: var(--surface);
+  border: 1px solid var(--border);
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -22,51 +21,24 @@
   flex-direction: column;
 }
 
-.settings-modal.light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f5f5;
-  --border-color: #ddd;
-  --text-primary: #333;
-  --text-secondary: #666;
-  --button-primary: #007acc;
-  --button-primary-hover: #005999;
-  --button-secondary: #6c757d;
-  --input-border: #ccc;
-  --input-focus: #007acc;
-}
-
-.settings-modal.dark {
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #252526;
-  --border-color: #3e3e42;
-  --text-primary: #cccccc;
-  --text-secondary: #999;
-  --button-primary: #007acc;
-  --button-primary-hover: #0099ff;
-  --button-secondary: #6c757d;
-  --input-border: #555;
-  --input-focus: #0099ff;
-}
-
 .settings-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .settings-header h2 {
   margin: 0;
-  color: var(--text-primary);
-  font-size: 24px;
+  color: var(--ink);
 }
 
 .close-button {
   background: none;
-  border: none;
-  font-size: 32px;
-  color: var(--text-secondary);
+  border: 1px solid transparent;
+  font-size: 24px;
+  color: var(--muted);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -74,47 +46,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: background 0.2s;
 }
 
 .close-button:hover {
-  background: var(--bg-secondary);
+  color: var(--ink);
+  border-color: var(--border);
 }
 
 .settings-content {
-  padding: 20px;
+  padding: var(--space-4);
   overflow-y: auto;
   flex: 1;
 }
 
 .settings-section {
-  margin-bottom: 30px;
+  margin-bottom: var(--space-5);
 }
 
 .settings-section h3 {
-  margin: 0 0 10px 0;
-  color: var(--text-primary);
-  font-size: 18px;
+  margin: 0 0 var(--space-3) 0;
+  color: var(--ink);
 }
 
 .settings-description {
-  margin: 0 0 20px 0;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 0 0 var(--space-4) 0;
+  color: var(--muted);
 }
 
 .settings-field {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-4);
 }
 
 .settings-field label {
   display: block;
-  margin-bottom: 8px;
-  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  color: var(--ink);
   font-weight: 500;
-  font-size: 14px;
 }
 
 .api-key-input-wrapper {
@@ -124,20 +91,8 @@
 }
 
 .api-key-input {
+  /* Using global input styles from components.css where possible, but ensuring specific overrides */
   width: 100%;
-  padding: 10px 40px 10px 12px;
-  border: 1px solid var(--input-border);
-  border-radius: 4px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: monospace;
-  font-size: 14px;
-  transition: border-color 0.2s;
-}
-
-.api-key-input:focus {
-  outline: none;
-  border-color: var(--input-focus);
 }
 
 .toggle-visibility {
@@ -146,74 +101,45 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: background 0.2s;
+  color: var(--ink);
 }
 
 .toggle-visibility:hover {
-  background: var(--bg-secondary);
+  text-decoration: none;
 }
 
 .settings-hint {
-  margin: 8px 0 0 0;
-  color: var(--text-secondary);
+  margin: var(--space-2) 0 0 0;
+  color: var(--muted);
   font-size: 12px;
 }
 
 .settings-hint a {
-  color: var(--button-primary);
-  text-decoration: none;
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .settings-hint a:hover {
-  text-decoration: underline;
+  color: var(--accent);
 }
 
 .settings-footer {
   display: flex;
   justify-content: space-between;
-  padding: 20px;
-  border-top: 1px solid var(--border-color);
-  gap: 10px;
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+  gap: var(--space-3);
+  background-color: var(--surface);
 }
 
-.settings-footer > div {
+.settings-footer>div {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
-.button-primary,
-.button-secondary {
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.button-primary {
-  background: var(--button-primary);
-  color: white;
-}
-
-.button-primary:hover {
-  background: var(--button-primary-hover);
-}
-
-.button-secondary {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-
-.button-secondary:hover {
-  background: var(--border-color);
-}
-
+/* Button styles are handled globally by components.css for .button-primary and .button-secondary */

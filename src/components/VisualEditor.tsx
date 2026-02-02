@@ -30,7 +30,7 @@ interface VisualEditorProps {
 const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  
+
   const getShapeStyle = () => {
     const shape = data.shape || 'rect'
     switch (shape) {
@@ -64,7 +64,7 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="source"
         position={Position.Top}
         id="top-source"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -75,7 +75,7 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="source"
         position={Position.Right}
         id="right-source"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -86,7 +86,7 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="source"
         position={Position.Bottom}
         id="bottom-source"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -97,20 +97,20 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="source"
         position={Position.Left}
         id="left-source"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
           zIndex: 10,
         }}
       />
-      
+
       {/* Target handles - allow connecting to this node */}
       <Handle
         type="target"
         position={Position.Top}
         id="top-target"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -121,7 +121,7 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="target"
         position={Position.Right}
         id="right-target"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -132,7 +132,7 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="target"
         position={Position.Bottom}
         id="bottom-target"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
@@ -143,14 +143,14 @@ const CustomNode = ({ data, selected }: { data: any; selected: boolean }) => {
         type="target"
         position={Position.Left}
         id="left-target"
-        style={{ 
+        style={{
           background: isDark ? '#4a9eff' : '#1976d2',
           width: '12px',
           height: '12px',
           zIndex: 10,
         }}
       />
-      
+
       <div style={{ padding: '8px 12px', textAlign: 'center', pointerEvents: 'none' }}>
         {data.label || data.id}
       </div>
@@ -171,8 +171,8 @@ export default function VisualEditor({ parsedDiagram, onCodeChange }: VisualEdit
       id: node.id,
       type: 'custom',
       position: {
-        x: (index % 3) * 200 + 50,
-        y: Math.floor(index / 3) * 150 + 50,
+        x: (index % 4) * 300 + 100, // Wider spacing to prevent overlap
+        y: Math.floor(index / 4) * 200 + 100,
       },
       data: {
         label: node.label,
@@ -214,7 +214,7 @@ export default function VisualEditor({ parsedDiagram, onCodeChange }: VisualEdit
       parsedDiagram.edges.map(e => `${e.source}-${e.target}`)
     )
 
-    const nodesChanged = 
+    const nodesChanged =
       nodes.length !== parsedDiagram.nodes.length ||
       [...parsedNodeIds].some(id => !nodeIds.has(id)) ||
       nodes.some(n => {
@@ -239,8 +239,8 @@ export default function VisualEditor({ parsedDiagram, onCodeChange }: VisualEdit
         id: node.id,
         type: 'custom' as const,
         position: existingNode?.position || {
-          x: (index % 3) * 200 + 50,
-          y: Math.floor(index / 3) * 150 + 50,
+          x: (index % 4) * 300 + 100, // Wider spacing
+          y: Math.floor(index / 4) * 200 + 100,
         },
         data: {
           label: node.label,
