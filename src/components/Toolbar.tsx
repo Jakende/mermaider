@@ -17,6 +17,7 @@ interface ToolbarProps {
   onToggleEditor: () => void
   diagramName: string
   onUpdateDiagramName: (name: string) => void
+  onNewTab: () => void
 }
 
 export interface ToolbarRef {
@@ -25,7 +26,7 @@ export interface ToolbarRef {
   handleSave: () => void
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab }, ref) => {
   const { theme, toggleTheme, mermaidTheme, setMermaidTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -34,10 +35,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
   const [isFixing, setIsFixing] = useState(false)
 
   const handleNew = () => {
-    if (confirm('Create a new diagram? Unsaved changes will be lost.')) {
-      setCode('graph TD\n    A[Start] --> B[End]')
-      onUpdateDiagramName('diagram')
-    }
+    onNewTab()
   }
 
   const handleOpen = () => {

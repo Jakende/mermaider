@@ -2,10 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, cleanCode } from '../utils/aiService'
 import './ChatPanel.css'
 
-interface ChatMessage {
-    role: 'user' | 'assistant'
-    content: string
-}
+import { ChatMessage, ChatSession } from '../types'
 
 interface ChatPanelProps {
     code: string
@@ -14,6 +11,12 @@ interface ChatPanelProps {
     onClose: () => void
     onTogglePopout: () => void
     isPoppedOut: boolean
+    messages: ChatMessage[]
+    onSendMessage: (role: 'user' | 'assistant', content: string) => void
+    sessions: ChatSession[]
+    activeSessionId: string
+    onNewChat: () => void
+    onSwitchSession: (id: string) => void
 }
 
 export default function ChatPanel({
@@ -22,19 +25,22 @@ export default function ChatPanel({
     isOpen,
     onClose,
     onTogglePopout,
-    isPoppedOut
+    isPoppedOut,
+    messages,
+    onSendMessage,
+    sessions,
+    activeSessionId,
+    onNewChat,
+    onSwitchSession
 }: ChatPanelProps) {
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        { role: 'assistant', content: 'Hi! I can help you edit or analyze your Mermaid diagram. Choose a mode below!' }
-    ])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [mode, setMode] = useState<'edit' | 'ask'>('edit')
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+    const [showHistory, setShowHistory] = useState(false)
 
     // Pop-out state
-    const [position, setPosition] = useState({ x: 20, y: 20 })
-    const [size] = useState({ width: 350, height: 500 })
+    const [position, setPosition] = useState({ x: 20, y: 50 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
@@ -59,7 +65,7 @@ export default function ChatPanel({
         const userMessage = input.trim()
         const currentMode = mode
         setInput('')
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+        onSendMessage('user', userMessage)
         setIsLoading(true)
 
         try {
@@ -89,23 +95,14 @@ export default function ChatPanel({
 
                 const finalCode = cleanCode(response)
                 setCode(finalCode)
-                setMessages(prev => [...prev, {
-                    role: 'assistant',
-                    content: explanation
-                }])
+                onSendMessage('assistant', explanation)
             } else {
                 const response = await askAboutCodeWithAI(code, userMessage, config)
-                setMessages(prev => [...prev, {
-                    role: 'assistant',
-                    content: response
-                }])
+                onSendMessage('assistant', response)
             }
         } catch (error) {
             console.error('AI error:', error)
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`
-            }])
+            onSendMessage('assistant', `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`)
         } finally {
             setIsLoading(false)
         }
@@ -144,7 +141,11 @@ export default function ChatPanel({
     // Dragging logic for pop-out
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!isPoppedOut) return
-        if ((e.target as HTMLElement).closest('.chat-input-form') || (e.target as HTMLElement).closest('.chat-messages')) return
+
+        // Only trigger drag if clicking the header or specific non-interactive parts
+        // Best practice: Only drag via the header
+        if (!(e.target as HTMLElement).closest('.chat-header')) return
+        if ((e.target as HTMLElement).closest('.chat-header-actions')) return
 
         setIsDragging(true)
         setDragOffset({
@@ -188,12 +189,9 @@ export default function ChatPanel({
             style={isPoppedOut ? {
                 left: position.x,
                 top: position.y,
-                width: size.width,
-                height: size.height
             } : undefined}
-            onMouseDown={handleMouseDown}
         >
-            <div className="chat-header">
+            <div className="chat-header" onMouseDown={handleMouseDown}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3>AI Assistant</h3>
                     <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
@@ -203,75 +201,117 @@ export default function ChatPanel({
                 <div className="chat-header-actions">
                     <button
                         className="chat-action-btn"
-                        onClick={onTogglePopout}
-                        title={isPoppedOut ? "Dock to side" : "Pop out window"}
+                        onClick={onNewChat}
+                        title="New Chat"
                     >
-                        {isPoppedOut ? '[DOCK]' : '[POP]'}
+                        +
                     </button>
-                    <button className="chat-close-btn" onClick={onClose}>[X]</button>
+                    <button
+                        className="chat-action-btn"
+                        onClick={() => setShowHistory(!showHistory)}
+                        title="History"
+                    >
+                        {showHistory ? 'BACK' : 'HIST'}
+                    </button>
+                    <button
+                        className="chat-action-btn"
+                        onClick={onTogglePopout}
+                        title={isPoppedOut ? "Dock" : "Pop out"}
+                    >
+                        {isPoppedOut ? '↙' : '↗'}
+                    </button>
+                    <button className="chat-close-btn" onClick={onClose} title="Close">✕</button>
                 </div>
             </div>
 
-            <div className="chat-messages">
-                {messages.map((msg, index) => (
-                    <div key={index} className={`chat-message ${msg.role}`}>
-                        <div className="message-wrapper">
-                            <button
-                                className={`copy-btn ${copiedIndex === index ? 'copied' : ''}`}
-                                onClick={() => copyToClipboard(msg.content, index)}
-                                title="Copy message"
-                            >
-                                {copiedIndex === index ? (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                ) : (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                )}
-                            </button>
-                            <div className="message-content">
-                                {renderContent(msg.content)}
+            {showHistory ? (
+                <div className="chat-history-list">
+                    <h4>Previous Chats</h4>
+                    {sessions.map(session => (
+                        <div
+                            key={session.id}
+                            className={`history-item ${session.id === activeSessionId ? 'active' : ''}`}
+                            onClick={() => {
+                                onSwitchSession(session.id)
+                                setShowHistory(false)
+                            }}
+                        >
+                            <div className="history-item-info">
+                                <span className="history-item-date">
+                                    {new Date(session.timestamp).toLocaleString()}
+                                </span>
+                                <span className="history-item-preview">
+                                    {session.messages.find(m => m.role === 'user')?.content.substring(0, 40) || 'New Conversation'}...
+                                </span>
                             </div>
+                            <span className="history-item-count">{session.messages.length} msg</span>
                         </div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    <div className="chat-messages">
+                        {messages.map((msg, index) => (
+                            <div key={index} className={`chat-message ${msg.role}`}>
+                                <div className="message-wrapper">
+                                    <button
+                                        className={`copy-btn ${copiedIndex === index ? 'copied' : ''}`}
+                                        onClick={() => copyToClipboard(msg.content, index)}
+                                        title="Copy message"
+                                    >
+                                        {copiedIndex === index ? (
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        ) : (
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        )}
+                                    </button>
+                                    <div className="message-content">
+                                        {renderContent(msg.content)}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {isLoading && (
+                            <div className="chat-message assistant">
+                                <div className="message-content typing-indicator">
+                                    Thinking...
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
                     </div>
-                ))}
-                {isLoading && (
-                    <div className="chat-message assistant">
-                        <div className="message-content typing-indicator">
-                            Thinking...
-                        </div>
+
+                    <div className="chat-mode-toggle">
+                        <button
+                            className={`mode-btn ${mode === 'edit' ? 'active' : ''}`}
+                            onClick={() => setMode('edit')}
+                            type="button"
+                        >
+                            EDIT
+                        </button>
+                        <button
+                            className={`mode-btn ${mode === 'ask' ? 'active' : ''}`}
+                            onClick={() => setMode('ask')}
+                            type="button"
+                        >
+                            ASK
+                        </button>
                     </div>
-                )}
-                <div ref={messagesEndRef} />
-            </div>
 
-            <div className="chat-mode-toggle">
-                <button
-                    className={`mode-btn ${mode === 'edit' ? 'active' : ''}`}
-                    onClick={() => setMode('edit')}
-                    type="button"
-                >
-                    [EDIT]
-                </button>
-                <button
-                    className={`mode-btn ${mode === 'ask' ? 'active' : ''}`}
-                    onClick={() => setMode('ask')}
-                    type="button"
-                >
-                    [ASK]
-                </button>
-            </div>
-
-            <form className="chat-input-form" onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={mode === 'edit' ? "e.g., Change all boxes to circles..." : "e.g., What is linked to Node A?"}
-                    disabled={isLoading}
-                />
-                <button type="submit" disabled={isLoading || !input.trim()}>
-                    [SEND]
-                </button>
-            </form>
+                    <form className="chat-input-form" onSubmit={handleSubmit}>
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder={mode === 'edit' ? "e.g., Change all boxes to circles..." : "e.g., What is linked to Node A?"}
+                            disabled={isLoading}
+                        />
+                        <button type="submit" disabled={isLoading || !input.trim()}>
+                            SEND
+                        </button>
+                    </form>
+                </>
+            )}
         </div>
     )
 }

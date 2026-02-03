@@ -1,19 +1,52 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
 import Toolbar from './components/Toolbar'
 import ChatPanel from './components/ChatPanel'
+import TabBar from './components/TabBar'
 import ResizableSplitter from './components/ResizableSplitter'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
+import type { Tab, ChatSession } from './types'
 import './App.css'
+
+const DEFAULT_CODE = 'graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E'
+
+const createInitialSession = (): ChatSession => ({
+  id: Date.now().toString(),
+  messages: [{ role: 'assistant', content: 'Hi! I can help you edit or analyze your Mermaid diagram. Choose a mode below!' }],
+  timestamp: Date.now()
+})
 
 function AppContent() {
   const { theme } = useTheme()
-  const [code, setCode] = useState('graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E')
+
+  // Tabs State
+  const [tabs, setTabs] = useState<Tab[]>([{
+    id: 'initial',
+    name: 'diagram',
+    code: DEFAULT_CODE,
+    chatSessions: [createInitialSession()],
+    activeChatSessionId: '' // Will be set in useMemo or useEffect if missing
+  }])
+  const [activeTabId, setActiveTabId] = useState<string>('initial')
+
+  // Migration and Active Session resolution
+  const activeTab = useMemo(() => {
+    const tab = tabs.find(t => t.id === activeTabId) || tabs[0]
+    if (!tab.activeChatSessionId && tab.chatSessions.length > 0) {
+      tab.activeChatSessionId = tab.chatSessions[0].id
+    }
+    return tab
+  }, [tabs, activeTabId])
+
+  const activeSession = useMemo(() => {
+    return activeTab.chatSessions.find(s => s.id === activeTab.activeChatSessionId) || activeTab.chatSessions[0]
+  }, [activeTab])
+
   const [error, setError] = useState<string | null>(null)
 
-  // Chat State
+  // Chat Panel State
   const [isChatOpen, setIsChatOpen] = useState(true)
   const [isChatPoppedOut, setIsChatPoppedOut] = useState(false)
   const [chatWidth, setChatWidth] = useState(300)
@@ -21,15 +54,70 @@ function AppContent() {
   const [editorWidth, setEditorWidth] = useState(50) // percentage
   const [isEditorVisible, setIsEditorVisible] = useState(true)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [diagramName, setDiagramName] = useState('diagram')
 
   const toolbarRef = useRef<{ handleNew: () => void; handleOpen: () => void; handleSave: () => void }>(null)
   const appContentRef = useRef<HTMLDivElement>(null)
 
+  const setCode = (newCode: string) => {
+    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode } : t))
+  }
+
+  const setDiagramName = (newName: string) => {
+    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, name: newName } : t))
+  }
+
+  const handleSendMessage = (role: 'user' | 'assistant', content: string) => {
+    setTabs(prev => prev.map(t => t.id === activeTabId ? {
+      ...t,
+      chatSessions: t.chatSessions.map(s => s.id === t.activeChatSessionId ? {
+        ...s,
+        messages: [...s.messages, { role, content }]
+      } : s)
+    } : t))
+  }
+
+  const handleNewChat = () => {
+    const newSession = createInitialSession()
+    setTabs(prev => prev.map(t => t.id === activeTabId ? {
+      ...t,
+      chatSessions: [newSession, ...t.chatSessions],
+      activeChatSessionId: newSession.id
+    } : t))
+  }
+
+  const handleSwitchSession = (sessionId: string) => {
+    setTabs(prev => prev.map(t => t.id === activeTabId ? {
+      ...t,
+      activeChatSessionId: sessionId
+    } : t))
+  }
+
+  const handleNewTab = () => {
+    const newId = Date.now().toString()
+    const newSession = createInitialSession()
+    const newTab: Tab = {
+      id: newId,
+      name: `diagram-${tabs.length + 1}`,
+      code: DEFAULT_CODE,
+      chatSessions: [newSession],
+      activeChatSessionId: newSession.id
+    }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newId)
+  }
+
+  const handleCloseTab = (id: string) => {
+    if (tabs.length === 1) return
+    const newTabs = tabs.filter(t => t.id !== id)
+    setTabs(newTabs)
+    if (activeTabId === id) {
+      setActiveTabId(newTabs[newTabs.length - 1].id)
+    }
+  }
+
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      // Calculate available width. If chat is embedded, subtract its current width
       const availableWidth = width - (isChatOpen && !isChatPoppedOut ? chatWidth : 0)
       if (availableWidth <= 0) return
 
@@ -50,43 +138,73 @@ function AppContent() {
     }
   }
 
+  // Load from localStorage and Migration
   useEffect(() => {
-    const saved = localStorage.getItem('mermaider-draft')
-    if (saved) {
-      setCode(saved)
+    const savedTabs = localStorage.getItem('mermaider-tabs')
+    const savedActiveId = localStorage.getItem('mermaider-active-tab')
+    if (savedTabs) {
+      try {
+        let parsed = JSON.parse(savedTabs)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Migration logic
+          const migrated = parsed.map((tab: any) => {
+            if (tab.chatSessions) return tab
+            const session: ChatSession = {
+              id: 'initial-session-' + tab.id,
+              messages: tab.chatHistory || [],
+              timestamp: Date.now()
+            }
+            return {
+              ...tab,
+              chatSessions: [session],
+              activeChatSessionId: session.id
+            }
+          })
+          setTabs(migrated)
+        }
+      } catch (e) {
+        console.error('Failed to parse or migrate saved tabs')
+      }
     }
-    const savedName = localStorage.getItem('mermaider-filename')
-    if (savedName) {
-      setDiagramName(savedName)
+    if (savedActiveId) {
+      setActiveTabId(savedActiveId)
     }
   }, [])
 
-  const handleUpdateDiagramName = (newName: string) => {
-    setDiagramName(newName)
-    localStorage.setItem('mermaider-filename', newName)
-  }
-
+  // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('mermaider-draft', code)
-  }, [code])
+    localStorage.setItem('mermaider-tabs', JSON.stringify(tabs))
+    localStorage.setItem('mermaider-active-tab', activeTabId)
+  }, [tabs, activeTabId])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+      const modifier = isMac ? e.metaKey : e.ctrlKey
+
+      if (modifier && e.key === 'n') {
         e.preventDefault()
-        toolbarRef.current?.handleNew()
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+        handleNewTab()
+      } else if (modifier && e.key === 't') {
+        e.preventDefault()
+        handleNewTab()
+      } else if (modifier && e.key === 'o') {
         e.preventDefault()
         toolbarRef.current?.handleOpen()
-      } else if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      } else if (modifier && e.key === 's') {
         e.preventDefault()
         toolbarRef.current?.handleSave()
+      } else if (modifier && e.key === 'w') {
+        if (tabs.length > 1) {
+          e.preventDefault()
+          handleCloseTab(activeTabId)
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [activeTabId, tabs.length])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -98,12 +216,20 @@ function AppContent() {
     const reader = new FileReader()
     reader.onload = (event) => {
       const content = event.target?.result as string
-      // Extract Mermaid code from potential markdown code blocks
       const extractedCode = extractMermaidCode(content)
-      setCode(extractedCode)
-      // Set diagram name from dropped file
       const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, "")
-      handleUpdateDiagramName(nameWithoutExtension)
+
+      const newId = Date.now().toString()
+      const newSession = createInitialSession()
+      const newTab: Tab = {
+        id: newId,
+        name: nameWithoutExtension,
+        code: extractedCode,
+        chatSessions: [{ ...newSession, messages: [{ role: 'assistant', content: `Loaded diagram from ${file.name}` }] }],
+        activeChatSessionId: newSession.id
+      }
+      setTabs(prev => [...prev, newTab])
+      setActiveTabId(newId)
     }
     reader.readAsText(file)
   }
@@ -120,58 +246,77 @@ function AppContent() {
     >
       <Toolbar
         ref={toolbarRef}
-        code={code}
+        code={activeTab.code}
         setCode={setCode}
         error={error}
         onToggleChat={() => setIsChatOpen(!isChatOpen)}
         isEditorVisible={isEditorVisible}
         onToggleEditor={() => setIsEditorVisible(!isEditorVisible)}
-        diagramName={diagramName}
-        onUpdateDiagramName={handleUpdateDiagramName}
+        diagramName={activeTab.name}
+        onUpdateDiagramName={setDiagramName}
+        onNewTab={handleNewTab}
       />
+
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onSelectTab={setActiveTabId}
+        onCloseTab={handleCloseTab}
+        onNewTab={handleNewTab}
+      />
+
       <div className="app-content" ref={appContentRef}>
         <div style={{ display: 'flex', flex: 1, minWidth: 0, position: 'relative' }}>
           {isEditorVisible && (
             <>
               <div style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Editor code={code} setCode={setCode} error={error} onNodeSelected={setSelectedNodeId} />
+                <Editor code={activeTab.code} setCode={setCode} error={error} onNodeSelected={setSelectedNodeId} />
               </div>
               <ResizableSplitter onResize={handleResizeEditor} />
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <Preview code={code} setError={setError} onCodeChange={setCode} targetNodeId={selectedNodeId} />
+            <Preview code={activeTab.code} setError={setError} onCodeChange={setCode} targetNodeId={selectedNodeId} />
           </div>
 
-          {/* Resize handle for Chat if it is OPEN and EMBEDDED */}
           {isChatOpen && !isChatPoppedOut && (
             <ResizableSplitter onResize={handleResizeChat} />
           )}
 
-          {/* Embedded Chat Panel */}
           {isChatOpen && !isChatPoppedOut && (
             <div style={{ width: chatWidth }}>
               <ChatPanel
-                code={code}
+                code={activeTab.code}
                 setCode={setCode}
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 isPoppedOut={false}
                 onTogglePopout={() => setIsChatPoppedOut(true)}
+                messages={activeSession.messages}
+                onSendMessage={handleSendMessage}
+                sessions={activeTab.chatSessions}
+                activeSessionId={activeTab.activeChatSessionId}
+                onNewChat={handleNewChat}
+                onSwitchSession={handleSwitchSession}
               />
             </div>
           )}
         </div>
 
-        {/* Popped Out Chat Panel - Rendered outside the flex flow but inside app-content */}
         {isChatOpen && isChatPoppedOut && (
           <ChatPanel
-            code={code}
+            code={activeTab.code}
             setCode={setCode}
             isOpen={isChatOpen}
             onClose={() => setIsChatOpen(false)}
             isPoppedOut={true}
             onTogglePopout={() => setIsChatPoppedOut(false)}
+            messages={activeSession.messages}
+            onSendMessage={handleSendMessage}
+            sessions={activeTab.chatSessions}
+            activeSessionId={activeTab.activeChatSessionId}
+            onNewChat={handleNewChat}
+            onSwitchSession={handleSwitchSession}
           />
         )}
       </div>
