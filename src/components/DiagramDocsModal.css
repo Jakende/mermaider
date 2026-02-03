@@ -106,27 +106,113 @@
     gap: 8px;
 }
 
-.diagram-tags .doc-link {
+.diagram-docs-modal {
+    width: 650px;
+    max-width: 95vw;
+}
+
+.docs-content {
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+.docs-content h1 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 4px;
+    color: var(--ink);
+}
+
+.docs-content h2 {
+    font-size: 16px;
+    margin-top: 14px;
+    margin-bottom: 2px;
+    color: var(--ink);
+}
+
+.docs-content h3 {
+    font-size: 14px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    color: var(--ink);
+}
+
+.docs-content ul {
+    padding-left: 20px;
+    margin: 8px 0;
+    list-style-position: outside;
+}
+
+.docs-content li {
+    margin: 2px 0 2px 45px;
+    display: list-item;
+    list-style-type: disc;
+    color: var(--ink);
+}
+
+.spacer {
+    height: 12px;
+}
+
+.docs-content strong {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.docs-content code {
+    background-color: var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: var(--ink);
+    border: 1px solid transparent;
+}
+
+.mermaid-code-container {
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.code-label {
+    background-color: var(--border);
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 4px 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.mermaid-code {
+    margin: 0;
+    padding: 16px;
+    color: var(--ink);
+    font-family: var(--font-mono, monospace);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+}
+
+.diagram-tags span {
     background-color: var(--control-bg);
     border: 1px solid var(--control-border);
     color: var(--control-ink);
-    padding: 6px 14px;
+    padding: 4px 12px;
     border-radius: 20px;
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 
-.diagram-tags .doc-link:hover {
+.diagram-tags span:hover {
     background-color: var(--border);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--muted);
-}
-
-.diagram-tags .doc-link:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
 }
 
 .help-footer {

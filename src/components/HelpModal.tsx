@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
+import DiagramDocsModal from './DiagramDocsModal'
 import './HelpModal.css'
 
 interface HelpModalProps {
@@ -8,6 +10,7 @@ interface HelpModalProps {
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
     const { theme } = useTheme()
+    const [selectedDoc, setSelectedDoc] = useState<{ id: string, name: string } | null>(null)
 
     if (!isOpen) return null
 
@@ -19,51 +22,73 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         { title: 'Keyboard Shortcuts', text: '⌘N for New, ⌘O for Open, ⌘S for Save.' }
     ]
 
+    const diagrams = [
+        { id: 'flowcharts', name: 'Flowcharts' },
+        { id: 'sequence', name: 'Sequence' },
+        { id: 'class', name: 'Class' },
+        { id: 'state', name: 'State' },
+        { id: 'er', name: 'ER' },
+        { id: 'gantt', name: 'Gantt' },
+        { id: 'pie', name: 'Pie' },
+        { id: 'gitgraph', name: 'GitGraph' },
+        { id: 'userjourney', name: 'User Journey' }
+    ]
+
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className={`help-modal ${theme}`} onClick={(e) => e.stopPropagation()}>
-                <div className="help-header">
-                    <h2>About Mermaider</h2>
-                    <button className="close-button" onClick={onClose}>
-                        [X]
-                    </button>
-                </div>
-
-                <div className="help-content">
-                    <p className="help-intro">
-                        Mermaider is a privacy-focused, AI-powered Mermaid diagram editor.
-                    </p>
-
-                    <div className="help-grid">
-                        {content.map((item, i) => (
-                            <div key={i} className="help-item">
-                                <h3>{item.title}</h3>
-                                <p>{item.text}</p>
-                            </div>
-                        ))}
+        <>
+            <div className="modal-overlay" onClick={onClose}>
+                <div className={`help-modal ${theme}`} onClick={(e) => e.stopPropagation()}>
+                    <div className="help-header">
+                        <h2>About Mermaider</h2>
+                        <button className="close-button" onClick={onClose}>
+                            [X]
+                        </button>
                     </div>
 
-                    <div className="help-section">
-                        <h3>Supported Diagrams</h3>
-                        <div className="diagram-tags">
-                            <span>Flowcharts</span>
-                            <span>Sequence</span>
-                            <span>Class</span>
-                            <span>State</span>
-                            <span>ER</span>
-                            <span>Gantt</span>
-                            <span>Pie</span>
-                            <span>GitGraph</span>
+                    <div className="help-content">
+                        <p className="help-intro">
+                            Mermaider is a privacy-focused, AI-powered Mermaid diagram editor.
+                        </p>
+
+                        <div className="help-grid">
+                            {content.map((item, i) => (
+                                <div key={i} className="help-item">
+                                    <h3>{item.title}</h3>
+                                    <p>{item.text}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="help-section">
+                            <h3>Supported Diagrams (Click to view syntax)</h3>
+                            <div className="diagram-tags">
+                                {diagrams.map(diag => (
+                                    <span
+                                        key={diag.id}
+                                        onClick={() => setSelectedDoc(diag)}
+                                        className="doc-link"
+                                    >
+                                        {diag.name}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="help-footer">
-                    <button onClick={onClose} className="button-primary">
-                        Close
-                    </button>
+                    <div className="help-footer">
+                        <button onClick={onClose} className="button-primary">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <DiagramDocsModal
+                isOpen={!!selectedDoc}
+                onClose={() => setSelectedDoc(null)}
+                diagramId={selectedDoc?.id || ''}
+                diagramName={selectedDoc?.name || ''}
+            />
+        </>
     )
 }
