@@ -27,6 +27,9 @@ loader.init().then((monaco) => {
         // Styling
         [/classDef|style|linkStyle/, 'keyword'],
 
+        // Colors (Hex)
+        [/#[A-Fa-f0-9]{3,6}/, 'number.hex'],
+
         // Arrows
         [/[-.]+>/g, 'operator'],
         [/[-><]+|==[>=]|--/, 'operator'],
@@ -41,12 +44,57 @@ loader.init().then((monaco) => {
         [/"[^"]*"/, 'string'],
         [/('[^']*')/, 'string'],
 
-        // Numbers
+        // Numbers (non-hex)
         [/\d+/, 'number'],
 
         // Special characters
         [/[{}[\]]/, 'delimiter.bracket'],
       ]
+    }
+  })
+
+  // Register Color Provider
+  monaco.languages.registerColorProvider('mermaid', {
+    provideDocumentColors(model) {
+      const text = model.getValue()
+      const colors: any[] = []
+      const regex = /#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})\b/g
+      let match
+      while ((match = regex.exec(text)) !== null) {
+        const startPos = model.getPositionAt(match.index)
+        const endPos = model.getPositionAt(match.index + match[0].length)
+        const colorStr = match[1]
+        
+        let r, g, b
+        if (colorStr.length === 3) {
+          r = parseInt(colorStr[0] + colorStr[0], 16) / 255
+          g = parseInt(colorStr[1] + colorStr[1], 16) / 255
+          b = parseInt(colorStr[2] + colorStr[2], 16) / 255
+        } else {
+          r = parseInt(colorStr.substring(0, 2), 16) / 255
+          g = parseInt(colorStr.substring(2, 4), 16) / 255
+          b = parseInt(colorStr.substring(4, 6), 16) / 255
+        }
+
+        colors.push({
+          range: {
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column
+          },
+          color: { red: r, green: g, blue: b, alpha: 1 }
+        })
+      }
+      return colors
+    },
+    provideColorPresentations(_model, colorInfo) {
+      const { red, green, blue } = colorInfo.color
+      const r = Math.round(red * 255).toString(16).padStart(2, '0')
+      const g = Math.round(green * 255).toString(16).padStart(2, '0')
+      const b = Math.round(blue * 255).toString(16).padStart(2, '0')
+      const label = `#${r}${g}${b}`
+      return [{ label }]
     }
   })
 
@@ -81,9 +129,10 @@ interface EditorProps {
   setCode: (code: string) => void
   error: string | null
   onNodeSelected?: (nodeId: string | null) => void
+  scrollToNode?: string | null
 }
 
-export default function Editor({ code, setCode, error, onNodeSelected }: EditorProps) {
+export default function Editor({ code, setCode, error, onNodeSelected, scrollToNode }: EditorProps) {
   const { theme } = useTheme()
   const debounceTimer = useRef<NodeJS.Timeout>()
   const editorRef = useRef<any>(null)
@@ -91,10 +140,21 @@ export default function Editor({ code, setCode, error, onNodeSelected }: EditorP
   // Update Monaco editor when code changes externally (e.g., from AI Fix)
   useEffect(() => {
     if (editorRef.current) {
-      const currentValue = editorRef.current.getValue()
+      const editor = editorRef.current
+      const model = editor.getModel()
+      const currentValue = model.getValue()
       if (currentValue !== code) {
-        console.log('Updating Monaco editor with new code')
-        editorRef.current.setValue(code)
+        console.log('Updating Monaco editor with new code (preserving undo stack)')
+        
+        // Use pushEditOperations to preserve undo/redo history
+        model.pushEditOperations(
+          editor.getSelections(),
+          [{
+            range: model.getFullModelRange(),
+            text: code
+          }],
+          () => null
+        )
       }
     }
   }, [code])
@@ -112,6 +172,29 @@ export default function Editor({ code, setCode, error, onNodeSelected }: EditorP
       }
     }
   }, [code])
+
+  // Scroll to node when requested from Preview
+  useEffect(() => {
+    if (!scrollToNode || !editorRef.current) return
+
+    const editor = editorRef.current
+    const model = editor.getModel()
+    if (!model) return
+
+    // Search for the node ID. We use a regex to find it as a whole word or starting a line
+    // Mermaid nodes are often at the start of a line or after spaces/arrows
+    const matches = model.findMatches(scrollToNode, true, false, true, null, true)
+    
+    if (matches && matches.length > 0) {
+      // Prioritize matches that are at the beginning of a line (common for node definitions)
+      const bestMatch = matches.find((m: any) => m.range.startColumn === 1 || 
+        model.getLineContent(m.range.startLineNumber).substring(0, m.range.startColumn - 1).trim() === '') || matches[0]
+      
+      editor.revealRangeInCenterIfOutsideViewport(bestMatch.range)
+      editor.setSelection(bestMatch.range)
+      // Optional: add a temporary decoration to highlight it
+    }
+  }, [scrollToNode])
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor

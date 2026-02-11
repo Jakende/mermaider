@@ -24,6 +24,8 @@ export interface ToolbarRef {
   handleNew: () => void
   handleOpen: () => void
   handleSave: () => void
+  handleSettings: () => void
+  handleHelp: () => void
 }
 
 const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab }, ref) => {
@@ -269,6 +271,8 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     handleNew,
     handleOpen,
     handleSave: () => setShowExport(true),
+    handleSettings: () => setShowSettings(true),
+    handleHelp: () => setShowHelp(true),
   }))
 
   return (
@@ -331,7 +335,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
             {theme === 'light' ? '[DARK]' : '[LIGHT]'}
           </button>
-          <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings">
+          <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings (⌘,)">
             [SETTINGS]
           </button>
         </div>
@@ -340,7 +344,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           <button
             onClick={() => setShowHelp(true)}
             className="toolbar-btn text-btn"
-            title="App Documentation & Features"
+            title="App Documentation & Features (⌘/)"
           >
             [INFO]
           </button>

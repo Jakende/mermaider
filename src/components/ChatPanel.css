@@ -125,10 +125,23 @@
     flex-direction: column;
 }
 
-.copy-btn {
+.message-header-actions {
     position: absolute;
     top: -10px;
     right: -10px;
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.chat-message:hover .message-header-actions {
+    opacity: 1;
+}
+
+.copy-btn,
+.edit-btn {
     background-color: var(--surface);
     border: 1px solid var(--border);
     color: var(--muted);
@@ -139,17 +152,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 5;
-    opacity: 0;
-    transition: opacity 0.2s, color 0.2s;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: color 0.2s, border-color 0.2s;
 }
 
-.chat-message:hover .copy-btn {
-    opacity: 1;
-}
-
-.copy-btn:hover {
+.copy-btn:hover,
+.edit-btn:hover {
     color: var(--ink);
     border-color: var(--ink);
 }
@@ -157,6 +165,52 @@
 .copy-btn.copied {
     color: #4caf50;
     border-color: #4caf50;
+}
+
+.edit-message-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.edit-message-container textarea {
+    width: 100%;
+    min-height: 80px;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.edit-actions button {
+    padding: 4px 12px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.resend-btn {
+    background: var(--ink);
+    color: var(--surface);
+    border: none;
 }
 
 .message-content {

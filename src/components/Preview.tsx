@@ -12,19 +12,31 @@ interface PreviewProps {
   setError: (error: string | null) => void
   onCodeChange?: (code: string) => void
   targetNodeId?: string | null
+  onNodeClick?: (nodeId: string) => void
+  isVisualEditMode?: boolean
+  onToggleVisualEdit?: (isVisualEdit: boolean) => void
 }
 
-export default function Preview({ code, setError, onCodeChange, targetNodeId }: PreviewProps) {
+export default function Preview({ 
+  code, 
+  setError, 
+  onCodeChange, 
+  targetNodeId, 
+  onNodeClick,
+  isVisualEditMode = false,
+  onToggleVisualEdit 
+}: PreviewProps) {
   const { mermaidTheme } = useTheme()
   const mermaidContainerRef = useRef<HTMLDivElement>(null)
   const renderIdRef = useRef(0)
-  const [isEditMode, setIsEditMode] = useState(false)
 
   // Zoom & Pan State
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
+
+  const [layoutPositions, setLayoutPositions] = useState<Record<string, {x: number, y: number}>>({})
 
   const extractedCode = extractMermaidCode(code)
   const trimmedCode = extractedCode.trim()
@@ -46,10 +58,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
   }
 
   const handleWheel = (e: React.WheelEvent) => {
-    // User requested mouse wheel zoom (usually implies without modifier, or standard behavior)
-    // Standard CAD/Map behavior: Scroll to zoom, Drag to Pan.
-    // However, in a document flow, Scroll usually scrolls.
-    // If we want purely zoom on scroll:
     e.preventDefault()
     e.stopPropagation()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
@@ -58,7 +66,7 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
 
   // Pan Logic
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isEditMode) return
+    if (isVisualEditMode) return
     setIsPanning(true)
     setLastMousePos({ x: e.clientX, y: e.clientY })
     document.body.style.cursor = 'grabbing'
@@ -94,8 +102,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
 
 
   useEffect(() => {
-    // Get the configuration for the selected theme, defaulting to slate if somehow invalid
-    // Cast to any to avoid strict indexing issues if types aren't perfectly aligned
     const themes = mermaidThemes as any
     const selectedTheme = themes[mermaidTheme] || themes.slate
 
@@ -107,7 +113,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
       fontFamily: 'inherit',
     })
 
-    // Suppress Mermaid's default error rendering to the DOM
     mermaid.parseError = (err) => {
       console.log('Mermaid parsing error (suppressed default):', err);
     }
@@ -123,7 +128,8 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
       const container = mermaidContainerRef.current
 
       // Don't render preview if we're in edit mode
-      if (isEditMode && canEdit) {
+      // NOTE: We keep the last layoutPositions calculated before entering edit mode
+      if (isVisualEditMode && canEdit) {
         return
       }
 
@@ -133,16 +139,15 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
         if (renderIdRef.current === currentId) {
           container.innerHTML = '<div class="empty-preview">Start typing your Mermaid diagram...</div>'
           setError(null)
+          setLayoutPositions({})
         }
         return
       }
 
       try {
-        // Validate syntax first
         mermaid.parse(trimmedCode)
         const id = `mermaid-${currentId}-${Date.now()}`
 
-        // Render into a hidden element first
         const renderContainer = document.createElement('div')
         renderContainer.id = id
         renderContainer.style.position = 'absolute'
@@ -155,23 +160,86 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
 
           if (renderIdRef.current === currentId && container) {
             container.innerHTML = result.svg
+            
+            // Extract positions from the rendered SVG
+            const newPositions: Record<string, {x: number, y: number}> = {}
+            const nodes = container.querySelectorAll('.node')
+            
+            nodes.forEach(node => {
+              const fullId = node.id || ''
+              let nodeId = ''
+              if (fullId.startsWith('flowchart-')) {
+                nodeId = fullId.split('-')[1]
+              } else if (fullId.includes('-')) {
+                nodeId = fullId.split('-')[0]
+              } else {
+                nodeId = fullId
+              }
+              if (!nodeId || nodeId === 'node' || nodeId === 'flowchart') {
+                nodeId = node.textContent?.trim() || ''
+              }
+
+              const svgNode = node as unknown as SVGGraphicsElement
+              if (nodeId && svgNode.getBBox && svgNode.getAttribute('transform')) {
+                 const transform = svgNode.getAttribute('transform')
+                 const translateMatch = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
+                 if (translateMatch) {
+                    const tx = parseFloat(translateMatch[1])
+                    const ty = parseFloat(translateMatch[2])
+                    // Mermaid positions are center-based usually, or based on the group logic.
+                    // Top-left in SVG space is (tx + bbox.x), (ty + bbox.y)
+                    try {
+                      // We need to query bbox on the svgNode which is a <g>
+                      // bbox of a <g> is in its own coordinate system (ignoring transform)
+                      // So <g transform="translate(tx, ty)"><rect x="bx" y="by" .../></g>
+                      // The top-left corner in parent space is (tx + bx), (ty + by)
+                      const bbox = svgNode.getBBox()
+                      newPositions[nodeId] = { x: tx + bbox.x, y: ty + bbox.y }
+                    } catch (e) {
+                      console.warn('Failed to get BBox for node', nodeId, e)
+                    }
+                 }
+              }
+            })
+            setLayoutPositions(newPositions)
+
+            nodes.forEach(node => {
+              node.setAttribute('style', 'cursor: pointer;')
+              node.addEventListener('click', (e) => {
+                e.stopPropagation()
+                const fullId = node.id || ''
+                let nodeId = ''
+                
+                if (fullId.startsWith('flowchart-')) {
+                  nodeId = fullId.split('-')[1]
+                } else if (fullId.includes('-')) {
+                  nodeId = fullId.split('-')[0]
+                } else {
+                  nodeId = fullId
+                }
+
+                if (!nodeId || nodeId === 'node' || nodeId === 'flowchart') {
+                  nodeId = node.textContent?.trim() || ''
+                }
+
+                if (nodeId && onNodeClick) {
+                  onNodeClick(nodeId)
+                }
+              })
+            })
+
             const svg = container.querySelector('svg')
             if (svg) {
-              // Extract original dimensions from viewBox if possible
               const viewBox = svg.getAttribute('viewBox')?.split(' ')
               const originalWidth = viewBox ? parseFloat(viewBox[2]) : 0
               const originalHeight = viewBox ? parseFloat(viewBox[3]) : 0
 
               if (originalWidth && originalHeight) {
-                // Store original dimensions for later use
                 svg.setAttribute('data-original-width', originalWidth.toString())
                 svg.setAttribute('data-original-height', originalHeight.toString())
-
-                // Set current size based on zoom
                 svg.style.width = `${originalWidth * zoom}px`
                 svg.style.height = `${originalHeight * zoom}px`
               } else {
-                // Fallback if viewBox is missing
                 svg.style.width = '100%'
                 svg.style.height = 'auto'
               }
@@ -180,7 +248,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
               svg.removeAttribute('height')
               svg.style.maxWidth = 'none'
 
-              // Apply rendering hints
               svg.style.imageRendering = 'crisp-edges'
               svg.style.imageRendering = '-webkit-optimize-contrast'
               svg.style.shapeRendering = 'geometricPrecision'
@@ -189,7 +256,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
             setError(null)
           }
         } finally {
-          // Clean up
           if (renderContainer.parentNode) {
             renderContainer.parentNode.removeChild(renderContainer)
           }
@@ -198,12 +264,10 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
         const errorMsg = err instanceof Error ? err.message : 'Invalid Mermaid syntax'
         setError(errorMsg)
 
-        // Aggressively remove any error divs that Mermaid might have appended to the body
         const errorDivs = document.querySelectorAll('[id^="dmermaid-"], #dmermaid');
         errorDivs.forEach(div => div.remove());
 
         if (renderIdRef.current === currentId && container) {
-          // Render error directly in preview container, centered or top
           container.innerHTML = `<div class="error-preview">
             <h3>Syntax Error</h3>
             <pre>${errorMsg}</pre>
@@ -213,7 +277,7 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [code, setError, mermaidTheme, isEditMode, canEdit, extractedCode])
+  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode]) // Removed zoom from dep to avoid re-render loop on zoom
 
   // Effect to handle zoom changes on existing SVG
   useEffect(() => {
@@ -232,9 +296,7 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
   // Effect to zoom to targetNodeId
   useEffect(() => {
     if (!targetNodeId || !mermaidContainerRef.current) return
-
     const container = mermaidContainerRef.current
-    // Try to find the element. Mermaid often uses nodeId as ID or class
     const element = container.querySelector(`[id^="${targetNodeId}-"]`) ||
       container.querySelector(`[id="${targetNodeId}"]`) ||
       container.querySelector(`.node[id*="${targetNodeId}"]`) ||
@@ -243,10 +305,7 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
     if (element) {
       const svg = container.querySelector('svg')
       if (svg) {
-        // const svgBox = svg.getBoundingClientRect()
         const elBox = element.getBoundingClientRect()
-
-        // Calculate position relative to container
         const centerX = (elBox.left + elBox.right) / 2
         const centerY = (elBox.top + elBox.bottom) / 2
 
@@ -260,7 +319,6 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
           const dy = viewCenterY - centerY
 
           setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
-          // Zoom in closer for better focus on the selected node
           setZoom(prev => Math.max(prev, 2.0))
         }
       }
@@ -268,14 +326,14 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
   }, [targetNodeId])
 
   // Show visual editor if in edit mode and diagram is editable
-  if (isEditMode && canEdit && parsedDiagram) {
+  if (isVisualEditMode && canEdit && parsedDiagram) {
     return (
       <div className="preview-container">
         <div className="preview-header">
           <span>Visual Editor</span>
           <button
             className="mode-toggle-btn"
-            onClick={() => setIsEditMode(false)}
+            onClick={() => onToggleVisualEdit?.(false)}
             title="Switch to preview mode"
           >
             Preview Mode
@@ -283,7 +341,9 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
         </div>
         <VisualEditor
           parsedDiagram={parsedDiagram}
+          code={code}
           onCodeChange={handleCodeChange}
+          layoutPositions={layoutPositions}
         />
       </div>
     )
@@ -301,7 +361,7 @@ export default function Preview({ code, setError, onCodeChange, targetNodeId }: 
           {canEdit && (
             <button
               className="mode-toggle-btn"
-              onClick={() => setIsEditMode(true)}
+              onClick={() => onToggleVisualEdit?.(true)}
               title="Switch to visual edit mode"
               style={{ marginLeft: '8px' }}
             >

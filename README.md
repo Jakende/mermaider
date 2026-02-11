@@ -61,9 +61,25 @@ Mermaider is built using modern, efficient technologies:
 
 ## Keyboard Shortcuts
 
-- New Diagram: Cmd+N (Mac) / Ctrl+N (Windows)
-- Open File: Cmd+O / Ctrl+O
-- Export / Save: Cmd+S / Ctrl+S
+### General
+- **New Diagram**: `Cmd+N` (Mac) / `Ctrl+N` (Windws)
+- **Open / Import**: `Cmd+O` / `Ctrl+O`
+- **Export / Save**: `Cmd+S` / `Ctrl+S`
+- **Close Tab**: `Cmd+W` / `Ctrl+W`
+- **Toggle Settings**: `Cmd+,` / `Ctrl+,`
+- **Toggle Help/Info**: `Cmd+/` / `Ctrl+/`
+
+### UI & Navigation
+- **Toggle Editor**: `Cmd+B` / `Ctrl+B` (Hide/Show editor for full preview)
+- **Toggle AI Chat**: `Cmd+J` / `Ctrl+J`
+- **Focus Chat Input**: `Cmd+L` / `Ctrl+L`
+
+### AI Chat & Editor
+- **Toggle Mode**: `Cmd+E` / `Ctrl+E` (Switch between EDIT and ASK)
+- **Send Message**: `Cmd+Enter` / `Ctrl+Enter`
+- **Undo AI Action**: `Cmd+Shift+R` / `Ctrl+Shift+R` (Undo code change and chat message)
+- **Undo Manual Edit**: `Cmd+Z` / `Ctrl+Z`
+- **Redo Manual Edit**: `Cmd+Y` / `Ctrl+Y` or `Cmd+Shift+Z`
 
 ## Development
 

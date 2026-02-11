@@ -1,6 +1,7 @@
 export interface ChatMessage {
     role: 'user' | 'assistant'
     content: string
+    codeBefore?: string // Store code state before this message (for user messages)
 }
 
 export interface ChatSession {

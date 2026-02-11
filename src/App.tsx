@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
-import Toolbar from './components/Toolbar'
-import ChatPanel from './components/ChatPanel'
+import Toolbar, { ToolbarRef } from './components/Toolbar'
+import ChatPanel, { ChatPanelRef } from './components/ChatPanel'
 import TabBar from './components/TabBar'
 import ResizableSplitter from './components/ResizableSplitter'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
@@ -53,9 +53,12 @@ function AppContent() {
 
   const [editorWidth, setEditorWidth] = useState(50) // percentage
   const [isEditorVisible, setIsEditorVisible] = useState(true)
+  const [isVisualEditMode, setIsVisualEditMode] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [scrollToNodeId, setScrollToNodeId] = useState<string | null>(null)
 
-  const toolbarRef = useRef<{ handleNew: () => void; handleOpen: () => void; handleSave: () => void }>(null)
+  const toolbarRef = useRef<ToolbarRef>(null)
+  const chatPanelRef = useRef<ChatPanelRef>(null)
   const appContentRef = useRef<HTMLDivElement>(null)
 
   const setCode = (newCode: string) => {
@@ -71,9 +74,55 @@ function AppContent() {
       ...t,
       chatSessions: t.chatSessions.map(s => s.id === t.activeChatSessionId ? {
         ...s,
-        messages: [...s.messages, { role, content }]
+        messages: [...s.messages, { 
+          role, 
+          content, 
+          // Only store codeBefore for user messages to allow reverting
+          codeBefore: role === 'user' ? t.code : undefined 
+        }]
       } : s)
     } : t))
+  }
+
+  const handleEditMessage = (index: number, _newContent: string) => {
+    const tab = tabs.find(t => t.id === activeTabId)
+    if (!tab) return
+
+    const session = tab.chatSessions.find(s => s.id === tab.activeChatSessionId)
+    if (!session) return
+
+    const messageToEdit = session.messages[index]
+    if (!messageToEdit || messageToEdit.role !== 'user') return
+
+    // 1. Revert code to the state before this message
+    const revertedCode = messageToEdit.codeBefore || tab.code
+    
+    // 2. Update session: remove this message and all subsequent ones
+    // then we'll add the new one via handleSendMessage in the ChatPanel or here.
+    // Actually, it's better to update the history here and then trigger the AI response.
+    
+    setTabs(prev => prev.map(t => {
+      if (t.id !== activeTabId) return t
+      
+      return {
+        ...t,
+        code: revertedCode, // Revert the code
+        chatSessions: t.chatSessions.map(s => {
+          if (s.id !== t.activeChatSessionId) return s
+          
+          // Truncate messages to before the edited one
+          return {
+            ...s,
+            messages: s.messages.slice(0, index)
+          }
+        })
+      }
+    }))
+
+    // The ChatPanel will handle re-sending the message since it has the logic for AI calls
+    // But we need a way to tell ChatPanel: "Hey, I just reverted, now send this new content"
+    // Actually, it might be cleaner if App.tsx just updates the history and ChatPanel reacts.
+    // Or ChatPanel calls handleEditMessage which returns the reverted code?
   }
 
   const handleNewChat = () => {
@@ -90,6 +139,28 @@ function AppContent() {
       ...t,
       activeChatSessionId: sessionId
     } : t))
+  }
+
+  const handleUndoAI = () => {
+    const tab = tabs.find(t => t.id === activeTabId)
+    if (!tab) return
+    const session = tab.chatSessions.find(s => s.id === tab.activeChatSessionId)
+    if (!session || session.messages.length < 2) return
+
+    // Find the last user message index
+    let lastUserIdx = -1
+    for (let i = session.messages.length - 1; i >= 0; i--) {
+      if (session.messages[i].role === 'user') {
+        lastUserIdx = i
+        break
+      }
+    }
+
+    if (lastUserIdx !== -1) {
+      if (confirm('Undo last AI action and revert code?')) {
+        handleEditMessage(lastUserIdx, "")
+      }
+    }
   }
 
   const handleNewTab = () => {
@@ -199,6 +270,28 @@ function AppContent() {
           e.preventDefault()
           handleCloseTab(activeTabId)
         }
+      } else if (modifier && e.key === 'b') {
+        e.preventDefault()
+        setIsEditorVisible(prev => !prev)
+      } else if (modifier && e.key === 'j') {
+        e.preventDefault()
+        setIsChatOpen(prev => !prev)
+      } else if (modifier && e.key === 'l') {
+        e.preventDefault()
+        setIsChatOpen(true)
+        setTimeout(() => chatPanelRef.current?.focusInput(), 100)
+      } else if (modifier && e.key === 'e') {
+        e.preventDefault()
+        chatPanelRef.current?.toggleMode()
+      } else if (modifier && e.key === ',') {
+        e.preventDefault()
+        toolbarRef.current?.handleSettings()
+      } else if (modifier && e.key === '/') {
+        e.preventDefault()
+        toolbarRef.current?.handleHelp()
+      } else if (modifier && e.shiftKey && e.key === 'R') {
+        e.preventDefault()
+        handleUndoAI()
       }
     }
 
@@ -238,6 +331,9 @@ function AppContent() {
     e.preventDefault()
   }
 
+  // If in Visual Edit mode, hide the editor regardless of isEditorVisible
+  const showEditor = isEditorVisible && !isVisualEditMode
+
   return (
     <div
       className={`app ${theme}`}
@@ -267,16 +363,33 @@ function AppContent() {
 
       <div className="app-content" ref={appContentRef}>
         <div style={{ display: 'flex', flex: 1, minWidth: 0, position: 'relative' }}>
-          {isEditorVisible && (
+          {showEditor && (
             <>
               <div style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Editor code={activeTab.code} setCode={setCode} error={error} onNodeSelected={setSelectedNodeId} />
+                <Editor 
+                  code={activeTab.code} 
+                  setCode={setCode} 
+                  error={error} 
+                  onNodeSelected={setSelectedNodeId} 
+                  scrollToNode={scrollToNodeId}
+                />
               </div>
               <ResizableSplitter onResize={handleResizeEditor} />
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <Preview code={activeTab.code} setError={setError} onCodeChange={setCode} targetNodeId={selectedNodeId} />
+            <Preview 
+              code={activeTab.code} 
+              setError={setError} 
+              onCodeChange={setCode} 
+              targetNodeId={selectedNodeId} 
+              onNodeClick={(nodeId) => {
+                setScrollToNodeId(null) // Reset first to ensure effect triggers
+                setTimeout(() => setScrollToNodeId(nodeId), 0)
+              }}
+              isVisualEditMode={isVisualEditMode}
+              onToggleVisualEdit={setIsVisualEditMode}
+            />
           </div>
 
           {isChatOpen && !isChatPoppedOut && (
@@ -298,6 +411,8 @@ function AppContent() {
                 activeSessionId={activeTab.activeChatSessionId}
                 onNewChat={handleNewChat}
                 onSwitchSession={handleSwitchSession}
+                onEditMessage={handleEditMessage}
+                ref={chatPanelRef}
               />
             </div>
           )}
@@ -317,6 +432,8 @@ function AppContent() {
             activeSessionId={activeTab.activeChatSessionId}
             onNewChat={handleNewChat}
             onSwitchSession={handleSwitchSession}
+            onEditMessage={handleEditMessage}
+            ref={chatPanelRef}
           />
         )}
       </div>

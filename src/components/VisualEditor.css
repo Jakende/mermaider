@@ -10,14 +10,49 @@
 }
 
 .visual-editor-header {
-  padding: 8px 12px;
+  padding: 8px 16px;
   background-color: var(--surface);
   border-bottom: 1px solid var(--border);
   font-size: 11px;
   color: var(--muted);
-  display: flex;
-  justify-content: center;
   flex-shrink: 0;
+}
+
+.visual-editor-hint-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.handle-legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.legend-box,
+.legend-circle {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+}
+
+.legend-box.source {
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+.legend-circle.target {
+  background: #10b981;
+  border-radius: 50%;
 }
 
 .visual-editor-content {
@@ -52,6 +87,38 @@
   height: 10px;
   border-radius: 50%;
   background-color: var(--accent);
+}
+
+.visible-handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--muted) !important;
+  border: 1px solid var(--border) !important;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.visual-node:hover .visible-handle {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.source-handle {
+  background: #3b82f6 !important;
+  /* blue */
+  border-radius: 2px !important;
+}
+
+.target-handle {
+  background: #10b981 !important;
+  /* green */
+  border-radius: 50% !important;
+}
+
+.visible-handle:hover {
+  background: var(--accent) !important;
+  transform: scale(1.5) !important;
 }
 
 /* Dark mode adjustments for React Flow */

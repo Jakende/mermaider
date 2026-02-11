@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, cleanCode } from '../utils/aiService'
 import './ChatPanel.css'
 
@@ -17,27 +17,37 @@ interface ChatPanelProps {
     activeSessionId: string
     onNewChat: () => void
     onSwitchSession: (id: string) => void
+    onEditMessage: (index: number, newContent: string) => void
 }
 
-export default function ChatPanel({
-    code,
-    setCode,
-    isOpen,
-    onClose,
-    onTogglePopout,
-    isPoppedOut,
-    messages,
-    onSendMessage,
-    sessions,
-    activeSessionId,
-    onNewChat,
-    onSwitchSession
-}: ChatPanelProps) {
+export interface ChatPanelRef {
+    focusInput: () => void
+    toggleMode: () => void
+}
+
+const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
+    const {
+        code,
+        setCode,
+        isOpen,
+        onClose,
+        onTogglePopout,
+        isPoppedOut,
+        messages,
+        onSendMessage,
+        sessions,
+        activeSessionId,
+        onNewChat,
+        onSwitchSession,
+        onEditMessage
+    } = props
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [mode, setMode] = useState<'edit' | 'ask'>('edit')
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
     const [showHistory, setShowHistory] = useState(false)
+    const [editingIndex, setEditingIndex] = useState<number | null>(null)
+    const [editInput, setEditInput] = useState('')
 
     // Pop-out state
     const [position, setPosition] = useState({ x: 20, y: 50 })
@@ -46,6 +56,18 @@ export default function ChatPanel({
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const panelRef = useRef<HTMLDivElement>(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    const toggleMode = () => {
+        setMode(prev => prev === 'edit' ? 'ask' : 'edit')
+    }
+
+    useImperativeHandle(ref, () => ({
+        focusInput: () => {
+            inputRef.current?.focus()
+        },
+        toggleMode
+    }))
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -58,21 +80,13 @@ export default function ChatPanel({
     // Calculate approx tokens (char count / 4)
     const totalTokens = messages.reduce((acc, m) => acc + m.content.length, 0) / 4 + (input.length / 4)
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!input.trim() || isLoading) return
-
-        const userMessage = input.trim()
-        const currentMode = mode
-        setInput('')
-        onSendMessage('user', userMessage)
+    const processMessage = async (userMessage: string, contextCode: string, currentMode: 'edit' | 'ask') => {
         setIsLoading(true)
-
         try {
             const config = getStoredConfig()
 
             if (currentMode === 'edit') {
-                const response = await editCodeWithAI(code, userMessage, config)
+                const response = await editCodeWithAI(contextCode, userMessage, config)
 
                 // Split explanation and code
                 let explanation = 'I have updated the diagram based on your request.'
@@ -97,7 +111,7 @@ export default function ChatPanel({
                 setCode(finalCode)
                 onSendMessage('assistant', explanation)
             } else {
-                const response = await askAboutCodeWithAI(code, userMessage, config)
+                const response = await askAboutCodeWithAI(contextCode, userMessage, config)
                 onSendMessage('assistant', response)
             }
         } catch (error) {
@@ -106,6 +120,39 @@ export default function ChatPanel({
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!input.trim() || isLoading) return
+
+        const userMessage = input.trim()
+        const currentMode = mode
+        setInput('')
+        onSendMessage('user', userMessage)
+        
+        await processMessage(userMessage, code, currentMode)
+    }
+
+    const handleEditResend = async (idx: number) => {
+        if (!editInput.trim() || isLoading) return
+        
+        const userMessage = editInput.trim()
+        const messageToEdit = messages[idx]
+        const currentMode = mode
+        
+        // Store codeBefore for the AI call before we truncate history
+        const revertedCode = messageToEdit.codeBefore || code
+
+        setEditingIndex(null)
+        setEditInput('')
+        
+        // Revert history in App.tsx
+        onEditMessage(idx, userMessage)
+        
+        // Send new user message and wait for AI
+        onSendMessage('user', userMessage)
+        await processMessage(userMessage, revertedCode, currentMode)
     }
 
     const copyToClipboard = (text: string, index: number) => {
@@ -254,19 +301,47 @@ export default function ChatPanel({
                         {messages.map((msg, index) => (
                             <div key={index} className={`chat-message ${msg.role}`}>
                                 <div className="message-wrapper">
-                                    <button
-                                        className={`copy-btn ${copiedIndex === index ? 'copied' : ''}`}
-                                        onClick={() => copyToClipboard(msg.content, index)}
-                                        title="Copy message"
-                                    >
-                                        {copiedIndex === index ? (
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        ) : (
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <div className="message-header-actions">
+                                        {msg.role === 'user' && editingIndex !== index && (
+                                            <button
+                                                className="edit-btn"
+                                                onClick={() => {
+                                                    setEditingIndex(index)
+                                                    setEditInput(msg.content)
+                                                }}
+                                                title="Edit and resend"
+                                            >
+                                                ✎
+                                            </button>
                                         )}
-                                    </button>
+                                        <button
+                                            className={`copy-btn ${copiedIndex === index ? 'copied' : ''}`}
+                                            onClick={() => copyToClipboard(msg.content, index)}
+                                            title="Copy message"
+                                        >
+                                            {copiedIndex === index ? (
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            ) : (
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                            )}
+                                        </button>
+                                    </div>
                                     <div className="message-content">
-                                        {renderContent(msg.content)}
+                                        {editingIndex === index ? (
+                                            <div className="edit-message-container">
+                                                <textarea
+                                                    value={editInput}
+                                                    onChange={(e) => setEditInput(e.target.value)}
+                                                    autoFocus
+                                                />
+                                                <div className="edit-actions">
+                                                    <button className="cancel-btn" onClick={() => setEditingIndex(null)}>Cancel</button>
+                                                    <button className="resend-btn" onClick={() => handleEditResend(index)}>Save & Resend</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            renderContent(msg.content)
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -300,10 +375,22 @@ export default function ChatPanel({
 
                     <form className="chat-input-form" onSubmit={handleSubmit}>
                         <input
+                            ref={inputRef}
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder={mode === 'edit' ? "e.g., Change all boxes to circles..." : "e.g., What is linked to Node A?"}
+                            onKeyDown={(e) => {
+                                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+                                const modifier = isMac ? e.metaKey : e.ctrlKey
+                                if (modifier && e.key === 'Enter') {
+                                    e.preventDefault()
+                                    handleSubmit(e as any)
+                                } else if (modifier && e.key === 'e') {
+                                    e.preventDefault()
+                                    toggleMode()
+                                }
+                            }}
+                            placeholder={mode === 'edit' ? "e.g., Change all boxes to circles... (⌘Enter)" : "e.g., What is linked to Node A? (⌘Enter)"}
                             disabled={isLoading}
                         />
                         <button type="submit" disabled={isLoading || !input.trim()}>
@@ -314,4 +401,8 @@ export default function ChatPanel({
             )}
         </div>
     )
-}
+})
+
+ChatPanel.displayName = 'ChatPanel'
+
+export default ChatPanel

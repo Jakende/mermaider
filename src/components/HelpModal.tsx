@@ -60,6 +60,39 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                         </div>
 
                         <div className="help-section">
+                            <h3>Keyboard Shortcuts</h3>
+                            <div className="help-shortcuts-grid">
+                                <div className="shortcut-category">
+                                    <h4>General</h4>
+                                    <ul>
+                                        <li><span>New Tab</span> <kbd>⌘N</kbd></li>
+                                        <li><span>Import</span> <kbd>⌘O</kbd></li>
+                                        <li><span>Export</span> <kbd>⌘S</kbd></li>
+                                        <li><span>Close Tab</span> <kbd>⌘W</kbd></li>
+                                        <li><span>Settings</span> <kbd>⌘,</kbd></li>
+                                    </ul>
+                                </div>
+                                <div className="shortcut-category">
+                                    <h4>UI & Navigation</h4>
+                                    <ul>
+                                        <li><span>Toggle Editor</span> <kbd>⌘B</kbd></li>
+                                        <li><span>Toggle Chat</span> <kbd>⌘J</kbd></li>
+                                        <li><span>Focus Chat</span> <kbd>⌘L</kbd></li>
+                                        <li><span>Toggle Help</span> <kbd>⌘/</kbd></li>
+                                    </ul>
+                                </div>
+                                <div className="shortcut-category">
+                                    <h4>AI Chat</h4>
+                                    <ul>
+                                        <li><span>Send Message</span> <kbd>⌘Enter</kbd></li>
+                                        <li><span>Toggle Mode</span> <kbd>⌘E</kbd></li>
+                                        <li><span>Undo AI</span> <kbd>⌘⇧R</kbd></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="help-section">
                             <h3>Supported Diagrams (Click to view syntax)</h3>
                             <div className="diagram-tags">
                                 {diagrams.map(diag => (
