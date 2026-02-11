@@ -105,6 +105,23 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
+### Pushing and Creating Releases
+To push changes and create a new release on GitHub:
+
+1. **Commit and Push Changes**:
+   ```bash
+   git add .
+   git commit -m "Your descriptive commit message"
+   git push origin main
+   ```
+
+2. **Create a Release Draft** (requires [GitHub CLI](https://cli.github.com/)):
+   ```bash
+   # Create a release draft with a tag
+   gh release create v1.5.0 --draft --title "v1.5.0" --notes "Release notes summary here"
+   ```
+   *If you don't have the GitHub CLI, you can create a release manually via the GitHub web interface.*
+
 ## License
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) license. You are free to share and adapt the material for non-commercial purposes, provided you give appropriate credit.
