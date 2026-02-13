@@ -29,7 +29,7 @@ export interface ToolbarRef {
 }
 
 const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab }, ref) => {
-  const { theme, toggleTheme, mermaidTheme, setMermaidTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
@@ -191,17 +191,18 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     const svgElement = previewContainer?.querySelector('svg') as SVGSVGElement | null
 
     if (!svgElement || !previewContainer) {
-      alert('No diagram to export')
+      alert('No diagram to export. Please ensure you are in the Preview tab.')
       return
     }
 
     try {
+      // 300 DPI: Standard is 96. 300 / 96 = 3.125 scale factor.
       const canvas = await html2canvas(previewContainer as HTMLElement, {
         backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
-        scale: 2,
+        scale: 3.125,
         logging: false,
         useCORS: true,
-        allowTaint: false,
+        allowTaint: true,
       } as any)
 
       canvas.toBlob((blob) => {
@@ -320,18 +321,6 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
         </div>
 
         <div className="toolbar-section">
-          <select
-            value={mermaidTheme}
-            onChange={(e) => setMermaidTheme(e.target.value as any)}
-            className="toolbar-select"
-            title="Mermaid Theme"
-          >
-            <option value="slate">Slate</option>
-            <option value="earth">Earth</option>
-            <option value="cosmic">Cosmic</option>
-            <option value="sage">Sage</option>
-            <option value="royal">Royal</option>
-          </select>
           <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
             {theme === 'light' ? '[DARK]' : '[LIGHT]'}
           </button>

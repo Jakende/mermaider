@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import EditorComponent, { loader } from '@monaco-editor/react'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
+import MermaidConfigPanel from './MermaidConfigPanel'
 import './Editor.css'
 
 // Register Mermaid language
+// ... (rest of registration logic remains same)
 loader.init().then((monaco) => {
   monaco.languages.register({ id: 'mermaid' })
 
@@ -33,6 +35,9 @@ loader.init().then((monaco) => {
         // Arrows
         [/[-.]+>/g, 'operator'],
         [/[-><]+|==[>=]|--/, 'operator'],
+
+        // Config block
+        [/%%\{init:.*\}%%/, 'keyword'],
 
         // Comments
         [/%%.*$/, 'comment'],
@@ -64,7 +69,7 @@ loader.init().then((monaco) => {
         const startPos = model.getPositionAt(match.index)
         const endPos = model.getPositionAt(match.index + match[0].length)
         const colorStr = match[1]
-        
+
         let r, g, b
         if (colorStr.length === 3) {
           r = parseInt(colorStr[0] + colorStr[0], 16) / 255
@@ -136,6 +141,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
   const { theme } = useTheme()
   const debounceTimer = useRef<NodeJS.Timeout>()
   const editorRef = useRef<any>(null)
+  const [showConfig, setShowConfig] = useState(false)
 
   // Update Monaco editor when code changes externally (e.g., from AI Fix)
   useEffect(() => {
@@ -145,7 +151,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
       const currentValue = model.getValue()
       if (currentValue !== code) {
         console.log('Updating Monaco editor with new code (preserving undo stack)')
-        
+
         // Use pushEditOperations to preserve undo/redo history
         model.pushEditOperations(
           editor.getSelections(),
@@ -184,12 +190,12 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
     // Search for the node ID. We use a regex to find it as a whole word or starting a line
     // Mermaid nodes are often at the start of a line or after spaces/arrows
     const matches = model.findMatches(scrollToNode, true, false, true, null, true)
-    
+
     if (matches && matches.length > 0) {
       // Prioritize matches that are at the beginning of a line (common for node definitions)
-      const bestMatch = matches.find((m: any) => m.range.startColumn === 1 || 
+      const bestMatch = matches.find((m: any) => m.range.startColumn === 1 ||
         model.getLineContent(m.range.startLineNumber).substring(0, m.range.startColumn - 1).trim() === '') || matches[0]
-      
+
       editor.revealRangeInCenterIfOutsideViewport(bestMatch.range)
       editor.setSelection(bestMatch.range)
       // Optional: add a temporary decoration to highlight it
@@ -255,9 +261,29 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
   return (
     <div className="editor-container">
       <div className="editor-header">
-        <span>Editor</span>
-        {error && <span className="error-indicator">⚠️ Syntax Error</span>}
+        <div className="header-left">
+          <span>Editor</span>
+          {error && <span className="error-indicator">⚠️ Syntax Error</span>}
+        </div>
+        <div className="header-right">
+          <button
+            className={`config-toggle-btn ${showConfig ? 'active' : ''}`}
+            onClick={() => setShowConfig(!showConfig)}
+            title="Diagram Configuration"
+          >
+            Config
+          </button>
+        </div>
       </div>
+
+      {showConfig && (
+        <MermaidConfigPanel
+          code={code}
+          setCode={setCode}
+          onClose={() => setShowConfig(false)}
+        />
+      )}
+
       <EditorComponent
         height="100%"
         defaultLanguage="mermaid"

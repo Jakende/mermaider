@@ -30,7 +30,8 @@ export interface ParsedMermaidDiagram {
  */
 export function isEditableDiagram(code: string): boolean {
   const trimmed = code.trim()
-  const flowchartRegex = /^(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i
+  // Support code with YAML frontmatter
+  const flowchartRegex = /(?:^|\n)\s*(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i
   return flowchartRegex.test(trimmed)
 }
 
@@ -39,16 +40,18 @@ export function isEditableDiagram(code: string): boolean {
  */
 export function parseMermaidFlowchart(code: string): ParsedMermaidDiagram | null {
   const trimmed = code.trim()
-  
-  // Check if it's a flowchart or graph
-  const flowchartMatch = trimmed.match(/^(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i)
+
+  // Check if it's a flowchart or graph (allowing leading frontmatter)
+  const flowchartRegex = /(?:^|\n)\s*(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i
+  const flowchartMatch = trimmed.match(flowchartRegex)
+
   if (!flowchartMatch) {
     return null
   }
 
   const type = flowchartMatch[1].toLowerCase() as 'flowchart' | 'graph'
   let directionRaw = flowchartMatch[2].toUpperCase()
-  
+
   // Normalize direction
   let direction: 'TD' | 'BT' | 'LR' | 'RL' = 'TD'
   if (directionRaw === 'TB' || directionRaw === 'TD') direction = 'TD'
@@ -61,8 +64,11 @@ export function parseMermaidFlowchart(code: string): ParsedMermaidDiagram | null
   const nodeMap = new Map<string, MermaidNode>()
   const subgraphs: Array<{ id: string; label?: string; nodes: string[] }> = []
 
+  // Remove YAML frontmatter if present for parsing lines
+  const codeWithoutFrontmatter = trimmed.replace(/^---\s*[\s\S]*?---\s*/, '')
+
   // Remove comments
-  const withoutComments = trimmed.replace(/%%[^\n]*/g, '')
+  const withoutComments = codeWithoutFrontmatter.replace(/%%[^\n]*/g, '')
 
   // Split into lines
   const lines = withoutComments.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%'))
@@ -122,78 +128,34 @@ export function parseMermaidFlowchart(code: string): ParsedMermaidDiagram | null
       continue
     }
 
-    // Parse node definitions: A[Label], A(Label), A{Label}, etc.
-    // Patterns to match:
-    // - [label] - rect
-    // - (label) - rounded
-    // - {label} - diamond
-    // - [[label]] - subroutine
-    // - ((label)) - stadium
-    // - {{label}} - hexagon
-    // - [/label/] - parallelogram
-    // - [/label\] - trapezoid
-    // - [\label/] - trapezoidAlt
-    // - [\(label)] - cylinder
-    // - [(label)] - circle
-    // - (((label))) - doublecircle
-    // - [[[label]]] - (not standard but included)
+    // Parse node definitions
     const nodeMatch = line.match(/^(\w+)(\{\{([^}]+)\}\}|\[\\\\([^\]]+)\/\]|\[\/([^\]]+)\\\]|\[\/([^\]]+)\/\]|\[\[\[([^\]]+)\]\]\]|\(\(\(([^)]+)\)\)\)|\[\[([^\]]+)\]\]|\(\(([^)]+)\)\)|\[\(([^\]]+)\)\]|\(\[([^\]]+)\]\)|\[([^\]]+)\]|\(([^)]+)\)|\{([^}]+)\})/)
     if (nodeMatch) {
       const id = nodeMatch[1]
       const fullMatch = nodeMatch[2]
-      
-      // Extract label based on which pattern matched (check in order of specificity)
-      const label = nodeMatch[3] || // hexagon {{label}}
-                    nodeMatch[4] || // trapezoidAlt [\label/]
-                    nodeMatch[5] || // trapezoid [/label\]
-                    nodeMatch[6] || // parallelogram [/label/]
-                    nodeMatch[7] || // [[[label]]]
-                    nodeMatch[8] || // doublecircle (((label)))
-                    nodeMatch[9] || // subroutine [[label]]
-                    nodeMatch[10] || // stadium ((label))
-                    nodeMatch[11] || // circle [\(label)]
-                    nodeMatch[12] || // cylinder (\[label])
-                    nodeMatch[13] || // rect [label]
-                    nodeMatch[14] || // rounded (label)
-                    nodeMatch[15] || // diamond {label}
-                    id
-      
-      // Determine shape from brackets (check most specific patterns first)
+
+      const label = nodeMatch[3] || nodeMatch[4] || nodeMatch[5] || nodeMatch[6] || nodeMatch[7] ||
+        nodeMatch[8] || nodeMatch[9] || nodeMatch[10] || nodeMatch[11] || nodeMatch[12] ||
+        nodeMatch[13] || nodeMatch[14] || nodeMatch[15] || id
+
       let shape: MermaidNode['shape'] = 'rect'
-      if (fullMatch?.startsWith('{{') && fullMatch?.endsWith('}}')) {
-        shape = 'hexagon'
-      } else if (fullMatch?.startsWith('[\\') && fullMatch?.endsWith('/]')) {
-        shape = 'trapezoidAlt'
-      } else if (fullMatch?.startsWith('[/') && fullMatch?.endsWith('\\]')) {
-        shape = 'trapezoid'
-      } else if (fullMatch?.startsWith('[/') && fullMatch?.endsWith('/]')) {
-        shape = 'parallelogram'
-      } else if (fullMatch?.startsWith('[[[') && fullMatch?.endsWith(']]]')) {
-        shape = 'rect' // not a standard shape, treat as rect
-      } else if (fullMatch?.startsWith('(((') && fullMatch?.endsWith(')))')) {
-        shape = 'doublecircle'
-      } else if (fullMatch?.startsWith('[[') && fullMatch?.endsWith(']]')) {
-        shape = 'subroutine'
-      } else if (fullMatch?.startsWith('((') && fullMatch?.endsWith('))')) {
-        shape = 'stadium'
-      } else if (fullMatch?.startsWith('[(') && fullMatch?.endsWith(')]')) {
-        shape = 'circle'
-      } else if (fullMatch?.startsWith('([') && fullMatch?.endsWith('])')) {
-        shape = 'cylinder'
-      } else if (fullMatch?.startsWith('(') && fullMatch?.endsWith(')')) {
-        shape = 'rounded'
-      } else if (fullMatch?.startsWith('{') && fullMatch?.endsWith('}')) {
-        shape = 'diamond'
-      } else if (fullMatch?.startsWith('[') && fullMatch?.endsWith(']')) {
-        shape = 'rect'
-      }
+      if (fullMatch?.startsWith('{{')) shape = 'hexagon'
+      else if (fullMatch?.startsWith('[\\')) shape = 'trapezoidAlt'
+      else if (fullMatch?.startsWith('[/')) shape = 'trapezoid'
+      else if (fullMatch?.startsWith('(((')) shape = 'doublecircle'
+      else if (fullMatch?.startsWith('[[')) shape = 'subroutine'
+      else if (fullMatch?.startsWith('((')) shape = 'stadium'
+      else if (fullMatch?.startsWith('[(')) shape = 'circle'
+      else if (fullMatch?.startsWith('([')) shape = 'cylinder'
+      else if (fullMatch?.startsWith('(')) shape = 'rounded'
+      else if (fullMatch?.startsWith('{')) shape = 'diamond'
+      else if (fullMatch?.startsWith('[')) shape = 'rect'
 
       if (!nodeMap.has(id)) {
         const node: MermaidNode = { id, label, shape }
         nodes.push(node)
         nodeMap.set(id, node)
       } else {
-        // Update existing node
         const existing = nodeMap.get(id)!
         existing.label = label
         existing.shape = shape
@@ -209,4 +171,3 @@ export function parseMermaidFlowchart(code: string): ParsedMermaidDiagram | null
     subgraphs: subgraphs.length > 0 ? subgraphs : undefined
   }
 }
-

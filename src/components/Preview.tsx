@@ -5,6 +5,7 @@ import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import { isEditableDiagram, parseMermaidFlowchart } from '../utils/mermaidParser'
 import VisualEditor from './VisualEditor'
 import { mermaidThemes } from '../utils/mermaidThemes'
+import { parseInitBlock } from '../utils/mermaidConfig'
 import './Preview.css'
 
 interface PreviewProps {
@@ -17,14 +18,14 @@ interface PreviewProps {
   onToggleVisualEdit?: (isVisualEdit: boolean) => void
 }
 
-export default function Preview({ 
-  code, 
-  setError, 
-  onCodeChange, 
-  targetNodeId, 
+export default function Preview({
+  code,
+  setError,
+  onCodeChange,
+  targetNodeId,
   onNodeClick,
   isVisualEditMode = false,
-  onToggleVisualEdit 
+  onToggleVisualEdit
 }: PreviewProps) {
   const { mermaidTheme } = useTheme()
   const mermaidContainerRef = useRef<HTMLDivElement>(null)
@@ -36,7 +37,7 @@ export default function Preview({
   const [isPanning, setIsPanning] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
 
-  const [layoutPositions, setLayoutPositions] = useState<Record<string, {x: number, y: number}>>({})
+  const [layoutPositions, setLayoutPositions] = useState<Record<string, { x: number, y: number }>>({})
 
   const extractedCode = extractMermaidCode(code)
   const trimmedCode = extractedCode.trim()
@@ -50,8 +51,8 @@ export default function Preview({
   }
 
   // Zoom Logic
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 20)) // Increased to 20x
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.05)) // Decreased to 0.05x
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 20))
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.05))
   const handleZoomReset = () => {
     setZoom(1)
     setPan({ x: 0, y: 0 })
@@ -100,25 +101,12 @@ export default function Preview({
     }
   }, [isPanning, handleMouseMove, handleMouseUp])
 
-
+  // Initial mermaid setup
   useEffect(() => {
-    const themes = mermaidThemes as any
-    const selectedTheme = themes[mermaidTheme] || themes.slate
-
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: selectedTheme.config.theme,
-      themeVariables: selectedTheme.config.themeVariables,
-      securityLevel: 'loose',
-      fontFamily: 'inherit',
-    })
-
     mermaid.parseError = (err) => {
       console.log('Mermaid parsing error (suppressed default):', err);
     }
-
-  }, [mermaidTheme])
-
+  }, [])
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -127,8 +115,6 @@ export default function Preview({
       const currentId = ++renderIdRef.current
       const container = mermaidContainerRef.current
 
-      // Don't render preview if we're in edit mode
-      // NOTE: We keep the last layoutPositions calculated before entering edit mode
       if (isVisualEditMode && canEdit) {
         return
       }
@@ -145,6 +131,50 @@ export default function Preview({
       }
 
       try {
+        // --- DIAMGRAM CONFIG LOGIC ---
+        const { config: localConfig } = parseInitBlock(trimmedCode)
+        const themes = mermaidThemes as any
+        const selectedTheme = themes[mermaidTheme] || themes.slate
+
+        const initConfig: any = {
+          startOnLoad: false,
+          securityLevel: 'loose',
+          fontFamily: 'inherit',
+        }
+
+        // Apply Global or Local Theme
+        if (localConfig?.theme) {
+          initConfig.theme = localConfig.theme
+        } else if (localConfig?.look === 'handDrawn') {
+          // Hand-drawn look often conflicts with custom themeVariables
+          // Use default theme or a simple one
+          initConfig.theme = 'default'
+        } else {
+          initConfig.theme = selectedTheme.config.theme
+          initConfig.themeVariables = selectedTheme.config.themeVariables
+        }
+
+        // Apply "look" (hand-drawn)
+        if (localConfig?.look) {
+          initConfig.look = localConfig.look
+          if (localConfig.look === 'handDrawn') {
+            initConfig.handDrawnSeed = 1
+          }
+        }
+
+        // Explicitly set flowchart options
+        if (!initConfig.flowchart) initConfig.flowchart = {}
+
+        if (localConfig?.flowchart?.defaultRenderer) {
+          initConfig.flowchart.defaultRenderer = localConfig.flowchart.defaultRenderer
+        }
+        if (localConfig?.flowchart?.nodeSpacing) initConfig.flowchart.nodeSpacing = localConfig.flowchart.nodeSpacing
+        if (localConfig?.flowchart?.rankSpacing) initConfig.flowchart.rankSpacing = localConfig.flowchart.rankSpacing
+        if (localConfig?.flowchart?.useMaxWidth !== undefined) initConfig.flowchart.useMaxWidth = localConfig.flowchart.useMaxWidth
+
+        mermaid.initialize(initConfig)
+        // ------------------------------
+
         mermaid.parse(trimmedCode)
         const id = `mermaid-${currentId}-${Date.now()}`
 
@@ -160,11 +190,10 @@ export default function Preview({
 
           if (renderIdRef.current === currentId && container) {
             container.innerHTML = result.svg
-            
-            // Extract positions from the rendered SVG
-            const newPositions: Record<string, {x: number, y: number}> = {}
+
+            const newPositions: Record<string, { x: number, y: number }> = {}
             const nodes = container.querySelectorAll('.node')
-            
+
             nodes.forEach(node => {
               const fullId = node.id || ''
               let nodeId = ''
@@ -181,24 +210,18 @@ export default function Preview({
 
               const svgNode = node as unknown as SVGGraphicsElement
               if (nodeId && svgNode.getBBox && svgNode.getAttribute('transform')) {
-                 const transform = svgNode.getAttribute('transform')
-                 const translateMatch = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
-                 if (translateMatch) {
-                    const tx = parseFloat(translateMatch[1])
-                    const ty = parseFloat(translateMatch[2])
-                    // Mermaid positions are center-based usually, or based on the group logic.
-                    // Top-left in SVG space is (tx + bbox.x), (ty + bbox.y)
-                    try {
-                      // We need to query bbox on the svgNode which is a <g>
-                      // bbox of a <g> is in its own coordinate system (ignoring transform)
-                      // So <g transform="translate(tx, ty)"><rect x="bx" y="by" .../></g>
-                      // The top-left corner in parent space is (tx + bx), (ty + by)
-                      const bbox = svgNode.getBBox()
-                      newPositions[nodeId] = { x: tx + bbox.x, y: ty + bbox.y }
-                    } catch (e) {
-                      console.warn('Failed to get BBox for node', nodeId, e)
-                    }
-                 }
+                const transform = svgNode.getAttribute('transform')
+                const translateMatch = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
+                if (translateMatch) {
+                  const tx = parseFloat(translateMatch[1])
+                  const ty = parseFloat(translateMatch[2])
+                  try {
+                    const bbox = svgNode.getBBox()
+                    newPositions[nodeId] = { x: tx + bbox.x, y: ty + bbox.y }
+                  } catch (e) {
+                    console.warn('Failed to get BBox for node', nodeId, e)
+                  }
+                }
               }
             })
             setLayoutPositions(newPositions)
@@ -209,7 +232,6 @@ export default function Preview({
                 e.stopPropagation()
                 const fullId = node.id || ''
                 let nodeId = ''
-                
                 if (fullId.startsWith('flowchart-')) {
                   nodeId = fullId.split('-')[1]
                 } else if (fullId.includes('-')) {
@@ -217,11 +239,9 @@ export default function Preview({
                 } else {
                   nodeId = fullId
                 }
-
                 if (!nodeId || nodeId === 'node' || nodeId === 'flowchart') {
                   nodeId = node.textContent?.trim() || ''
                 }
-
                 if (nodeId && onNodeClick) {
                   onNodeClick(nodeId)
                 }
@@ -263,10 +283,8 @@ export default function Preview({
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Invalid Mermaid syntax'
         setError(errorMsg)
-
         const errorDivs = document.querySelectorAll('[id^="dmermaid-"], #dmermaid');
         errorDivs.forEach(div => div.remove());
-
         if (renderIdRef.current === currentId && container) {
           container.innerHTML = `<div class="error-preview">
             <h3>Syntax Error</h3>
@@ -277,9 +295,8 @@ export default function Preview({
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode]) // Removed zoom from dep to avoid re-render loop on zoom
+  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode, onNodeClick])
 
-  // Effect to handle zoom changes on existing SVG
   useEffect(() => {
     if (!mermaidContainerRef.current) return
     const svg = mermaidContainerRef.current.querySelector('svg')
@@ -293,7 +310,6 @@ export default function Preview({
     }
   }, [zoom])
 
-  // Effect to zoom to targetNodeId
   useEffect(() => {
     if (!targetNodeId || !mermaidContainerRef.current) return
     const container = mermaidContainerRef.current
@@ -308,16 +324,13 @@ export default function Preview({
         const elBox = element.getBoundingClientRect()
         const centerX = (elBox.left + elBox.right) / 2
         const centerY = (elBox.top + elBox.bottom) / 2
-
         const viewport = container.closest('.preview-viewport')
         if (viewport) {
           const viewRect = viewport.getBoundingClientRect()
           const viewCenterX = (viewRect.left + viewRect.right) / 2
           const viewCenterY = (viewRect.top + viewRect.bottom) / 2
-
           const dx = viewCenterX - centerX
           const dy = viewCenterY - centerY
-
           setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
           setZoom(prev => Math.max(prev, 2.0))
         }
@@ -325,7 +338,6 @@ export default function Preview({
     }
   }, [targetNodeId])
 
-  // Show visual editor if in edit mode and diagram is editable
   if (isVisualEditMode && canEdit && parsedDiagram) {
     return (
       <div className="preview-container">

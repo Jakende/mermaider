@@ -3,10 +3,11 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
+  position: relative;
 }
 
 .editor-header {
-  padding: var(--space-2) var(--space-4);
+  padding: 0 var(--space-4);
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
@@ -18,6 +19,37 @@
   min-height: 40px;
   background-color: var(--surface);
   color: var(--ink);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.config-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.config-toggle-btn:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.config-toggle-btn.active {
+  background-color: var(--control-bg);
+  border-color: var(--control-bg);
+  color: var(--control-ink);
 }
 
 .error-indicator {
