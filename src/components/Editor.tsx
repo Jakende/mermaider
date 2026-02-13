@@ -8,9 +8,15 @@ import './Editor.css'
 // Register Mermaid language
 // ... (rest of registration logic remains same)
 loader.init().then((monaco) => {
-  monaco.languages.register({ id: 'mermaid' })
+  const languageId = 'mermaid'
 
-  monaco.languages.setMonarchTokensProvider('mermaid', {
+  // Guard to prevent multiple registrations
+  if ((window as any).__mermaid_registered) return
+    ; (window as any).__mermaid_registered = true
+
+  monaco.languages.register({ id: languageId })
+
+  monaco.languages.setMonarchTokensProvider(languageId, {
     tokenizer: {
       root: [
         // Diagram type keywords
@@ -59,8 +65,10 @@ loader.init().then((monaco) => {
   })
 
   // Register Color Provider
-  monaco.languages.registerColorProvider('mermaid', {
+  monaco.languages.registerColorProvider(languageId, {
     provideDocumentColors(model) {
+      if (model.getLanguageId() !== languageId) return []
+
       const text = model.getValue()
       const colors: any[] = []
       const regex = /#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})\b/g
@@ -102,6 +110,7 @@ loader.init().then((monaco) => {
       return [{ label }]
     }
   })
+
 
   monaco.languages.setLanguageConfiguration('mermaid', {
     comments: {
@@ -297,6 +306,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
           tabSize: 2,
           wordWrap: 'on',
           automaticLayout: true,
+          colorDecorators: true,
         }}
       />
 

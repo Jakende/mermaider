@@ -1,5 +1,4 @@
 import { useState, useRef, useImperativeHandle, forwardRef } from 'react'
-import html2canvas from 'html2canvas'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import { fixMermaidErrorWithAI, getStoredConfig, convertJsonToMermaidWithAI } from '../utils/aiService'
@@ -140,39 +139,59 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
 
     // Clone the SVG to avoid modifying the preview
     const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
-
-    // Ensure xmlns is present
     if (!clonedSvg.getAttribute('xmlns')) {
       clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     }
 
-    // Collect all Mermaid-related styles from the document
-    // Mermaid often injects styles into the <head> that are needed for the SVG
-    const svgStyles = document.querySelectorAll('style[id^="mermaid-"]');
-    const defs = clonedSvg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    if (!clonedSvg.querySelector('defs')) {
-      clonedSvg.insertBefore(defs, clonedSvg.firstChild);
-    }
+    // 2. Prepare for style inlining
+    const originalElements = svgElement.querySelectorAll('*')
+    const clonedElements = clonedSvg.querySelectorAll('*')
 
-    svgStyles.forEach(style => {
-      const styleClone = style.cloneNode(true);
-      defs.appendChild(styleClone);
-    });
+    // Expanded property list to capture capitalization and spacing
+    const stylesToCopy = [
+      'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity',
+      'font-family', 'font-size', 'font-weight', 'text-anchor', 'display',
+      'color', 'visibility', 'text-transform', 'letter-spacing'
+    ]
 
-    // Fix: Ensure all text has a readable font and explicit fill if possible
-    const texts = clonedSvg.querySelectorAll('text')
-    texts.forEach(text => {
-      const style = window.getComputedStyle(text)
-      if (style.fontFamily === 'inherit' || !style.fontFamily) {
-        text.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
-      }
+    originalElements.forEach((origEl, i) => {
+      const clonedEl = clonedElements[i] as SVGElement
+      if (clonedEl && origEl instanceof Element) {
+        const style = window.getComputedStyle(origEl)
+        stylesToCopy.forEach(prop => {
+          const val = style.getPropertyValue(prop)
+          if (val && val !== 'none' && val !== 'normal') {
+            clonedEl.style.setProperty(prop, val)
+          }
+        })
 
-      // If the color isn't set explicitly, use the computed color to ensure visibility in external viewers
-      if (!text.getAttribute('fill')) {
-        text.setAttribute('fill', style.fill || (theme === 'dark' ? '#ffffff' : '#000000'))
+        // Force high quality system fonts for export consistency
+        if (origEl.tagName === 'text') {
+          clonedEl.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
+        }
       }
     })
 
+    // 3. Set proper dimensions and add background rect
+    const bbox = svgElement.getBBox()
+    const padding = 20
+    const exportWidth = bbox.width + padding * 2
+    const exportHeight = bbox.height + padding * 2
+
+    clonedSvg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${exportWidth} ${exportHeight}`)
+    clonedSvg.setAttribute('width', exportWidth.toString())
+    clonedSvg.setAttribute('height', exportHeight.toString())
+
+    // Add a physical background rectangle for the SVG
+    const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+    backgroundRect.setAttribute('x', (bbox.x - padding).toString())
+    backgroundRect.setAttribute('y', (bbox.y - padding).toString())
+    backgroundRect.setAttribute('width', exportWidth.toString())
+    backgroundRect.setAttribute('height', exportHeight.toString())
+    backgroundRect.setAttribute('fill', theme === 'dark' ? '#1e1e1e' : '#ffffff')
+    clonedSvg.insertBefore(backgroundRect, clonedSvg.firstChild)
+
+    // 4. Serialize and download
     const svgData = new XMLSerializer().serializeToString(clonedSvg)
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
     const url = URL.createObjectURL(svgBlob)
@@ -187,39 +206,109 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
   }
 
   const handleExportPNG = async (filename: string) => {
-    const previewContainer = document.querySelector('.preview-content')
-    const svgElement = previewContainer?.querySelector('svg') as SVGSVGElement | null
-
-    if (!svgElement || !previewContainer) {
+    const svgElement = document.querySelector('.preview-content svg') as SVGSVGElement | null
+    if (!svgElement) {
       alert('No diagram to export. Please ensure you are in the Preview tab.')
       return
     }
 
     try {
-      // 300 DPI: Standard is 96. 300 / 96 = 3.125 scale factor.
-      const canvas = await html2canvas(previewContainer as HTMLElement, {
-        backgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff',
-        scale: 3.125,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-      } as any)
+      // 1. Get accurate dimensions
+      const bbox = svgElement.getBBox()
+      const padding = 20
+      const width = bbox.width + padding * 2
+      const height = bbox.height + padding * 2
 
+      // 2. Calculate scale for 300 DPI (3.125 magnification)
+      const scale = 3.125
+      let targetWidth = width * scale
+      let targetHeight = height * scale
+
+      const MAX_SIDE = 12000
+      if (targetWidth > MAX_SIDE || targetHeight > MAX_SIDE) {
+        const ratio = Math.min(MAX_SIDE / targetWidth, MAX_SIDE / targetHeight)
+        targetWidth *= ratio
+        targetHeight *= ratio
+        console.warn('Scaling down to fit browser canvas limits.')
+      }
+
+      // 3. Prepare the SVG clone with inlined styles
+      const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+      clonedSvg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`)
+      clonedSvg.setAttribute('width', targetWidth.toString())
+      clonedSvg.setAttribute('height', targetHeight.toString())
+
+      const originalElements = svgElement.querySelectorAll('*')
+      const clonedElements = clonedSvg.querySelectorAll('*')
+
+      const stylesToCopy = [
+        'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity',
+        'font-family', 'font-size', 'font-weight', 'text-anchor', 'display',
+        'color', 'text-transform', 'letter-spacing'
+      ]
+
+      originalElements.forEach((origEl, i) => {
+        const clonedEl = clonedElements[i] as SVGElement
+        if (clonedEl && origEl instanceof Element) {
+          const style = window.getComputedStyle(origEl)
+          stylesToCopy.forEach(prop => {
+            const val = style.getPropertyValue(prop)
+            // Special handling: we WANT to copy 'none' for text-transform to force mixed case if needed
+            if (prop === 'text-transform') {
+              clonedEl.style.setProperty(prop, val)
+            } else if (val && val !== 'none' && val !== 'normal') {
+              clonedEl.style.setProperty(prop, val)
+            }
+          })
+
+          if (origEl.tagName === 'text') {
+            clonedEl.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
+          }
+        }
+      })
+
+      // 4. Convert SVG to Data URL
+      const svgData = new XMLSerializer().serializeToString(clonedSvg)
+      const base64 = btoa(unescape(encodeURIComponent(svgData)))
+      const url = `data:image/svg+xml;base64,${base64}`
+
+      // 5. Draw to Canvas
+      const canvas = document.createElement('canvas')
+      canvas.width = targetWidth
+      canvas.height = targetHeight
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) throw new Error('Could not create canvas context')
+
+      ctx.fillStyle = theme === 'dark' ? '#1e1e1e' : '#ffffff'
+      ctx.fillRect(0, 0, targetWidth, targetHeight)
+
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+          resolve(null)
+        }
+        img.onerror = () => reject(new Error('Failed to render SVG to canvas'))
+        img.src = url
+      })
+
+      // 6. Output Blob
       canvas.toBlob((blob) => {
         if (!blob) {
-          alert('Failed to generate PNG')
+          alert('Failed to generate PNG blob')
           return
         }
 
-        const url = URL.createObjectURL(blob)
+        const pngUrl = URL.createObjectURL(blob)
         const a = document.createElement('a')
-        a.href = url
+        a.href = pngUrl
         a.download = `${filename}.png`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        URL.revokeObjectURL(pngUrl)
       }, 'image/png')
+
     } catch (error) {
       console.error('PNG export error:', error)
       alert('Failed to export PNG: ' + (error instanceof Error ? error.message : 'Unknown error'))
@@ -309,23 +398,23 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
               title="AI Fix Error (uses Ollama)"
               disabled={isFixing}
             >
-              {isFixing ? '[FIXING...]' : '[AI FIX]'}
+              {isFixing ? 'FIXING...' : 'AI FIX'}
             </button>
           )}
           <button onClick={onToggleChat} className="toolbar-btn text-btn" title="Toggle AI Chat">
-            [CHAT]
+            CHAT
           </button>
           <button onClick={onToggleEditor} className="toolbar-btn text-btn" title="Toggle Editor / Full Preview">
-            {isEditorVisible ? '[FULL PREVIEW]' : '[SHOW EDITOR]'}
+            {isEditorVisible ? 'FULL PREVIEW' : 'SHOW EDITOR'}
           </button>
         </div>
 
         <div className="toolbar-section">
           <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
-            {theme === 'light' ? '[DARK]' : '[LIGHT]'}
+            {theme === 'light' ? 'DARK' : 'LIGHT'}
           </button>
           <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings (⌘,)">
-            [SETTINGS]
+            SETTINGS
           </button>
         </div>
 
@@ -335,7 +424,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
             className="toolbar-btn text-btn"
             title="App Documentation & Features (⌘/)"
           >
-            [INFO]
+            INFO
           </button>
         </div>
       </div>

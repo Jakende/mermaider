@@ -2,12 +2,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 type Theme = 'light' | 'dark'
 type MermaidTheme = 'slate' | 'earth' | 'cosmic' | 'sage' | 'royal'
+export type TextTransform = 'none' | 'uppercase' | 'lowercase'
 
 interface ThemeContextType {
   theme: Theme
   mermaidTheme: MermaidTheme
+  textTransform: TextTransform
   toggleTheme: () => void
   setMermaidTheme: (theme: MermaidTheme) => void
+  setTextTransform: (transform: TextTransform) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -25,6 +28,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     return 'slate'
   })
+  const [textTransform, setTextTransformState] = useState<TextTransform>(() => {
+    const saved = localStorage.getItem('mermaider-text-transform')
+    if (saved === 'none' || saved === 'uppercase' || saved === 'lowercase') {
+      return saved
+    }
+    return 'none'
+  })
 
   useEffect(() => {
     localStorage.setItem('mermaider-theme', theme)
@@ -39,6 +49,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('mermaider-mermaid-theme', mermaidTheme)
   }, [mermaidTheme])
 
+  useEffect(() => {
+    localStorage.setItem('mermaider-text-transform', textTransform)
+  }, [textTransform])
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
   }
@@ -47,8 +61,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setMermaidThemeState(newTheme)
   }
 
+  const setTextTransform = (newTransform: TextTransform) => {
+    setTextTransformState(newTransform)
+  }
+
   return (
-    <ThemeContext.Provider value={{ theme, mermaidTheme, toggleTheme, setMermaidTheme }}>
+    <ThemeContext.Provider value={{
+      theme,
+      mermaidTheme,
+      textTransform,
+      toggleTheme,
+      setMermaidTheme,
+      setTextTransform
+    }}>
       {children}
     </ThemeContext.Provider>
   )

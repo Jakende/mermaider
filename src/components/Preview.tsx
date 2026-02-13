@@ -27,7 +27,7 @@ export default function Preview({
   isVisualEditMode = false,
   onToggleVisualEdit
 }: PreviewProps) {
-  const { mermaidTheme } = useTheme()
+  const { mermaidTheme, textTransform } = useTheme()
   const mermaidContainerRef = useRef<HTMLDivElement>(null)
   const renderIdRef = useRef(0)
 
@@ -183,6 +183,12 @@ export default function Preview({
         renderContainer.style.position = 'absolute'
         renderContainer.style.left = '-9999px'
         renderContainer.style.top = '-9999px'
+        // Apply text-transform via global style to ensure it overrides internal Mermaid styles during measurement
+        const tempStyle = document.createElement('style')
+        if (textTransform && textTransform !== 'none') {
+          tempStyle.innerHTML = `#${id} *, #${id} text, #${id} tspan, #${id} span { text-transform: ${textTransform} !important; }`
+          document.head.appendChild(tempStyle)
+        }
         document.body.appendChild(renderContainer)
 
         try {
@@ -272,12 +278,27 @@ export default function Preview({
               svg.style.imageRendering = '-webkit-optimize-contrast'
               svg.style.shapeRendering = 'geometricPrecision'
               svg.style.textRendering = 'geometricPrecision'
+
+              // Inject capitalization style
+              if (textTransform) {
+                const style = document.createElementNS('http://www.w3.org/2000/svg', 'style')
+                style.textContent = `
+                  text, tspan, .nodeLabel, .edgeLabel, .cluster-label, .label, .task, .actor, .messageText, .loopText, .noteText, .sectionTitle { 
+                    text-transform: ${textTransform} !important; 
+                  }
+                `
+                svg.querySelector('defs')?.appendChild(style) || svg.appendChild(style)
+              }
             }
             setError(null)
           }
         } finally {
           if (renderContainer.parentNode) {
             renderContainer.parentNode.removeChild(renderContainer)
+          }
+          // Clean up the temporary style rule
+          if (tempStyle.parentNode) {
+            tempStyle.parentNode.removeChild(tempStyle)
           }
         }
       } catch (err) {
@@ -295,7 +316,7 @@ export default function Preview({
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode, onNodeClick])
+  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode, onNodeClick, textTransform])
 
   useEffect(() => {
     if (!mermaidContainerRef.current) return
@@ -396,7 +417,14 @@ export default function Preview({
             transition: isPanning ? 'none' : 'transform 0.1s ease-out'
           }}
         >
-          <div ref={mermaidContainerRef} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div
+            ref={mermaidContainerRef}
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
+          >
             <div className="empty-preview">Loading...</div>
           </div>
         </div>

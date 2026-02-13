@@ -18,3 +18,36 @@ body {
   height: 100vh;
 }
 
+/* Global UI Capitalization (Premium Design) */
+/* Target specific UI components, NOT general content */
+button,
+.toolbar-btn,
+.tab-item,
+.tab-name,
+.settings-header h2,
+.settings-section h3,
+.help-modal h2,
+.config-header span,
+.mode-toggle-btn,
+.preview-header span,
+.editor-header span {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px;
+}
+
+/* Ensure editor, code areas, and chat are NEVER forced uppercase */
+.monaco-editor,
+.editor-content,
+.chat-message-content,
+.message-content,
+.mermaid-config-panel input,
+.mermaid-config-panel select {
+  text-transform: none !important;
+}
+
+/* Prevent global styles from leaking into SVG text */
+svg text,
+svg tspan {
+  text-transform: inherit;
+  /* Let the injected style handle it */
+}

@@ -231,3 +231,15 @@ input[type="range"]::-webkit-slider-thumb {
     border-color: var(--muted);
     background-color: var(--bg-hover, rgba(255, 255, 255, 0.05));
 }
+
+.compact-select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 11px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    text-transform: uppercase;
+}

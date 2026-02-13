@@ -12,7 +12,7 @@ interface MermaidConfigPanelProps {
 }
 
 export default function MermaidConfigPanel({ code, setCode, onClose }: MermaidConfigPanelProps) {
-    const { mermaidTheme, setMermaidTheme } = useTheme()
+    const { mermaidTheme, setMermaidTheme, textTransform, setTextTransform } = useTheme()
     const [config, setConfig] = useState<MermaidConfig>({})
     const [direction, setDirection] = useState<'TD' | 'BT' | 'LR' | 'RL'>('TD')
 
@@ -156,6 +156,24 @@ export default function MermaidConfigPanel({ code, setCode, onClose }: MermaidCo
                         >
                             ELK
                         </button>
+                    </div>
+                </div>
+
+                <div className="config-group">
+                    <label>Text Styling</label>
+                    <div className="config-row">
+                        <div className="config-field" style={{ width: '100%' }}>
+                            <span className="field-label">Capitalization</span>
+                            <select
+                                value={textTransform}
+                                onChange={(e) => setTextTransform(e.target.value as any)}
+                                className="compact-select"
+                            >
+                                <option value="none">Mixed (As Typed)</option>
+                                <option value="uppercase">Uppercase</option>
+                                <option value="lowercase">Lowercase</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
