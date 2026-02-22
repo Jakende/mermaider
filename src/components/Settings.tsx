@@ -74,11 +74,11 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
                 type="text"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="http://localhost:11434/v1"
+                placeholder="http://127.0.0.1:11434/v1"
                 className="api-key-input"
               />
               <p className="settings-hint">
-                Default: http://localhost:11434/v1
+                Default: http://127.0.0.1:11434/v1
               </p>
             </div>
 

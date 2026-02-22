@@ -21,7 +21,7 @@ export interface OllamaConfig {
   systemPrompt?: string
 }
 
-const DEFAULT_ENDPOINT = 'http://localhost:11434/v1'
+const DEFAULT_ENDPOINT = 'http://127.0.0.1:11434/v1'
 const DEFAULT_MODEL = 'gpt-oss:20b'
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful and technical Mermaid.js assistant.
 Your goal is to help the user with their diagrams, whether it's fixing syntax, editing structure, generating new diagrams, or analyzing relationships.
@@ -66,9 +66,12 @@ async function callOllama(
     if (endpoint.endsWith('/v1')) {
       endpoint += '/chat/completions'
     } else {
-      endpoint += '/chat/completions'
+      endpoint += '/v1/chat/completions'
     }
   }
+
+  // Windows workaround: fetch might try IPv6 (::1) for localhost while Ollama listens on IPv4 (127.0.0.1)
+  endpoint = endpoint.replace('localhost', '127.0.0.1')
 
   try {
     const response = await fetch(endpoint, {
