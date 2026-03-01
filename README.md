@@ -21,6 +21,8 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - AI Fix: Automatically repair syntax errors in Mermaid code.
 - JSON to Mermaid: Convert structured data into visual representations using AI.
 - Code Extraction: Automatically detects and extracts Mermaid code blocks from Markdown files.
+- Local Knowledge Base (RAG): Index your unstructured text locally to generate context-aware diagrams or detailed AI Reports with source tracking.
+- Custom AI Settings: Control AI temperature, generation depth/complexity, and select custom models for chat and embeddings directly from the settings panel.
 
 ### Professional Editing
 - Monaco Editor: Full-featured code editor with syntax highlighting.
