@@ -18,48 +18,54 @@ interface OllamaResponse {
 export interface OllamaConfig {
   endpoint: string
   model: string
+  embeddingModel?: string
   systemPrompt?: string
+  temperature?: number
+  generationDepth?: number
 }
 
 const DEFAULT_ENDPOINT = 'http://127.0.0.1:11434/v1'
 const DEFAULT_MODEL = 'gpt-oss:20b'
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful and technical Mermaid.js assistant.
-Your goal is to help the user with their diagrams, whether it's fixing syntax, editing structure, generating new diagrams, or analyzing relationships.
+const DEFAULT_EMBEDDING_MODEL = 'nomic-embed-text'
+const DEFAULT_SYSTEM_PROMPT = `You are a deterministic Mermaid.js code generator and editor.
 
-[SUPPORTED DIAGRAMS]
-You support all standard Mermaid types:
-- Flowcharts (flowchart / graph)
-- Sequence Diagrams (sequenceDiagram)
-- Class Diagrams (classDiagram)
-- State Diagrams (stateDiagram-v2 / stateDiagram)
-- Entity Relationship Diagrams (erDiagram)
-- Gantt Charts (gantt)
-- Pie Charts (pie)
-- Git Graphs (gitGraph)
-- User Journeys (journey)
+You operate in strict execution modes defined by the user prompt.
 
-[SYNTAX & STYLE]
-- Always use double quotes for labels with special characters: ["My Label"].
-- Prefer "flowchart" over "graph" for flow diagrams.
-- Use stateDiagram-v2 for state diagrams if possible.
-- Use clear indentation and logical structure.
-- NEVER use markdown code blocks (backticks) for Mermaid code.
+GENERAL RULES:
+- Output MUST follow the exact required format.
+- Do NOT include explanations unless explicitly required.
+- NEVER use markdown code fences.
+- ALWAYS validate Mermaid syntax before output.
 
-[COMMUNICATION]
-- Be technical and direct. Avoid small talk.
-- FOR EDITS: Provide 2-4 sentences explaining the changes, then the tag "[CODE_START]" followed by the raw code.
-- FOR ANALYSIS (ASK mode): Provide a structured response using Markdown. Interpret terms like "knot", "box", or "bubble" as nodes.
+SYNTAX RULES:
+- Use "flowchart" instead of "graph" for flow diagrams.
+- Use ["Label"] for nodes with spaces or special characters.
+- Ensure consistent indentation.
+- Avoid unsupported constructs.
 
-[MODELS]
-- If you are unsure about a specific term, interpret it in the context of the current diagram structure.
-- If you are asked to generate a new diagram, provide a structured response using Markdown.`
+VALIDATION STEP (MANDATORY):
+Before returning output:
+1. Check for syntax errors.
+2. Ensure diagram type is valid.
+3. Ensure node references are consistent.
 
+FAILURE HANDLING:
+If the request is ambiguous:
+- Infer the most logical structure based on relationships
+- Do NOT ask questions.`
+
+
+function getTemperature(preferred: number, config: OllamaConfig): number {
+  return config.temperature !== undefined ? config.temperature : preferred;
+}
 
 async function callOllama(
   messages: OllamaMessage[],
   config: OllamaConfig,
   temperature: number = 0.3
 ): Promise<string> {
+  const finalTemperature = getTemperature(temperature, config);
+
   // Ensure endpoint ends with /chat/completions if not present, but handle v1 base
   let endpoint = config.endpoint.replace(/\/$/, '')
   if (!endpoint.endsWith('/chat/completions')) {
@@ -82,7 +88,7 @@ async function callOllama(
       body: JSON.stringify({
         model: config.model,
         messages,
-        temperature,
+        temperature: finalTemperature,
         max_tokens: 6000
       })
     })
@@ -113,6 +119,40 @@ async function callOllama(
   }
 }
 
+export async function generateEmbedding(text: string, config: OllamaConfig): Promise<number[]> {
+  let endpoint = config.endpoint.replace(/\/$/, '')
+  // For embeddings, Ollama expects /api/embeddings.
+  // The provided config.endpoint is likely http://127.0.0.1:11434/v1
+  // We need to access http://127.0.0.1:11434/api/embeddings
+  // If endpoint is already specifically set for openAI compat, try to extract the base url
+  try {
+    const url = new URL(endpoint)
+    endpoint = `${url.protocol}//${url.host}/api/embeddings`
+  } catch (e) {
+    endpoint = endpoint.replace('/v1', '') + '/api/embeddings'
+  }
+
+  endpoint = endpoint.replace('localhost', '127.0.0.1')
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: config.embeddingModel || DEFAULT_EMBEDDING_MODEL,
+      prompt: text
+    })
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.error?.message || `Ollama Embedding API error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.embedding
+}
+
+
 export function cleanCode(code: string): string {
   let cleaned = code
 
@@ -128,7 +168,7 @@ export function cleanCode(code: string): string {
   }
 
   return cleaned
-    .replace(/^```mermaid\s*/i, '')
+    .replace(/^```mermaid\s */i, '')
     .replace(/^```\w*\s*/i, '')
     .replace(/```\s*$/, '')
     .trim()
@@ -142,14 +182,30 @@ export async function fixMermaidErrorWithAI(
 ): Promise<string> {
   const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT
 
-  const userPrompt = `Fix this Mermaid syntax error:
+  const userPrompt = `[MODE: FIX]
 
-Error: ${errorMessage}
+You must:
+- Fix ONLY what is necessary
+- Preserve original structure
+- Do NOT redesign the diagram
+
+Validation required.
+
+Error:
+${errorMessage}
 
 Broken Code:
 ${code}
 
-Provide the brief explanation followed by the fixed code:`
+FINAL CHECK:
+- Did you only fix the error?
+- Is the new code valid Mermaid syntax?
+If not -> fix before output.
+
+OUTPUT FORMAT:
+Explanation: max 2 sentences
+[CODE_START]
+<valid Mermaid code>`
 
   const messages: OllamaMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -167,12 +223,30 @@ export async function editCodeWithAI(
 ): Promise<string> {
   const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT
 
-  const userPrompt = `Edit the following Mermaid code based on this instruction: "${instruction}"
+  const userPrompt = `[MODE: EDIT]
+
+Instruction:
+"${instruction}"
+
+Constraints:
+- Apply ONLY requested changes
+- Keep naming, structure, and layout unless explicitly changed
+- No additional improvements
+- Target depth/complexity of changes (1-10): ${config.generationDepth ?? 5}
 
 Current Code:
 ${code}
 
-Provide the brief explanation of changes followed by the updated code.`
+FINAL CHECK:
+- Is the Mermaid code valid?
+- Are all nodes defined?
+- Are there syntax violations?
+If yes -> fix before output.
+
+OUTPUT FORMAT:
+Explanation: max 2 sentences
+[CODE_START]
+<updated Mermaid code>`
 
   const messages: OllamaMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -182,18 +256,36 @@ Provide the brief explanation of changes followed by the updated code.`
   return await callOllama(messages, config, 0.3)
 }
 
-export async function convertJsonToMermaidWithAI(
-  jsonContent: string,
+export async function convertTextToMermaidWithAI(
+  textContent: string,
   config: OllamaConfig
 ): Promise<string> {
   const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT
 
-  const userPrompt = `Convert the following JSON data to a Mermaid flowchart or diagram that best represents the structure and relationships described in the data.
+  const userPrompt = `[MODE: GENERATE]
 
-JSON Data:
-${jsonContent}
+Input:
+${textContent}
 
-Provide a brief explanation of how you mapped the JSON to Mermaid, followed by the "[CODE_START]" tag and the raw Mermaid code.`
+TASK:
+- STEP 1: Identify entities
+- STEP 2: Identify relationships
+- STEP 3: Choose the most appropriate diagram type
+
+Complexity and Detail Depth Level: ${config.generationDepth ?? 5}/10 (1 = very high-level/simple, 10 = extremely detailed with many nodes and explanations).
+
+Then generate code representing the hierarchy and relationships clearly based on the specified depth level.
+
+FINAL CHECK:
+- Is the Mermaid code valid?
+- Are all nodes defined?
+- Are there syntax violations?
+If yes -> fix before output.
+
+OUTPUT FORMAT:
+Explanation (mapping logic: max 3 sentences)
+[CODE_START]
+<mermaid code>`
 
   const messages: OllamaMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -213,7 +305,10 @@ export function getStoredConfig(): OllamaConfig {
       return {
         endpoint: parsed.endpoint || DEFAULT_ENDPOINT,
         model: parsed.model || DEFAULT_MODEL,
-        systemPrompt: parsed.systemPrompt // might be undefined, which is fine, fallback to default
+        embeddingModel: parsed.embeddingModel || DEFAULT_EMBEDDING_MODEL,
+        systemPrompt: parsed.systemPrompt, // might be undefined, which is fine, fallback to default
+        temperature: parsed.temperature !== undefined ? Number(parsed.temperature) : 0.3,
+        generationDepth: parsed.generationDepth !== undefined ? Number(parsed.generationDepth) : 5
       }
     } catch (e) {
       console.error('Failed to parse stored config', e)
@@ -221,7 +316,10 @@ export function getStoredConfig(): OllamaConfig {
   }
   return {
     endpoint: DEFAULT_ENDPOINT,
-    model: DEFAULT_MODEL
+    model: DEFAULT_MODEL,
+    embeddingModel: DEFAULT_EMBEDDING_MODEL,
+    temperature: 0.3,
+    generationDepth: 5
   }
 }
 
@@ -240,12 +338,26 @@ export async function askAboutCodeWithAI(
 ): Promise<string> {
   const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT
 
-  const userPrompt = `Analyze the following Mermaid diagram and answer this question: "${question}"
+  const userPrompt = `[MODE: ANALYZE]
 
 Current Code:
 ${code}
 
-Provide your analysis. Do not include a new code block unless it's necessary for the answer.`
+Question:
+"${question}"
+
+Provide:
+1. Diagram type
+2. Key components
+3. Relationships
+4. Structural issues (if any)
+5. Answer to the question.
+
+NO code generation unless explicitly required.
+
+FINAL CHECK:
+- Did you answer the user's question accurately?
+- Did you provide the analysis without generating new Mermaid code?`
 
   const messages: OllamaMessage[] = [
     { role: 'system', content: systemPrompt },
@@ -253,4 +365,56 @@ Provide your analysis. Do not include a new code block unless it's necessary for
   ]
 
   return await callOllama(messages, config, 0.7)
+}
+
+export async function generateMarkdownReport(
+  code: string,
+  config: OllamaConfig,
+  activeSourcesParam?: string[]
+): Promise<string> {
+  const systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT
+
+  let contextString = ""
+  try {
+    const { searchSimilar } = await import('./vectorStore')
+    const queryEmbedding = await generateEmbedding(code, config)
+    const similarDocs = await searchSimilar(queryEmbedding, 5, activeSourcesParam)
+    if (similarDocs.length > 0) {
+      contextString = similarDocs.map(d => `[Source: ${d.source}]\n${d.textChunk}`).join('\n\n')
+    }
+  } catch (err) {
+    console.warn('Could not fetch context for report', err)
+  }
+
+  const userPrompt = `[MODE: REPORT]
+
+Diagram Code:
+${code}
+
+CONTEXT (MANDATORY USE):
+${contextString || '(No contextual sources provided)'}
+
+You MUST:
+- Include and explain ALL elements (nodes, relationships, etc.) of the provided graph in your report.
+- Reference context explicitly.
+- Integrate sources into explanation.
+If context is ignored -> response is invalid.
+
+FINAL CHECK:
+- Did you explain ALL elements of the graph?
+- Did you format the sources correctly?
+
+OUTPUT FORMAT:
+Write a clear, structured markdown report with different heading levels explaining the diagram and the process.
+At the BEGINNING of the report, add a section called 'Overall Summary' (using an H2 heading) that provides a high-level summary of the entire diagram.
+At the very end of the report, use an exactly named H1 heading '# Sources'.
+Under this heading, list ALL the unique sources provided in the context (if any) in BibTeX format.
+CRITICAL: For sources provided from the context (RAG) or generated by the AI: if they do not contain an explicitly mentioned year, use the current year (${new Date().getFullYear()}) in their BibTeX entry. Do NOT overwrite existing years in sources that already have one.`
+
+  const messages: OllamaMessage[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ]
+
+  return await callOllama(messages, config, 0.6)
 }

@@ -5,14 +5,14 @@ import './ExportModal.css'
 interface ExportModalProps {
     isOpen: boolean
     onClose: () => void
-    onExport: (filename: string, format: 'svg' | 'png' | 'mmd') => void
+    onExport: (filename: string, format: 'svg' | 'png' | 'mmd' | 'pdf' | 'md') => void
     defaultFilename: string
 }
 
 export default function ExportModal({ isOpen, onClose, onExport, defaultFilename }: ExportModalProps) {
     const { theme } = useTheme()
     const [filename, setFilename] = useState(defaultFilename || 'diagram')
-    const [format, setFormat] = useState<'svg' | 'png' | 'mmd'>('svg')
+    const [format, setFormat] = useState<'svg' | 'png' | 'mmd' | 'pdf' | 'md'>('svg')
 
     useEffect(() => {
         if (isOpen) {
@@ -72,6 +72,18 @@ export default function ExportModal({ isOpen, onClose, onExport, defaultFilename
                                 onClick={() => setFormat('png')}
                             >
                                 PNG
+                            </button>
+                            <button
+                                className={`format-btn ${format === 'pdf' ? 'active' : ''}`}
+                                onClick={() => setFormat('pdf')}
+                            >
+                                PDF
+                            </button>
+                            <button
+                                className={`format-btn ${format === 'md' ? 'active' : ''}`}
+                                onClick={() => setFormat('md')}
+                            >
+                                AI Report (.md)
                             </button>
                             <button
                                 className={`format-btn ${format === 'mmd' ? 'active' : ''}`}

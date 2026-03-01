@@ -12,14 +12,20 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const { theme } = useTheme()
   const [endpoint, setEndpoint] = useState('')
   const [model, setModel] = useState('')
+  const [embeddingModel, setEmbeddingModel] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
+  const [temperature, setTemperature] = useState<number>(0.3)
+  const [generationDepth, setGenerationDepth] = useState<number>(5)
 
   useEffect(() => {
     if (isOpen) {
       const config = getStoredConfig()
       setEndpoint(config.endpoint)
       setModel(config.model)
+      setEmbeddingModel(config.embeddingModel || 'nomic-embed-text')
       setSystemPrompt(config.systemPrompt || '')
+      setTemperature(config.temperature ?? 0.3)
+      setGenerationDepth(config.generationDepth ?? 5)
     }
   }, [isOpen])
 
@@ -28,7 +34,10 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       storeConfig({
         endpoint: endpoint.trim(),
         model: model.trim(),
-        systemPrompt: systemPrompt.trim()
+        embeddingModel: embeddingModel.trim(),
+        systemPrompt: systemPrompt.trim(),
+        temperature,
+        generationDepth
       })
       alert('Settings saved successfully!')
       onClose()
@@ -44,7 +53,10 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       const config = getStoredConfig()
       setEndpoint(config.endpoint)
       setModel(config.model)
+      setEmbeddingModel(config.embeddingModel || 'nomic-embed-text')
       setSystemPrompt(config.systemPrompt || '')
+      setTemperature(0.3)
+      setGenerationDepth(5)
     }
   }
 
@@ -94,6 +106,59 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               />
               <p className="settings-hint">
                 Default: gpt-oss:20b
+              </p>
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="ollama-embedding-model">Embedding Model</label>
+              <input
+                id="ollama-embedding-model"
+                type="text"
+                value={embeddingModel}
+                onChange={(e) => setEmbeddingModel(e.target.value)}
+                placeholder="nomic-embed-text"
+                className="api-key-input"
+              />
+              <p className="settings-hint">
+                Model used for RAG embeddings. Default: nomic-embed-text
+              </p>
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="ollama-temperature">
+                Temperature ({temperature})
+              </label>
+              <input
+                id="ollama-temperature"
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={temperature}
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                style={{ width: '100%' }}
+              />
+              <p className="settings-hint">
+                Lower = more deterministic, Higher = more creative. Default: 0.3
+              </p>
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="ollama-generation-depth">
+                Generation Depth ({generationDepth})
+              </label>
+              <input
+                id="ollama-generation-depth"
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={generationDepth}
+                onChange={(e) => setGenerationDepth(parseInt(e.target.value))}
+                style={{ width: '100%' }}
+              />
+              <p className="settings-hint">
+                1 = Simple, 10 = Very complex with many details. Default: 5
               </p>
             </div>
 

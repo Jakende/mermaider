@@ -1,10 +1,12 @@
 import { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
-import { fixMermaidErrorWithAI, getStoredConfig, convertJsonToMermaidWithAI } from '../utils/aiService'
+import { fixMermaidErrorWithAI, getStoredConfig, convertTextToMermaidWithAI, generateMarkdownReport } from '../utils/aiService'
 import Settings from './Settings'
 import HelpModal from './HelpModal'
 import ExportModal from './ExportModal'
+import KnowledgeBaseModal from './KnowledgeBaseModal'
+import { jsPDF } from 'jspdf'
 import './Toolbar.css'
 
 interface ToolbarProps {
@@ -33,7 +35,9 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showKB, setShowKB] = useState(false)
   const [isFixing, setIsFixing] = useState(false)
+  const [isExportingReport, setIsExportingReport] = useState(false)
 
   const handleNew = () => {
     onNewTab()
@@ -85,7 +89,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
               setIsFixing(true) // Reuse fixing state for loading indication
               try {
                 const config = getStoredConfig()
-                const convertedCode = await convertJsonToMermaidWithAI(content, config)
+                const convertedCode = await convertTextToMermaidWithAI(content, config)
                 setCode(convertedCode)
               } catch (err) {
                 alert('Conversion failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
@@ -319,11 +323,13 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     setShowExport(true)
   }
 
-  const onExport = (filename: string, format: 'svg' | 'png' | 'mmd') => {
+  const onExport = (filename: string, format: 'svg' | 'png' | 'mmd' | 'pdf' | 'md') => {
     onUpdateDiagramName(filename)
     if (format === 'svg') handleExportSVG(filename)
     else if (format === 'png') handleExportPNG(filename)
     else if (format === 'mmd') handleSaveMMD(filename)
+    else if (format === 'pdf') handleExportPDF(filename)
+    else if (format === 'md') handleExportMarkdown(filename)
   }
 
   const handleCopyCode = () => {
@@ -332,6 +338,219 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     const codeBlock = `\`\`\`mermaid\n${plainCode}\n\`\`\``
     navigator.clipboard.writeText(codeBlock)
     alert('Code copied to clipboard!')
+  }
+
+  const handleCopyImage = async () => {
+    const svgElement = document.querySelector('.preview-content svg') as SVGSVGElement | null
+    if (!svgElement) {
+      alert('No diagram to copy. Please ensure you are in the Preview tab.')
+      return
+    }
+
+    try {
+      const bbox = svgElement.getBBox()
+      const padding = 20
+      const width = bbox.width + padding * 2
+      const height = bbox.height + padding * 2
+      const scale = 3.125
+      let targetWidth = width * scale
+      let targetHeight = height * scale
+      const MAX_SIDE = 12000
+      if (targetWidth > MAX_SIDE || targetHeight > MAX_SIDE) {
+        const ratio = Math.min(MAX_SIDE / targetWidth, MAX_SIDE / targetHeight)
+        targetWidth *= ratio
+        targetHeight *= ratio
+      }
+
+      const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+      clonedSvg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`)
+      clonedSvg.setAttribute('width', targetWidth.toString())
+      clonedSvg.setAttribute('height', targetHeight.toString())
+
+      const originalElements = svgElement.querySelectorAll('*')
+      const clonedElements = clonedSvg.querySelectorAll('*')
+      const stylesToCopy = [
+        'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity',
+        'font-family', 'font-size', 'font-weight', 'text-anchor', 'display',
+        'color', 'text-transform', 'letter-spacing'
+      ]
+
+      originalElements.forEach((origEl, i) => {
+        const clonedEl = clonedElements[i] as SVGElement
+        if (clonedEl && origEl instanceof Element) {
+          const style = window.getComputedStyle(origEl)
+          stylesToCopy.forEach(prop => {
+            const val = style.getPropertyValue(prop)
+            if (prop === 'text-transform') {
+              clonedEl.style.setProperty(prop, val)
+            } else if (val && val !== 'none' && val !== 'normal') {
+              clonedEl.style.setProperty(prop, val)
+            }
+          })
+          if (origEl.tagName === 'text') {
+            clonedEl.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
+          }
+        }
+      })
+
+      const svgData = new XMLSerializer().serializeToString(clonedSvg)
+      const base64 = btoa(unescape(encodeURIComponent(svgData)))
+      const url = `data:image/svg+xml;base64,${base64}`
+
+      const canvas = document.createElement('canvas')
+      canvas.width = targetWidth
+      canvas.height = targetHeight
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) throw new Error('Could not create canvas context')
+
+      ctx.fillStyle = theme === 'dark' ? '#1e1e1e' : '#ffffff'
+      ctx.fillRect(0, 0, targetWidth, targetHeight)
+
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+          resolve(null)
+        }
+        img.onerror = () => reject(new Error('Failed to render SVG to canvas'))
+        img.src = url
+      })
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          alert('Failed to generate PNG blob')
+          return
+        }
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ])
+          alert('Image copied to clipboard!')
+        } catch (err) {
+          console.error('Clipboard write error:', err)
+          alert('Failed to copy. Requires a secure context (HTTPS/localhost).')
+        }
+      }, 'image/png')
+    } catch (error) {
+      console.error('Copy Image error:', error)
+      alert('Failed to copy image: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const handleExportPDF = async (filename: string) => {
+    const svgElement = document.querySelector('.preview-content svg') as SVGSVGElement | null
+    if (!svgElement) {
+      alert('No diagram to export. Please ensure you are in the Preview tab.')
+      return
+    }
+
+    try {
+      const bbox = svgElement.getBBox()
+      const padding = 20
+      const width = bbox.width + padding * 2
+      const height = bbox.height + padding * 2
+      const scale = 3.125
+      let targetWidth = width * scale
+      let targetHeight = height * scale
+      const MAX_SIDE = 12000
+      if (targetWidth > MAX_SIDE || targetHeight > MAX_SIDE) {
+        const ratio = Math.min(MAX_SIDE / targetWidth, MAX_SIDE / targetHeight)
+        targetWidth *= ratio
+        targetHeight *= ratio
+      }
+
+      const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+      clonedSvg.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`)
+      clonedSvg.setAttribute('width', targetWidth.toString())
+      clonedSvg.setAttribute('height', targetHeight.toString())
+
+      const originalElements = svgElement.querySelectorAll('*')
+      const clonedElements = clonedSvg.querySelectorAll('*')
+      const stylesToCopy = [
+        'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity',
+        'font-family', 'font-size', 'font-weight', 'text-anchor', 'display',
+        'color', 'text-transform', 'letter-spacing'
+      ]
+
+      originalElements.forEach((origEl, i) => {
+        const clonedEl = clonedElements[i] as SVGElement
+        if (clonedEl && origEl instanceof Element) {
+          const style = window.getComputedStyle(origEl)
+          stylesToCopy.forEach(prop => {
+            const val = style.getPropertyValue(prop)
+            if (prop === 'text-transform') {
+              clonedEl.style.setProperty(prop, val)
+            } else if (val && val !== 'none' && val !== 'normal') {
+              clonedEl.style.setProperty(prop, val)
+            }
+          })
+          if (origEl.tagName === 'text') {
+            clonedEl.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif'
+          }
+        }
+      })
+
+      const svgData = new XMLSerializer().serializeToString(clonedSvg)
+      const base64 = btoa(unescape(encodeURIComponent(svgData)))
+      const url = `data:image/svg+xml;base64,${base64}`
+
+      const canvas = document.createElement('canvas')
+      canvas.width = targetWidth
+      canvas.height = targetHeight
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) throw new Error('Could not create canvas context')
+
+      ctx.fillStyle = theme === 'dark' ? '#1e1e1e' : '#ffffff'
+      ctx.fillRect(0, 0, targetWidth, targetHeight)
+
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
+          resolve(null)
+        }
+        img.onerror = () => reject(new Error('Failed to render SVG to canvas'))
+        img.src = url
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const isPortrait = height > width
+      const pdf = new jsPDF({
+        orientation: isPortrait ? 'portrait' : 'landscape',
+        unit: 'px',
+        format: [width, height]
+      })
+
+      pdf.addImage(imgData, 'PNG', 0, 0, width, height)
+      pdf.save(`${filename}.pdf`)
+
+    } catch (error) {
+      console.error('PDF export error:', error)
+      alert('Failed to export PDF: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    }
+  }
+
+  const handleExportMarkdown = async (filename: string) => {
+    setIsExportingReport(true);
+    try {
+      const config = getStoredConfig()
+      const activeSourcesStr = localStorage.getItem('mermaider-active-sources')
+      const activeSources = activeSourcesStr ? JSON.parse(activeSourcesStr) : []
+      const markdown = await generateMarkdownReport(code, config, activeSources)
+
+      const blob = new Blob([markdown], { type: 'text/markdown' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${filename}.md`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Markdown export error:', error)
+      alert('Failed to export Markdown report: ' + (error instanceof Error ? error.message : 'Unknown AI error'))
+    } finally {
+      setIsExportingReport(false);
+    }
   }
 
   const handleAIFix = async () => {
@@ -375,6 +594,9 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           <button onClick={handleOpen} className="toolbar-btn" title="Import / Open (⌘O)">
             Import...
           </button>
+          <button onClick={() => setShowKB(true)} className="toolbar-btn" title="Knowledge Base / Quick Import">
+            RAG / IMPORT
+          </button>
           <button onClick={handleExportClick} className="toolbar-btn button-primary" title="Export Diagram (⌘S)">
             Export...
           </button>
@@ -390,6 +612,9 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
         <div className="toolbar-section">
           <button onClick={handleCopyCode} className="toolbar-btn" title="Copy Code">
             Copy Code
+          </button>
+          <button onClick={handleCopyImage} className="toolbar-btn" title="Copy Image">
+            Copy Image
           </button>
           {error && (
             <button
@@ -430,12 +655,43 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
       </div>
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <KnowledgeBaseModal
+        isOpen={showKB}
+        onClose={() => setShowKB(false)}
+        onImportDiagram={(importedCode, name) => {
+          setCode(importedCode)
+          onUpdateDiagramName(name || 'Generated Diagram')
+          setShowKB(false)
+        }}
+      />
       <ExportModal
         isOpen={showExport}
         onClose={() => setShowExport(false)}
         onExport={onExport}
         defaultFilename={diagramName}
       />
+      {isExportingReport && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'var(--text-color)',
+          color: 'var(--bg-color)',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 9999,
+          fontWeight: 600,
+          fontSize: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span className="spinner" style={{ animation: 'spin 1s linear infinite' }}>↻</span>
+          Generating AI Report... Please wait.
+        </div>
+      )}
     </>
   )
 })

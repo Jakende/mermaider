@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, cleanCode } from '../utils/aiService'
+import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, cleanCode, generateEmbedding } from '../utils/aiService'
+import { searchSimilar } from '../utils/vectorStore'
 import './ChatPanel.css'
 
 import { ChatMessage, ChatSession } from '../types'
@@ -48,6 +49,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
     const [showHistory, setShowHistory] = useState(false)
     const [editingIndex, setEditingIndex] = useState<number | null>(null)
     const [editInput, setEditInput] = useState('')
+    const [useKnowledgeBase, setUseKnowledgeBase] = useState(true)
 
     // Pop-out state
     const [position, setPosition] = useState({ x: 20, y: 50 })
@@ -85,8 +87,29 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
         try {
             const config = getStoredConfig()
 
+            let enhancedContext = contextCode
+            if (useKnowledgeBase && currentMode === 'ask') {
+                // For edit mode, we could also use it, but it's most useful for 'ask' or generating new things
+                // Let's use it for both for now, but label it clearly
+            }
+            if (useKnowledgeBase) {
+                try {
+                    const activeSourcesStr = localStorage.getItem('mermaider-active-sources')
+                    const activeSources = activeSourcesStr ? JSON.parse(activeSourcesStr) : []
+                    const queryEmbedding = await generateEmbedding(userMessage, config)
+                    const similarDocs = await searchSimilar(queryEmbedding, 3, activeSources)
+
+                    if (similarDocs.length > 0) {
+                        const extraContext = similarDocs.map(d => `[Source: ${d.source}]\n${d.textChunk}`).join('\n\n')
+                        enhancedContext = `[CURRENT DIAGRAM CODE]\n${contextCode}\n\n[RELEVANT KNOWLEDGE BASE CONTEXT]\n${extraContext}`
+                    }
+                } catch (err) {
+                    console.error('Vector search failed', err)
+                }
+            }
+
             if (currentMode === 'edit') {
-                const response = await editCodeWithAI(contextCode, userMessage, config)
+                const response = await editCodeWithAI(enhancedContext, userMessage, config)
 
                 // Split explanation and code
                 let explanation = 'I have updated the diagram based on your request.'
@@ -111,7 +134,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                 setCode(finalCode)
                 onSendMessage('assistant', explanation)
             } else {
-                const response = await askAboutCodeWithAI(contextCode, userMessage, config)
+                const response = await askAboutCodeWithAI(enhancedContext, userMessage, config)
                 onSendMessage('assistant', response)
             }
         } catch (error) {
@@ -130,26 +153,26 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
         const currentMode = mode
         setInput('')
         onSendMessage('user', userMessage)
-        
+
         await processMessage(userMessage, code, currentMode)
     }
 
     const handleEditResend = async (idx: number) => {
         if (!editInput.trim() || isLoading) return
-        
+
         const userMessage = editInput.trim()
         const messageToEdit = messages[idx]
         const currentMode = mode
-        
+
         // Store codeBefore for the AI call before we truncate history
         const revertedCode = messageToEdit.codeBefore || code
 
         setEditingIndex(null)
         setEditInput('')
-        
+
         // Revert history in App.tsx
         onEditMessage(idx, userMessage)
-        
+
         // Send new user message and wait for AI
         onSendMessage('user', userMessage)
         await processMessage(userMessage, revertedCode, currentMode)
@@ -371,6 +394,16 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                         >
                             ASK
                         </button>
+                    </div>
+
+                    <div style={{ padding: '0 12px', marginBottom: '8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                            type="checkbox"
+                            id="use-kb-checkbox"
+                            checked={useKnowledgeBase}
+                            onChange={(e) => setUseKnowledgeBase(e.target.checked)}
+                        />
+                        <label htmlFor="use-kb-checkbox" style={{ color: 'var(--muted)', cursor: 'pointer' }}>Use Local Knowledge Base</label>
                     </div>
 
                     <form className="chat-input-form" onSubmit={handleSubmit}>
