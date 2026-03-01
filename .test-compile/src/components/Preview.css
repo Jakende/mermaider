@@ -1,0 +1,151 @@
+.preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.preview-header {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--surface);
+  color: var(--ink);
+  z-index: 10;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.zoom-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  width: 24px;
+  /* small square */
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+}
+
+.zoom-btn:hover {
+  background-color: var(--border);
+}
+
+.zoom-level {
+  font-size: 11px;
+  min-width: 32px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.preview-viewport {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface) !important;
+  /* Strictly follows app theme: #000 (Dark) / #FFF (Light) */
+}
+
+.preview-content {
+  /* No specific size constraints, let it grow with content or zoom */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Ensure it has some size to grab */
+  padding: 100px;
+  /* Magic fixes for WebKit blurry transforms */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.preview-content svg {
+  max-width: none !important;
+  box-shadow: none;
+  background-color: transparent !important;
+  border: none;
+  min-width: 50px;
+  min-height: 50px;
+  /* Rendering hints */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+/* Force internal Mermaid background rects to be transparent */
+.preview-content svg rect.mermaid-main-rect,
+.preview-content svg rect.background,
+.preview-content svg rect[class*="background"] {
+  fill: transparent !important;
+}
+
+.empty-preview {
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  background-color: var(--surface);
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+
+.error-preview {
+  color: var(--div-1);
+  /* Red-ish from design tokens usually? */
+  background-color: var(--surface);
+  border: 2px solid var(--div-1);
+  /* Make it distinct */
+  padding: var(--space-4);
+  max-width: 90%;
+  text-align: left;
+}
+
+.error-preview h3 {
+  margin-top: 0;
+  color: var(--div-1);
+}
+
+.error-preview pre {
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background-color: rgba(255, 0, 0, 0.05);
+  padding: 10px;
+  margin-bottom: 0;
+}
+
+.mode-toggle-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mode-toggle-btn:hover {
+  text-decoration: underline;
+  border-color: var(--ink);
+}

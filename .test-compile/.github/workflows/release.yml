@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: ''
+          - platform: 'windows-latest'
+            args: ''
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Verify DMG tools (macOS only)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          echo "Checking DMG creation prerequisites..."
+          which hdiutil && echo "✓ hdiutil found" || echo "✗ hdiutil not found"
+          xcode-select -p && echo "✓ Xcode Command Line Tools found" || echo "✗ Xcode Command Line Tools not found"
+
+      - name: Check for existing release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "Checking for existing release: $TAG_NAME"
+          
+          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" &>/dev/null; then
+            RELEASE_STATE=$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)
+            if [ "$RELEASE_STATE" == "true" ]; then
+              echo "⚠️  Draft release already exists. Deleting it so tauri-action can create a new one..."
+              gh release delete "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
+            else
+              echo "❌ ERROR: Published release already exists for tag $TAG_NAME"
+              echo "Published releases are immutable and cannot be modified."
+              echo "Please delete the existing release or use a different tag."
+              exit 1
+            fi
+          else
+            echo "✓ No existing release found. tauri-action will create a new draft release."
+          fi
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUST_BACKTRACE: 1
+        with:
+          projectPath: ./
+          tagName: ${{ github.ref }}
+          releaseName: Release ${{ github.ref_name }}
+          releaseDraft: true
+          args: ${{ matrix.args }}
+
+      - name: Verify DMG was created (macOS only)
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          echo "Checking for DMG file..."
+          DMG_PATH=$(find src-tauri/target/release/bundle -name "*.dmg" 2>/dev/null | head -n 1)
+          if [ -z "$DMG_PATH" ]; then
+            echo "❌ ERROR: DMG file not found!"
+            echo "Contents of bundle directory:"
+            ls -la src-tauri/target/release/bundle/ || echo "Bundle directory not found"
+            exit 1
+          else
+            echo "✅ DMG file found: $DMG_PATH"
+            ls -lh "$DMG_PATH"
+          fi
+
+      - name: Verify EXE/MSI was created (Windows only)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          echo "Checking for Windows installer..."
+          INSTALLER_PATH=$(find src-tauri/target/release/bundle -name "*.exe" -o -name "*.msi" 2>/dev/null | head -n 1)
+          if [ -z "$INSTALLER_PATH" ]; then
+            echo "❌ ERROR: Windows installer not found!"
+            echo "Contents of bundle directory:"
+            ls -R src-tauri/target/release/bundle/ || echo "Bundle directory not found"
+            exit 1
+          else
+            echo "✅ Windows installer found: $INSTALLER_PATH"
+            ls -lh "$INSTALLER_PATH"
+          fi

@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+.env
+.env.local
+.env.*.local
+*.app
+*.dmg
+*.zip
+
+# Environment files (keep example files)
+!.env.example
+!env.example
+
+# Documentation files to keep local only
+APPWRITE_SETUP.md
+APPWRITE_TROUBLESHOOTING.md
+github_dario_novoa_io.pub
+PROJECT_STRUCTURE.md
+SEO_IMPLEMENTATION_SUMMARY.md
+SEO_OPTIMIZATION.md
+STATIC_HOSTING.md
+# Historical reference document
+MermaidChart_PRD.md
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary test/debug files
+test-*.js
+test-*.ts
+debug-*.js
+debug-*.ts
+*.test.local.*
+*.debug.*
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+.env
