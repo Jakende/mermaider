@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
+import { MERMAID_TEMPLATES } from '../utils/mermaidTemplates'
 import DiagramDocsModal from './DiagramDocsModal'
 import './HelpModal.css'
 
@@ -22,17 +23,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         { title: 'Keyboard Shortcuts', text: '⌘N for New, ⌘O for Open, ⌘S for Save.' }
     ]
 
-    const diagrams = [
-        { id: 'flowcharts', name: 'Flowcharts' },
-        { id: 'sequence', name: 'Sequence' },
-        { id: 'class', name: 'Class' },
-        { id: 'state', name: 'State' },
-        { id: 'er', name: 'ER' },
-        { id: 'gantt', name: 'Gantt' },
-        { id: 'pie', name: 'Pie' },
-        { id: 'gitgraph', name: 'GitGraph' },
-        { id: 'userjourney', name: 'User Journey' }
-    ]
+    const diagrams = MERMAID_TEMPLATES.map(t => ({ id: t.id, name: t.name }))
 
     return (
         <>

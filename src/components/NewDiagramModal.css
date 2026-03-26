@@ -1,0 +1,118 @@
+.new-diagram-modal {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+.new-diagram-modal.dark {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--ink);
+}
+
+.modal-search {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-search input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: 1rem;
+}
+
+.modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.template-section {
+    margin-bottom: 30px;
+}
+
+.template-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+}
+
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.template-card {
+    background-color: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.template-card:hover {
+    border-color: var(--muted);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.new-diagram-modal.dark .template-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.blank-card {
+    border-style: dashed;
+    border-width: 2px;
+    background-color: transparent;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.template-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    color: var(--ink);
+}
+
+.template-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.4;
+    flex: 1;
+}

@@ -6,6 +6,7 @@ import Toolbar, { ToolbarRef } from './components/Toolbar'
 import ChatPanel, { ChatPanelRef } from './components/ChatPanel'
 import TabBar from './components/TabBar'
 import ResizableSplitter from './components/ResizableSplitter'
+import NewDiagramModal from './components/NewDiagramModal'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
 import type { Tab, ChatSession } from './types'
 import './App.css'
@@ -45,6 +46,7 @@ function AppContent() {
   }, [activeTab])
 
   const [error, setError] = useState<string | null>(null)
+  const [isNewDiagramModalOpen, setIsNewDiagramModalOpen] = useState(false)
 
   // Chat Panel State
   const [isChatOpen, setIsChatOpen] = useState(true)
@@ -164,12 +166,17 @@ function AppContent() {
   }
 
   const handleNewTab = () => {
+    setIsNewDiagramModalOpen(true)
+  }
+
+  const handleCreateDiagramTab = (code: string, name: string) => {
+    setIsNewDiagramModalOpen(false)
     const newId = Date.now().toString()
     const newSession = createInitialSession()
     const newTab: Tab = {
       id: newId,
-      name: `diagram-${tabs.length + 1}`,
-      code: DEFAULT_CODE,
+      name: name && name !== 'untitled' ? name : `diagram-${tabs.length + 1}`,
+      code: code !== undefined ? code : DEFAULT_CODE,
       chatSessions: [newSession],
       activeChatSessionId: newSession.id
     }
@@ -437,6 +444,12 @@ function AppContent() {
           />
         )}
       </div>
+
+      <NewDiagramModal 
+        isOpen={isNewDiagramModalOpen} 
+        onClose={() => setIsNewDiagramModalOpen(false)} 
+        onSelect={handleCreateDiagramTab} 
+      />
     </div>
   )
 }
