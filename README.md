@@ -23,6 +23,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - Code Extraction: Automatically detects and extracts Mermaid code blocks from Markdown files.
 - Local Knowledge Base (RAG): Index your unstructured text locally to generate context-aware diagrams or detailed AI Reports with source tracking.
 - Custom AI Settings: Control AI temperature, generation depth/complexity, and select custom models for chat and embeddings directly from the settings panel.
+- MCP Server Integration: Exposes Mermaider's curated diagram templates and code validation logic to external AI assistants (like Claude Desktop) via the Model Context Protocol (`npm run mcp`).
 
 ### Professional Editing
 - Monaco Editor: Full-featured code editor with syntax highlighting.
