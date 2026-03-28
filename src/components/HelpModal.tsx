@@ -19,6 +19,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         { title: 'Live Editor', text: 'Real-time preview and syntax highlighting for all Mermaid diagram types. Changes are saved automatically.' },
         { title: 'AI Assistant', text: 'Use the Chat panel to edit diagrams with natural language or ask questions. Powered by your local Ollama instance for maximum privacy.' },
         { title: 'AI Fix', text: 'Whenever a syntax error occurs, an [AI FIX] button appears. Click it to let the AI resolve the issue automatically.' },
+        { title: 'MCP Integration', text: 'The Model Context Protocol (MCP) layer is always active. It enriches every AI call with curated diagram templates, syntax references, and post-generation validation — automatically, no extra setup needed.' },
         { title: 'Export Options', text: 'Export your diagrams as high-quality SVG or PNG images, or copy the code block for your documents.' },
         { title: 'Keyboard Shortcuts', text: '⌘N for New, ⌘O for Open, ⌘S for Save.' }
     ]
