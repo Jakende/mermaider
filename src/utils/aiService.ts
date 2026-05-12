@@ -9,6 +9,7 @@ import {
   validateAndSuggestFix,
   buildDiagramTypesContext,
 } from './mcpService'
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 
 interface OllamaMessage {
   role: 'system' | 'user' | 'assistant'
@@ -88,7 +89,9 @@ async function callOllama(
   endpoint = endpoint.replace('localhost', '127.0.0.1')
 
   try {
-    const response = await fetch(endpoint, {
+    const isTauri = !!(window as any).__TAURI_INTERNALS__
+    const customFetch = isTauri ? tauriFetch : fetch
+    const response = await customFetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -142,7 +145,10 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
 
   endpoint = endpoint.replace('localhost', '127.0.0.1')
 
-  const response = await fetch(endpoint, {
+  const isTauri = !!(window as any).__TAURI_INTERNALS__
+  const customFetch = isTauri ? tauriFetch : fetch
+
+  const response = await customFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

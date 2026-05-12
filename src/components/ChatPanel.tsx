@@ -72,7 +72,9 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
     }))
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
     }
 
     useEffect(() => {

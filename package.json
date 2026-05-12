@@ -1,6 +1,6 @@
 {
   "name": "mermaider",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "type": "module",
   "license": "CC-BY-NC-SA-4.0",
   "scripts": {
@@ -16,6 +16,7 @@
     "@modelcontextprotocol/sdk": "^1.28.0",
     "@monaco-editor/react": "^4.6.0",
     "@tauri-apps/api": "^2.9.0",
+    "@tauri-apps/plugin-http": "^2.2.0",
     "@types/html2canvas": "^0.5.35",
     "@xyflow/react": "^12.9.2",
     "html2canvas": "^1.4.1",
