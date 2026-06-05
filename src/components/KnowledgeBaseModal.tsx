@@ -19,6 +19,50 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
     const [docCount, setDocCount] = useState<number | null>(null)
     const [sources, setSources] = useState<string[]>([])
     const [activeSources, setActiveSources] = useState<string[]>([])
+    const [deleteConfirmSource, setDeleteConfirmSource] = useState<string | null>(null)
+    const [showClearConfirm, setShowClearConfirm] = useState(false)
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const text = event.target?.result as string
+            setInputText(text)
+            if (!sourceName.trim()) {
+                const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "")
+                setSourceName(nameWithoutExt)
+            }
+        }
+        reader.readAsText(file)
+    }
+
+    const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files?.[0]
+        if (!file) return
+
+        if (!file.name.endsWith('.txt') && !file.name.endsWith('.md') && !file.name.endsWith('.markdown')) {
+            alert('Only text and markdown files (.txt, .md, .markdown) are supported.')
+            return
+        }
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            const text = event.target?.result as string
+            setInputText(text)
+            if (!sourceName.trim()) {
+                const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "")
+                setSourceName(nameWithoutExt)
+            }
+        }
+        reader.readAsText(file)
+    }
+
+    const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+        e.preventDefault()
+    }
 
     const handleIndex = async () => {
         if (!inputText.trim() || !sourceName.trim()) {
@@ -33,17 +77,47 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
             const chunks = chunkText(inputText)
 
             const docs: VectorDocument[] = []
-            for (let i = 0; i < chunks.length; i++) {
-                const chunk = chunks[i]
-                const embedding = await generateEmbedding(chunk, config)
-                docs.push({
-                    id: `${sourceName.replace(/\s+/g, '-')}-${Date.now()}-${i}`,
-                    source: sourceName,
-                    textChunk: chunk,
-                    embedding
-                })
-                setProgress(Math.round(((i + 1) / chunks.length) * 100))
+            let completed = 0
+            const concurrencyLimit = 5
+            const queue = [...chunks.entries()] // [index, chunk]
+
+            const worker = async () => {
+                while (queue.length > 0) {
+                    const item = queue.shift()
+                    if (!item) break
+                    const [index, chunk] = item
+
+                    let embedding: number[] | null = null
+                    let retries = 2
+                    while (retries >= 0) {
+                        try {
+                            embedding = await generateEmbedding(chunk, config)
+                            break
+                        } catch (err) {
+                            console.warn(`Failed embedding chunk ${index}, retrying...`, err)
+                            retries--
+                            if (retries < 0) {
+                                throw new Error(`Failed to generate embedding for segment ${index + 1}: ${err instanceof Error ? err.message : String(err)}`)
+                            }
+                            await new Promise(r => setTimeout(r, 500))
+                        }
+                    }
+
+                    if (embedding) {
+                        docs.push({
+                            id: `${sourceName.replace(/\s+/g, '-')}-${Date.now()}-${index}`,
+                            source: sourceName,
+                            textChunk: chunk,
+                            embedding
+                        })
+                    }
+                    completed++
+                    setProgress(Math.round((completed / chunks.length) * 100))
+                }
             }
+
+            const workers = Array.from({ length: Math.min(concurrencyLimit, chunks.length) }, () => worker())
+            await Promise.all(workers)
 
             await addDocuments(docs)
             alert(`Successfully indexed ${chunks.length} segments!`)
@@ -111,18 +185,16 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
     }
 
     const handleDeleteSource = async (src: string) => {
-        if (confirm(`Delete all embeddings for "${src}"?`)) {
-            await deleteSource(src)
-            checkDocCount()
-        }
+        await deleteSource(src)
+        setDeleteConfirmSource(null)
+        checkDocCount()
     }
 
     const handleClear = async () => {
-        if (confirm('Clear the entire local knowledge base?')) {
-            await clearVectorStore()
-            setDocCount(0)
-            alert('Knowledge base cleared.')
-        }
+        await clearVectorStore()
+        setDocCount(0)
+        setShowClearConfirm(false)
+        alert('Knowledge base cleared.')
     }
 
     // Effect to load count
@@ -157,12 +229,26 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
                     </div>
 
                     <div className="kb-field">
-                        <label>Content</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label>Content</label>
+                            <label htmlFor="kb-file-upload" style={{ fontSize: '11px', color: 'var(--primary-color, #0066cc)', cursor: 'pointer', fontWeight: 600 }}>
+                                📁 Import from file (.md, .txt)
+                            </label>
+                            <input
+                                id="kb-file-upload"
+                                type="file"
+                                accept=".md,.txt,.markdown"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
                         <textarea
                             value={inputText}
                             onChange={e => setInputText(e.target.value)}
-                            placeholder="Paste your text here..."
+                            placeholder="Paste your text here, or drag & drop a .txt/.md file..."
                             className="kb-textarea"
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
                         />
                     </div>
 
@@ -187,7 +273,14 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
                                             />
                                             {src}
                                         </label>
-                                        <button onClick={() => handleDeleteSource(src)} style={{ background: 'none', border: 'none', color: 'var(--error, #ff4c4c)', cursor: 'pointer', fontSize: '11px', padding: '2px 6px' }}>Delete</button>
+                                        {deleteConfirmSource === src ? (
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button onClick={() => handleDeleteSource(src)} style={{ background: 'none', border: 'none', color: 'var(--error, #ff4c4c)', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>Confirm</button>
+                                                <button onClick={() => setDeleteConfirmSource(null)} style={{ background: 'none', border: 'none', color: 'var(--muted, #888)', cursor: 'pointer', fontSize: '11px' }}>Cancel</button>
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => setDeleteConfirmSource(src)} style={{ background: 'none', border: 'none', color: 'var(--error, #ff4c4c)', cursor: 'pointer', fontSize: '11px', padding: '2px 6px' }}>Delete</button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -196,7 +289,15 @@ export default function KnowledgeBaseModal({ isOpen, onClose, onImportDiagram }:
 
                     <div className="kb-stats" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: 'var(--muted)' }}>
                         <span>{docCount !== null ? `${docCount} chunks in local DB` : 'Loading DB stats...'}</span>
-                        <button onClick={handleClear} className="button-text-only" style={{ color: 'var(--error, #ff4c4c)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Clear DB</button>
+                        {showClearConfirm ? (
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--error, #ff4c4c)' }}>Sure?</span>
+                                <button onClick={handleClear} className="button-text-only" style={{ color: 'var(--error, #ff4c4c)', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Yes</button>
+                                <button onClick={() => setShowClearConfirm(false)} className="button-text-only" style={{ color: 'var(--muted, #888)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                        ) : (
+                            <button onClick={() => setShowClearConfirm(true)} className="button-text-only" style={{ color: 'var(--error, #ff4c4c)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Clear DB</button>
+                        )}
                     </div>
                 </div>
 

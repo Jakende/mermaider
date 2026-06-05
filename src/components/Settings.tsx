@@ -16,6 +16,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const [systemPrompt, setSystemPrompt] = useState('')
   const [temperature, setTemperature] = useState<number>(0.3)
   const [generationDepth, setGenerationDepth] = useState<number>(5)
+  const [numCtx, setNumCtx] = useState<number>(16384)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -26,6 +28,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setSystemPrompt(config.systemPrompt || '')
       setTemperature(config.temperature ?? 0.3)
       setGenerationDepth(config.generationDepth ?? 5)
+      setNumCtx(config.numCtx ?? 16384)
+      setShowResetConfirm(false)
     }
   }, [isOpen])
 
@@ -37,7 +41,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         embeddingModel: embeddingModel.trim(),
         systemPrompt: systemPrompt.trim(),
         temperature,
-        generationDepth
+        generationDepth,
+        numCtx
       })
       alert('Settings saved successfully!')
       onClose()
@@ -47,17 +52,17 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   }
 
   const handleReset = () => {
-    if (confirm('Reset to defaults?')) {
-      clearConfig()
-      // Re-load defaults
-      const config = getStoredConfig()
-      setEndpoint(config.endpoint)
-      setModel(config.model)
-      setEmbeddingModel(config.embeddingModel || 'nomic-embed-text')
-      setSystemPrompt(config.systemPrompt || '')
-      setTemperature(0.3)
-      setGenerationDepth(5)
-    }
+    clearConfig()
+    // Re-load defaults
+    const config = getStoredConfig()
+    setEndpoint(config.endpoint)
+    setModel(config.model)
+    setEmbeddingModel(config.embeddingModel || 'nomic-embed-text')
+    setSystemPrompt(config.systemPrompt || '')
+    setTemperature(0.3)
+    setGenerationDepth(5)
+    setNumCtx(16384)
+    setShowResetConfirm(false)
   }
 
   if (!isOpen) return null
@@ -125,6 +130,21 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
             </div>
 
             <div className="settings-field">
+              <label htmlFor="ollama-num-ctx">Context Window Size</label>
+              <input
+                id="ollama-num-ctx"
+                type="number"
+                value={numCtx}
+                onChange={(e) => setNumCtx(parseInt(e.target.value) || 2048)}
+                placeholder="16384"
+                className="api-key-input"
+              />
+              <p className="settings-hint">
+                Context window size (num_ctx) for Ollama. Default: 16384
+              </p>
+            </div>
+
+            <div className="settings-field">
               <label htmlFor="ollama-temperature">
                 Temperature ({temperature})
               </label>
@@ -180,9 +200,15 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         </div>
 
         <div className="settings-footer">
-          <button onClick={handleReset} className="button-secondary">
-            Reset Defaults
-          </button>
+          {showResetConfirm ? (
+            <button onClick={handleReset} className="button-secondary" style={{ borderColor: 'var(--error, #ff4c4c)', color: 'var(--error, #ff4c4c)' }}>
+              Confirm Reset?
+            </button>
+          ) : (
+            <button onClick={() => setShowResetConfirm(true)} className="button-secondary">
+              Reset Defaults
+            </button>
+          )}
           <div>
             <button onClick={onClose} className="button-secondary">
               Cancel

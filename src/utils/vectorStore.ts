@@ -91,27 +91,93 @@ export async function clearVectorStore(): Promise<void> {
 }
 
 export function chunkText(text: string, maxTokens: number = 500): string[] {
-    // Simple heuristic: split by double newlines, then merge up to maxTokens (approx 4 chars per token)
     const maxChars = maxTokens * 4
-    const paragraphs = text.split(/\n\s*\n/)
+    
+    // Check if the text contains Markdown headings
+    const isMarkdown = /^#{1,6}\s+/m.test(text)
+    
+    if (!isMarkdown) {
+        // Simple paragraph-based splitting
+        const paragraphs = text.split(/\n\s*\n/)
+        const chunks: string[] = []
+        let currentChunk = ''
 
-    const chunks: string[] = []
-    let currentChunk = ''
+        for (const p of paragraphs) {
+            if ((currentChunk.length + p.length) > maxChars && currentChunk.length > 0) {
+                chunks.push(currentChunk.trim())
+                currentChunk = p
+            } else {
+                currentChunk += (currentChunk ? '\n\n' : '') + p
+            }
+        }
 
-    for (const p of paragraphs) {
-        if ((currentChunk.length + p.length) > maxChars && currentChunk.length > 0) {
+        if (currentChunk.trim().length > 0) {
             chunks.push(currentChunk.trim())
-            currentChunk = p
+        }
+
+        // fallback if a single chunk is still too big, brute-force split it
+        const finalChunks: string[] = []
+        for (const c of chunks) {
+            if (c.length > maxChars * 1.5) {
+                for (let i = 0; i < c.length; i += maxChars) {
+                    finalChunks.push(c.substring(i, i + maxChars))
+                }
+            } else {
+                finalChunks.push(c)
+            }
+        }
+
+        return finalChunks
+    }
+
+    // Markdown heading-aware chunking
+    // Ensure headings have a blank line before them to guarantee clean paragraph splitting
+    const processedText = text.replace(/([^\n])\n(#{1,6}\s+)/g, '$1\n\n$2')
+    const blocks = processedText.split(/\n\s*\n/)
+    
+    const chunks: string[] = []
+    let currentHeaders: string[] = [] // Tracks current [H1, H2, H3, H4, H5, H6]
+    let currentChunkContent = ''
+
+    const getHeaderContext = () => {
+        const activeHeaders = currentHeaders.filter(Boolean)
+        return activeHeaders.length > 0 ? `Context: ${activeHeaders.join(' > ')}\n\n` : ''
+    }
+
+    for (const block of blocks) {
+        const headingMatch = block.match(/^(#{1,6})\s+(.*)$/m)
+        if (headingMatch) {
+            // Flush current chunk using old header context first
+            if (currentChunkContent.trim().length > 0) {
+                chunks.push(getHeaderContext() + currentChunkContent.trim())
+                currentChunkContent = ''
+            }
+
+            const level = headingMatch[1].length
+            const title = headingMatch[2].trim()
+
+            // Update current headers hierarchy
+            currentHeaders = currentHeaders.slice(0, level - 1)
+            currentHeaders[level - 1] = title
+
+            currentChunkContent = block + '\n\n'
         } else {
-            currentChunk += (currentChunk ? '\n\n' : '') + p
+            const headerContext = getHeaderContext()
+            // Check if adding this block exceeds limit
+            if ((headerContext.length + currentChunkContent.length + block.length) > maxChars && currentChunkContent.trim().length > 0) {
+                chunks.push(headerContext + currentChunkContent.trim())
+                currentChunkContent = block + '\n\n'
+            } else {
+                currentChunkContent += block + '\n\n'
+            }
         }
     }
 
-    if (currentChunk.trim().length > 0) {
-        chunks.push(currentChunk.trim())
+    if (currentChunkContent.trim().length > 0) {
+        chunks.push(getHeaderContext() + currentChunkContent.trim())
     }
 
-    // fallback if a single chunk is still too big, brute-force split it
+    // Brute-force split any remaining chunks that are still too big
     const finalChunks: string[] = []
     for (const c of chunks) {
         if (c.length > maxChars * 1.5) {

@@ -31,6 +31,7 @@ export interface OllamaConfig {
   systemPrompt?: string
   temperature?: number
   generationDepth?: number
+  numCtx?: number
 }
 
 const DEFAULT_ENDPOINT = 'http://127.0.0.1:11434/v1'
@@ -100,7 +101,10 @@ async function callOllama(
         model: config.model,
         messages,
         temperature: finalTemperature,
-        max_tokens: 6000
+        max_tokens: 6000,
+        options: {
+          num_ctx: config.numCtx || 16384
+        }
       })
     })
 
@@ -153,7 +157,10 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: config.embeddingModel || DEFAULT_EMBEDDING_MODEL,
-      prompt: text
+      prompt: text,
+      options: {
+        num_ctx: config.numCtx || 16384
+      }
     })
   })
 
@@ -343,7 +350,8 @@ export function getStoredConfig(): OllamaConfig {
         embeddingModel: parsed.embeddingModel || DEFAULT_EMBEDDING_MODEL,
         systemPrompt: parsed.systemPrompt, // might be undefined, which is fine, fallback to default
         temperature: parsed.temperature !== undefined ? Number(parsed.temperature) : 0.3,
-        generationDepth: parsed.generationDepth !== undefined ? Number(parsed.generationDepth) : 5
+        generationDepth: parsed.generationDepth !== undefined ? Number(parsed.generationDepth) : 5,
+        numCtx: parsed.numCtx !== undefined ? Number(parsed.numCtx) : 16384
       }
     } catch (e) {
       console.error('Failed to parse stored config', e)
@@ -354,7 +362,8 @@ export function getStoredConfig(): OllamaConfig {
     model: DEFAULT_MODEL,
     embeddingModel: DEFAULT_EMBEDDING_MODEL,
     temperature: 0.3,
-    generationDepth: 5
+    generationDepth: 5,
+    numCtx: 16384
   }
 }
 
