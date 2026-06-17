@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
-import { getStoredConfig, storeConfig, clearConfig } from '../utils/aiService'
+import { getStoredConfig, storeConfig, clearConfig, getAvailableModels, testOllamaConnection } from '../utils/aiService'
 import './Settings.css'
 
 interface SettingsProps {
@@ -19,6 +19,22 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const [numCtx, setNumCtx] = useState<number>(16384)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
+  // Diagnostics and Model discovery state
+  const [availableModels, setAvailableModels] = useState<string[]>([])
+  const [isTesting, setIsTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  const fetchModels = async (endpointUrl: string) => {
+    if (!endpointUrl.trim()) return
+    try {
+      const models = await getAvailableModels(endpointUrl.trim())
+      setAvailableModels(models)
+    } catch (err) {
+      console.warn('Failed to fetch available models', err)
+      // Keep existing list or empty it depending on preference, we keep it
+    }
+  }
+
   useEffect(() => {
     if (isOpen) {
       const config = getStoredConfig()
@@ -30,8 +46,33 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setGenerationDepth(config.generationDepth ?? 5)
       setNumCtx(config.numCtx ?? 16384)
       setShowResetConfirm(false)
+      setTestResult(null)
+      fetchModels(config.endpoint)
     }
   }, [isOpen])
+
+  const handleEndpointBlur = () => {
+    fetchModels(endpoint)
+  }
+
+  const handleTestConnection = async () => {
+    setIsTesting(true)
+    setTestResult(null)
+    try {
+      const result = await testOllamaConnection(endpoint, model, embeddingModel)
+      setTestResult(result)
+      if (result.success || result.message.includes('not found')) {
+        await fetchModels(endpoint)
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'Unknown error testing connection'
+      })
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   const handleSave = () => {
     if (endpoint.trim() && model.trim()) {
@@ -63,6 +104,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     setGenerationDepth(5)
     setNumCtx(16384)
     setShowResetConfirm(false)
+    setTestResult(null)
+    fetchModels(config.endpoint)
   }
 
   if (!isOpen) return null
@@ -84,16 +127,36 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               Configure your local Ollama instance for AI-powered error fixing.
             </p>
 
+            {testResult && (
+              <div className={`test-result-alert ${testResult.success ? 'success' : 'error'}`}>
+                <div className="alert-title">
+                  {testResult.success ? '✓ Connection Succeeded' : '✗ Connection Failed'}
+                </div>
+                <div className="alert-message">{testResult.message}</div>
+              </div>
+            )}
+
             <div className="settings-field">
               <label htmlFor="ollama-endpoint">Ollama Endpoint</label>
-              <input
-                id="ollama-endpoint"
-                type="text"
-                value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="http://127.0.0.1:11434/v1"
-                className="api-key-input"
-              />
+              <div className="input-with-button">
+                <input
+                  id="ollama-endpoint"
+                  type="text"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                  onBlur={handleEndpointBlur}
+                  placeholder="http://127.0.0.1:11434/v1"
+                  className="api-key-input"
+                />
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={isTesting}
+                  className="button-secondary test-conn-btn"
+                >
+                  {isTesting ? 'Testing...' : 'Test Connection'}
+                </button>
+              </div>
               <p className="settings-hint">
                 Default: http://127.0.0.1:11434/v1
               </p>
@@ -104,13 +167,19 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               <input
                 id="ollama-model"
                 type="text"
+                list="available-models-list"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="gpt-oss:20b"
                 className="api-key-input"
               />
+              <datalist id="available-models-list">
+                {availableModels.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
               <p className="settings-hint">
-                Default: gpt-oss:20b
+                Default: gpt-oss:20b {availableModels.length > 0 && `(found ${availableModels.length} models locally)`}
               </p>
             </div>
 
@@ -119,11 +188,23 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               <input
                 id="ollama-embedding-model"
                 type="text"
+                list="available-embeddings-list"
                 value={embeddingModel}
                 onChange={(e) => setEmbeddingModel(e.target.value)}
                 placeholder="nomic-embed-text"
                 className="api-key-input"
               />
+              <datalist id="available-embeddings-list">
+                {availableModels.filter(m => m.includes('embed') || m.includes('nomic')).map((m) => (
+                  <option key={m} value={m} />
+                ))}
+                {/* Fallback to show all models if no specific embedding model matches the filter */}
+                {availableModels.length > 0 && !availableModels.some(m => m.includes('embed') || m.includes('nomic')) && 
+                  availableModels.map((m) => (
+                    <option key={m} value={m} />
+                  ))
+                }
+              </datalist>
               <p className="settings-hint">
                 Model used for RAG embeddings. Default: nomic-embed-text
               </p>

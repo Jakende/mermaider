@@ -1,6 +1,6 @@
 [package]
 name = "mermaider"
-version = "1.8.1"
+version = "1.8.2"
 description = "Mermaider - A native macOS Mermaid diagram editor"
 authors = ["Dario Novoa Vergara"]
 license = "CC-BY-NC-SA-4.0"

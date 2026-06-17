@@ -65,6 +65,16 @@ If the request is ambiguous:
 - Do NOT ask questions.`
 
 
+function getBaseUrl(endpoint: string): string {
+  let cleanEndpoint = endpoint.replace(/\/$/, '')
+  try {
+    const url = new URL(cleanEndpoint)
+    return `${url.protocol}//${url.host}`
+  } catch (e) {
+    return cleanEndpoint.replace('/v1', '')
+  }
+}
+
 function getTemperature(preferred: number, config: OllamaConfig): number {
   return config.temperature !== undefined ? config.temperature : preferred;
 }
@@ -110,7 +120,8 @@ async function callOllama(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error?.message || `Ollama API error: ${response.status} ${response.statusText}`)
+      const errText = typeof errorData.error === 'object' ? errorData.error?.message : errorData.error
+      throw new Error(errText || `Ollama API error: ${response.status} ${response.statusText}`)
     }
 
     const data: OllamaResponse = await response.json()
@@ -128,6 +139,9 @@ async function callOllama(
     return content
   } catch (error) {
     if (error instanceof Error) {
+      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
+        throw new Error(`Failed to connect to Ollama. Make sure Ollama is running and your endpoint is correct: ${config.endpoint}`)
+      }
       throw error
     }
     throw new Error('Unknown error occurred while calling Ollama API')
@@ -135,43 +149,134 @@ async function callOllama(
 }
 
 export async function generateEmbedding(text: string, config: OllamaConfig): Promise<number[]> {
-  let endpoint = config.endpoint.replace(/\/$/, '')
-  // For embeddings, Ollama expects /api/embeddings.
-  // The provided config.endpoint is likely http://127.0.0.1:11434/v1
-  // We need to access http://127.0.0.1:11434/api/embeddings
-  // If endpoint is already specifically set for openAI compat, try to extract the base url
-  try {
-    const url = new URL(endpoint)
-    endpoint = `${url.protocol}//${url.host}/api/embeddings`
-  } catch (e) {
-    endpoint = endpoint.replace('/v1', '') + '/api/embeddings'
-  }
-
-  endpoint = endpoint.replace('localhost', '127.0.0.1')
+  const baseUrl = getBaseUrl(config.endpoint).replace('localhost', '127.0.0.1')
+  const endpoint = `${baseUrl}/api/embeddings`
 
   const isTauri = !!(window as any).__TAURI_INTERNALS__
   const customFetch = isTauri ? tauriFetch : fetch
 
-  const response = await customFetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: config.embeddingModel || DEFAULT_EMBEDDING_MODEL,
-      prompt: text,
-      options: {
-        num_ctx: config.numCtx || 16384
+  try {
+    const response = await customFetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: config.embeddingModel || DEFAULT_EMBEDDING_MODEL,
+        prompt: text,
+        options: {
+          num_ctx: config.numCtx || 16384
+        }
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errText = typeof errorData.error === 'object' ? errorData.error?.message : errorData.error
+      throw new Error(errText || `Ollama Embedding API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data.embedding
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
+        throw new Error(`Failed to connect to Ollama. Make sure Ollama is running and your endpoint is correct: ${config.endpoint}`)
+      }
+      throw error
+    }
+    throw new Error('Unknown error occurred while calling Ollama Embedding API')
+  }
+}
+
+export async function getAvailableModels(endpoint: string): Promise<string[]> {
+  const baseUrl = getBaseUrl(endpoint).replace('localhost', '127.0.0.1')
+  const tagsUrl = `${baseUrl}/api/tags`
+
+  const isTauri = !!(window as any).__TAURI_INTERNALS__
+  const customFetch = isTauri ? tauriFetch : fetch
+
+  try {
+    const response = await customFetch(tagsUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
       }
     })
-  })
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.error?.message || `Ollama Embedding API error: ${response.status}`)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errText = typeof errorData.error === 'object' ? errorData.error?.message : errorData.error
+      throw new Error(errText || `Ollama API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (data && Array.isArray(data.models)) {
+      return data.models.map((m: any) => m.name)
+    }
+    return []
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
+        throw new Error(`Failed to connect to Ollama at ${tagsUrl}. Please check if Ollama is running.`)
+      }
+      throw error
+    }
+    throw new Error('Unknown error occurred while fetching Ollama models')
   }
-
-  const data = await response.json()
-  return data.embedding
 }
+
+export async function testOllamaConnection(
+  endpoint: string,
+  model: string,
+  embeddingModel: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const models = await getAvailableModels(endpoint)
+    
+    const cleanModel = model.trim().toLowerCase()
+    const cleanEmbeddingModel = embeddingModel.trim().toLowerCase()
+    
+    const hasModel = models.some(m => {
+      const name = m.toLowerCase()
+      return name === cleanModel || 
+             name === `${cleanModel}:latest` || 
+             cleanModel === `${name}:latest` ||
+             name.split(':')[0] === cleanModel.split(':')[0]
+    })
+    
+    const hasEmbeddingModel = models.some(m => {
+      const name = m.toLowerCase()
+      return name === cleanEmbeddingModel || 
+             name === `${cleanEmbeddingModel}:latest` || 
+             cleanEmbeddingModel === `${name}:latest` ||
+             name.split(':')[0] === cleanEmbeddingModel.split(':')[0]
+    })
+    
+    if (!hasModel) {
+      return {
+        success: false,
+        message: `Ollama is running, but the chat model '${model}' was not found. Please run 'ollama pull ${model}' in your terminal or select a different model.`
+      }
+    }
+    
+    if (!hasEmbeddingModel) {
+      return {
+        success: true,
+        message: `Ollama is running and '${model}' is ready! However, the embedding model '${embeddingModel}' was not found. The chat will work, but the Knowledge Base (RAG) feature might fail. Consider running 'ollama pull ${embeddingModel}'.`
+      }
+    }
+    
+    return {
+      success: true,
+      message: `Success! Connection verified. Both '${model}' and '${embeddingModel}' are installed and ready.`
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown connection error'
+    }
+  }
+}
+
 
 
 export function cleanCode(code: string): string {
