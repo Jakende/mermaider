@@ -97,18 +97,73 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         throw new Error("Missing code argument");
       }
       
-      // Simple format check (basic keywords)
-      const validStarts = ['flowchart', 'graph', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'erDiagram', 'gantt', 'pie', 'requirementDiagram', 'gitGraph', 'C4Context', 'mindmap', 'timeline', 'journey', 'quadrantChart', 'sankey', 'xychart', 'block'];
-      const lines = code.trim().split('\\n');
-      const firstLine = lines[0].trim().split(' ')[0];
-      
-      const isValidStart = validStarts.some(start => firstLine.startsWith(start) || lines.some(l => l.trim().startsWith(start)));
-      
+      // Split properly with \r?\n or fallback to escaped \n
+      let codeStr = code.trim();
+      let lines = codeStr.split(/\r?\n/);
+      if (lines.length === 1 && codeStr.includes('\\n')) {
+        lines = codeStr.split('\\n');
+      }
+
+      // Remove YAML Frontmatter
+      let cleanLines = [...lines];
+      if (cleanLines[0] && cleanLines[0].trim() === '---') {
+        let closingIndex = -1;
+        for (let i = 1; i < cleanLines.length; i++) {
+          if (cleanLines[i].trim() === '---') {
+            closingIndex = i;
+            break;
+          }
+        }
+        if (closingIndex !== -1) {
+          cleanLines = cleanLines.slice(closingIndex + 1);
+        }
+      }
+
+      // Filter empty lines and comments
+      const contentLines = cleanLines
+        .map(l => l.trim())
+        .filter(l => l !== '' && !l.startsWith('%%'));
+
+      const validStarts = [
+        'flowchart', 'graph', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 
+        'erDiagram', 'gantt', 'pie', 'requirementDiagram', 'gitGraph', 
+        'C4Context', 'mindmap', 'timeline', 'journey', 'quadrantChart', 
+        'sankey', 'xychart', 'block'
+      ];
+
+      let isValidStart = false;
+      let detectedKeyword = '';
+
+      if (contentLines.length > 0) {
+        const firstLine = contentLines[0];
+        const firstWord = firstLine.split(/\s+/)[0];
+        isValidStart = validStarts.some(start => {
+          if (firstWord.startsWith(start)) {
+            detectedKeyword = start;
+            return true;
+          }
+          return false;
+        });
+
+        // Fallback: search in subsequent lines if first line is metadata or something else
+        if (!isValidStart) {
+          for (const line of contentLines) {
+            const word = line.split(/\s+/)[0];
+            const found = validStarts.find(start => word.startsWith(start));
+            if (found) {
+              isValidStart = true;
+              detectedKeyword = found;
+              break;
+            }
+          }
+        }
+      }
+
       if (!isValidStart) {
         return {
           content: [{
             type: "text",
-            text: `Validation failed: The code does not start with a recognized Mermaid diagram keyword (e.g. ${validStarts.slice(0, 5).join(', ')}...).`
+            text: `Validierung fehlgeschlagen: Der Code beginnt nicht mit einem erkannten Mermaid-Diagramm-Schlüsselwort (z. B. ${validStarts.slice(0, 5).join(', ')}...).`
           }],
           isError: true,
         };
@@ -117,7 +172,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return {
         content: [{
           type: "text",
-          text: "Validation passed: Syntax contains valid Mermaid entrypoints. The code can be rendered in the Mermaider application."
+          text: `Validierung erfolgreich: Gültiges Mermaid-Diagramm-Schlüsselwort '${detectedKeyword}' gefunden.`
         }]
       };
     }

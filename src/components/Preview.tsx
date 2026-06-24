@@ -302,13 +302,14 @@ export default function Preview({
           }
         }
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Invalid Mermaid syntax'
+        const errorMsg = err instanceof Error ? err.message : 'Ungültige Mermaid-Syntax'
         setError(errorMsg)
         const errorDivs = document.querySelectorAll('[id^="dmermaid-"], #dmermaid');
         errorDivs.forEach(div => div.remove());
         if (renderIdRef.current === currentId && container) {
           container.innerHTML = `<div class="error-preview">
-            <h3>Syntax Error</h3>
+            <h3>Syntaxfehler im Diagramm</h3>
+            <p style="margin: 8px 0; font-size: 0.9em; color: var(--text-secondary, #888);">Tipp: Verwende die <strong>[AI Fix]</strong> Schaltfläche im Chat-Panel, um den Fehler automatisch beheben zu lassen.</p>
             <pre>${errorMsg}</pre>
           </div>`
         }

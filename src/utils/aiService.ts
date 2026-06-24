@@ -140,11 +140,11 @@ async function callOllama(
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Failed to connect to Ollama. Make sure Ollama is running and your endpoint is correct: ${config.endpoint}`)
+        throw new Error(`Verbindung zu Ollama fehlgeschlagen. Bitte stelle sicher, dass Ollama im Hintergrund läuft (z. B. durch Ausführen des Befehls 'ollama serve' im Terminal oder Starten der Ollama Desktop-Anwendung) und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
       }
       throw error
     }
-    throw new Error('Unknown error occurred while calling Ollama API')
+    throw new Error('Ein unbekannter Fehler ist bei der Kommunikation mit der Ollama API aufgetreten.')
   }
 }
 
@@ -179,11 +179,11 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Failed to connect to Ollama. Make sure Ollama is running and your endpoint is correct: ${config.endpoint}`)
+        throw new Error(`Verbindung zu Ollama für Embeddings fehlgeschlagen. Bitte stelle sicher, dass Ollama läuft und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
       }
       throw error
     }
-    throw new Error('Unknown error occurred while calling Ollama Embedding API')
+    throw new Error('Ein unbekannter Fehler ist bei der Kommunikation mit der Ollama Embedding API aufgetreten.')
   }
 }
 
@@ -216,11 +216,11 @@ export async function getAvailableModels(endpoint: string): Promise<string[]> {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Failed to connect to Ollama at ${tagsUrl}. Please check if Ollama is running.`)
+        throw new Error(`Verbindung zu Ollama unter '${tagsUrl}' fehlgeschlagen. Bitte überprüfe, ob die Ollama Desktop-Anwendung läuft oder führe 'ollama serve' im Terminal aus.`)
       }
       throw error
     }
-    throw new Error('Unknown error occurred while fetching Ollama models')
+    throw new Error('Ein unbekannter Fehler ist beim Abrufen der installierten Ollama-Modelle aufgetreten.')
   }
 }
 
@@ -254,25 +254,25 @@ export async function testOllamaConnection(
     if (!hasModel) {
       return {
         success: false,
-        message: `Ollama is running, but the chat model '${model}' was not found. Please run 'ollama pull ${model}' in your terminal or select a different model.`
+        message: `Ollama läuft, aber das Chat-Modell '${model}' wurde lokal nicht gefunden. Bitte führe 'ollama pull ${model}' in deinem Terminal aus oder wähle ein anderes Modell in den Einstellungen.`
       }
     }
     
     if (!hasEmbeddingModel) {
       return {
         success: true,
-        message: `Ollama is running and '${model}' is ready! However, the embedding model '${embeddingModel}' was not found. The chat will work, but the Knowledge Base (RAG) feature might fail. Consider running 'ollama pull ${embeddingModel}'.`
+        message: `Ollama läuft und das Modell '${model}' ist bereit! Das Embedding-Modell '${embeddingModel}' wurde jedoch nicht gefunden. Der Chat funktioniert, aber die Wissensdatenbank (RAG) könnte fehlschlagen. Du kannst es mit 'ollama pull ${embeddingModel}' herunterladen.`
       }
     }
     
     return {
       success: true,
-      message: `Success! Connection verified. Both '${model}' and '${embeddingModel}' are installed and ready.`
+      message: `Erfolg! Verbindung verifiziert. Sowohl '${model}' als auch '${embeddingModel}' sind installiert und betriebsbereit.`
     }
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown connection error'
+      message: error instanceof Error ? error.message : 'Unbekannter Verbindungsfehler'
     }
   }
 }
