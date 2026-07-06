@@ -66,7 +66,7 @@ loader.init().then((monaco) => {
 
   // Register Color Provider
   monaco.languages.registerColorProvider(languageId, {
-    provideDocumentColors(model) {
+    provideDocumentColors(model: any) {
       if (model.getLanguageId() !== languageId) return []
 
       const text = model.getValue()
@@ -101,7 +101,7 @@ loader.init().then((monaco) => {
       }
       return colors
     },
-    provideColorPresentations(_model, colorInfo) {
+    provideColorPresentations(_model: any, colorInfo: any) {
       const { red, green, blue } = colorInfo.color
       const r = Math.round(red * 255).toString(16).padStart(2, '0')
       const g = Math.round(green * 255).toString(16).padStart(2, '0')
