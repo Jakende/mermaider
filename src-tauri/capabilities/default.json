@@ -8,5 +8,17 @@
   "permissions": [
     "core:default",
     "http:default"
-  ]
+  ],
+  "scope": {
+    "http": [
+      {
+        "url": "http://**",
+        "allow": true
+      },
+      {
+        "url": "https://**",
+        "allow": true
+      }
+    ]
+  }
 }

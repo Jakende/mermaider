@@ -140,7 +140,7 @@ async function callOllama(
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama fehlgeschlagen. Bitte stelle sicher, dass Ollama im Hintergrund läuft (z. B. durch Ausführen des Befehls 'ollama serve' im Terminal oder Starten der Ollama Desktop-Anwendung) und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
+        throw new Error(`Verbindung zu Ollama fehlgeschlagen (${error.message}). Bitte stelle sicher, dass Ollama im Hintergrund läuft (z. B. durch Ausführen des Befehls 'ollama serve' im Terminal oder Starten der Ollama Desktop-Anwendung) und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
       }
       throw error
     }
@@ -179,7 +179,7 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama für Embeddings fehlgeschlagen. Bitte stelle sicher, dass Ollama läuft und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
+        throw new Error(`Verbindung zu Ollama für Embeddings fehlgeschlagen (${error.message}). Bitte stelle sicher, dass Ollama läuft und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
       }
       throw error
     }
@@ -216,7 +216,7 @@ export async function getAvailableModels(endpoint: string): Promise<string[]> {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama unter '${tagsUrl}' fehlgeschlagen. Bitte überprüfe, ob die Ollama Desktop-Anwendung läuft oder führe 'ollama serve' im Terminal aus.`)
+        throw new Error(`Verbindung zu Ollama unter '${tagsUrl}' fehlgeschlagen (${error.message}). Bitte überprüfe, ob die Ollama Desktop-Anwendung läuft oder führe 'ollama serve' im Terminal aus.`)
       }
       throw error
     }
