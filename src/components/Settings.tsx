@@ -17,6 +17,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const [temperature, setTemperature] = useState<number>(0.3)
   const [generationDepth, setGenerationDepth] = useState<number>(5)
   const [numCtx, setNumCtx] = useState<number>(16384)
+  const [autoAIFix, setAutoAIFix] = useState<boolean>(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   // Diagnostics and Model discovery state
@@ -45,6 +46,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setTemperature(config.temperature ?? 0.3)
       setGenerationDepth(config.generationDepth ?? 5)
       setNumCtx(config.numCtx ?? 16384)
+      setAutoAIFix(config.autoAIFix ?? false)
       setShowResetConfirm(false)
       setTestResult(null)
       fetchModels(config.endpoint)
@@ -83,7 +85,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         systemPrompt: systemPrompt.trim(),
         temperature,
         generationDepth,
-        numCtx
+        numCtx,
+        autoAIFix
       })
       alert('Settings saved successfully!')
       onClose()
@@ -103,6 +106,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     setTemperature(0.3)
     setGenerationDepth(5)
     setNumCtx(16384)
+    setAutoAIFix(false)
     setShowResetConfirm(false)
     setTestResult(null)
     fetchModels(config.endpoint)
@@ -223,6 +227,24 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               <p className="settings-hint">
                 Context window size (num_ctx) for Ollama. Default: 16384
               </p>
+            </div>
+
+            <div className="settings-field" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <label htmlFor="ollama-auto-fix" style={{ cursor: 'pointer', marginBottom: 0 }}>
+                  Auto AI Fix Syntax Errors
+                </label>
+                <p className="settings-hint" style={{ marginTop: '2px' }}>
+                  Automatically trigger AI Fix whenever a diagram code syntax error occurs.
+                </p>
+              </div>
+              <input
+                id="ollama-auto-fix"
+                type="checkbox"
+                checked={autoAIFix}
+                onChange={(e) => setAutoAIFix(e.target.checked)}
+                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+              />
             </div>
 
             <div className="settings-field">

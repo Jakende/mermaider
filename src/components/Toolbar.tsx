@@ -27,6 +27,7 @@ export interface ToolbarRef {
   handleSave: () => void
   handleSettings: () => void
   handleHelp: () => void
+  handleAIFix: () => Promise<void>
 }
 
 const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab }, ref) => {
@@ -582,6 +583,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     handleSave: () => setShowExport(true),
     handleSettings: () => setShowSettings(true),
     handleHelp: () => setShowHelp(true),
+    handleAIFix,
   }))
 
   return (

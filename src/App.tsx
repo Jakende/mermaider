@@ -8,6 +8,7 @@ import TabBar from './components/TabBar'
 import ResizableSplitter from './components/ResizableSplitter'
 import NewDiagramModal from './components/NewDiagramModal'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
+import { getStoredConfig } from './utils/aiService'
 import type { Tab, ChatSession } from './types'
 import './App.css'
 
@@ -62,6 +63,24 @@ function AppContent() {
   const toolbarRef = useRef<ToolbarRef>(null)
   const chatPanelRef = useRef<ChatPanelRef>(null)
   const appContentRef = useRef<HTMLDivElement>(null)
+
+  // Auto AI Fix when syntax error occurs and autoAIFix toggle is enabled
+  const isAutoFixingRef = useRef(false)
+  useEffect(() => {
+    if (!error) {
+      isAutoFixingRef.current = false
+      return
+    }
+
+    const config = getStoredConfig()
+    if (config.autoAIFix && !isAutoFixingRef.current) {
+      isAutoFixingRef.current = true
+      const timer = setTimeout(() => {
+        toolbarRef.current?.handleAIFix()
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [error])
 
   const setCode = (newCode: string) => {
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode } : t))

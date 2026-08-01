@@ -32,6 +32,7 @@ export interface OllamaConfig {
   temperature?: number
   generationDepth?: number
   numCtx?: number
+  autoAIFix?: boolean
 }
 
 const DEFAULT_ENDPOINT = 'http://127.0.0.1:11434/v1'
@@ -501,7 +502,8 @@ export function getStoredConfig(): OllamaConfig {
         systemPrompt: parsed.systemPrompt, // might be undefined, which is fine, fallback to default
         temperature: parsed.temperature !== undefined ? Number(parsed.temperature) : 0.3,
         generationDepth: parsed.generationDepth !== undefined ? Number(parsed.generationDepth) : 5,
-        numCtx: parsed.numCtx !== undefined ? Number(parsed.numCtx) : 16384
+        numCtx: parsed.numCtx !== undefined ? Number(parsed.numCtx) : 16384,
+        autoAIFix: parsed.autoAIFix !== undefined ? Boolean(parsed.autoAIFix) : false
       }
     } catch (e) {
       console.error('Failed to parse stored config', e)
@@ -513,7 +515,8 @@ export function getStoredConfig(): OllamaConfig {
     embeddingModel: DEFAULT_EMBEDDING_MODEL,
     temperature: 0.3,
     generationDepth: 5,
-    numCtx: 16384
+    numCtx: 16384,
+    autoAIFix: false
   }
 }
 
