@@ -192,20 +192,37 @@ export async function getAvailableModels(endpoint: string): Promise<string[]> {
   const tagsUrl = `${baseUrl}/api/tags`
 
   const isTauri = !!(window as any).__TAURI_INTERNALS__
-  const customFetch = isTauri ? tauriFetch : fetch
+
+  async function performFetch(url: string) {
+    if (isTauri) {
+      try {
+        return await tauriFetch(url, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        })
+      } catch (tauriErr) {
+        // Fallback to native window.fetch if tauriFetch fails (e.g. plugin IPC issues)
+        console.warn('tauriFetch failed in getAvailableModels, falling back to window.fetch:', tauriErr)
+        return await fetch(url, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        })
+      }
+    } else {
+      return await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      })
+    }
+  }
 
   try {
-    const response = await customFetch(tagsUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    })
+    const response = await performFetch(tagsUrl)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       const errText = typeof errorData.error === 'object' ? errorData.error?.message : errorData.error
-      throw new Error(errText || `Ollama API error: ${response.status}`)
+      throw new Error(errText || `Ollama API HTTP Fehler: ${response.status}`)
     }
 
     const data = await response.json()
@@ -213,14 +230,21 @@ export async function getAvailableModels(endpoint: string): Promise<string[]> {
       return data.models.map((m: any) => m.name)
     }
     return []
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama unter '${tagsUrl}' fehlgeschlagen (${error.message}). Bitte überprüfe, ob die Ollama Desktop-Anwendung läuft oder führe 'ollama serve' im Terminal aus.`)
-      }
-      throw error
+  } catch (error: any) {
+    const errMsg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Unbekannter Fehler'
+    
+    if (
+      errMsg.includes('fetch') || 
+      errMsg.includes('NetworkError') || 
+      errMsg.includes('Failed to fetch') || 
+      errMsg.includes('Connection refused') ||
+      errMsg.includes('plugin:http') ||
+      errMsg.includes('grant')
+    ) {
+      throw new Error(`Verbindung zu Ollama unter '${tagsUrl}' fehlgeschlagen (${errMsg}). Bitte überprüfe, ob die Ollama Desktop-Anwendung läuft oder führe 'ollama serve' im Terminal aus.`)
     }
-    throw new Error('Ein unbekannter Fehler ist beim Abrufen der installierten Ollama-Modelle aufgetreten.')
+    
+    throw new Error(`Fehler beim Abrufen der Ollama-Modelle: ${errMsg}`)
   }
 }
 

@@ -12,6 +12,26 @@
   "scope": {
     "http": [
       {
+        "url": "http://127.0.0.1:*",
+        "allow": true
+      },
+      {
+        "url": "http://127.0.0.1:**",
+        "allow": true
+      },
+      {
+        "url": "http://localhost:*",
+        "allow": true
+      },
+      {
+        "url": "http://localhost:**",
+        "allow": true
+      },
+      {
+        "url": "http://[::1]:*",
+        "allow": true
+      },
+      {
         "url": "http://**",
         "allow": true
       },
