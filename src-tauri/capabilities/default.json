@@ -8,7 +8,9 @@
   "permissions": [
     "core:default",
     "http:default",
-    "http:allow-all"
+    "http:allow-fetch",
+    "http:allow-fetch-send",
+    "http:allow-fetch-read-body"
   ],
   "scope": {
     "http": [
