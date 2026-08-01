@@ -79,6 +79,20 @@ function getTemperature(preferred: number, config: OllamaConfig): number {
   return config.temperature !== undefined ? config.temperature : preferred;
 }
 
+async function performFetch(url: string, options: RequestInit) {
+  const isTauri = !!(window as any).__TAURI_INTERNALS__
+  if (isTauri) {
+    try {
+      return await tauriFetch(url, options as any)
+    } catch (tauriErr) {
+      console.warn('tauriFetch failed, falling back to window.fetch:', tauriErr)
+      return await fetch(url, options)
+    }
+  } else {
+    return await fetch(url, options)
+  }
+}
+
 async function callOllama(
   messages: OllamaMessage[],
   config: OllamaConfig,
@@ -100,9 +114,7 @@ async function callOllama(
   endpoint = endpoint.replace('localhost', '127.0.0.1')
 
   try {
-    const isTauri = !!(window as any).__TAURI_INTERNALS__
-    const customFetch = isTauri ? tauriFetch : fetch
-    const response = await customFetch(endpoint, {
+    const response = await performFetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -137,14 +149,20 @@ async function callOllama(
     }
 
     return content
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama fehlgeschlagen (${error.message}). Bitte stelle sicher, dass Ollama im Hintergrund läuft (z. B. durch Ausführen des Befehls 'ollama serve' im Terminal oder Starten der Ollama Desktop-Anwendung) und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
-      }
-      throw error
+  } catch (error: any) {
+    const errMsg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Unbekannter Fehler'
+
+    if (
+      errMsg.includes('fetch') || 
+      errMsg.includes('NetworkError') || 
+      errMsg.includes('Failed to fetch') || 
+      errMsg.includes('Connection refused') ||
+      errMsg.includes('plugin:http') ||
+      errMsg.includes('grant')
+    ) {
+      throw new Error(`Verbindung zu Ollama fehlgeschlagen (${errMsg}). Bitte stelle sicher, dass Ollama im Hintergrund läuft (z. B. durch Ausführen des Befehls 'ollama serve' im Terminal oder Starten der Ollama Desktop-Anwendung) und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
     }
-    throw new Error('Ein unbekannter Fehler ist bei der Kommunikation mit der Ollama API aufgetreten.')
+    throw new Error(`Ollama API Kommunikation fehlgeschlagen: ${errMsg}`)
   }
 }
 
@@ -152,11 +170,8 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
   const baseUrl = getBaseUrl(config.endpoint).replace('localhost', '127.0.0.1')
   const endpoint = `${baseUrl}/api/embeddings`
 
-  const isTauri = !!(window as any).__TAURI_INTERNALS__
-  const customFetch = isTauri ? tauriFetch : fetch
-
   try {
-    const response = await customFetch(endpoint, {
+    const response = await performFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -176,14 +191,20 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
 
     const data = await response.json()
     return data.embedding
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch') || error.message.includes('Connection refused')) {
-        throw new Error(`Verbindung zu Ollama für Embeddings fehlgeschlagen (${error.message}). Bitte stelle sicher, dass Ollama läuft und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
-      }
-      throw error
+  } catch (error: any) {
+    const errMsg = error?.message || (typeof error === 'string' ? error : JSON.stringify(error)) || 'Unbekannter Fehler'
+
+    if (
+      errMsg.includes('fetch') || 
+      errMsg.includes('NetworkError') || 
+      errMsg.includes('Failed to fetch') || 
+      errMsg.includes('Connection refused') ||
+      errMsg.includes('plugin:http') ||
+      errMsg.includes('grant')
+    ) {
+      throw new Error(`Verbindung zu Ollama für Embeddings fehlgeschlagen (${errMsg}). Bitte stelle sicher, dass Ollama läuft und dein Endpunkt korrekt konfiguriert ist: ${config.endpoint}`)
     }
-    throw new Error('Ein unbekannter Fehler ist bei der Kommunikation mit der Ollama Embedding API aufgetreten.')
+    throw new Error(`Ollama Embedding Kommunikation fehlgeschlagen: ${errMsg}`)
   }
 }
 
