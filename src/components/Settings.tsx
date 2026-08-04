@@ -65,7 +65,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const [temperature, setTemperature] = useState<number>(0.3)
   const [generationDepth, setGenerationDepth] = useState<number>(5)
   const [autoAIFix, setAutoAIFix] = useState<boolean>(false)
-  const [openaiWebSearch, setOpenaiWebSearch] = useState<boolean>(false)
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -107,7 +106,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setTemperature(config.temperature ?? 0.3)
       setGenerationDepth(config.generationDepth ?? 5)
       setAutoAIFix(config.autoAIFix ?? false)
-      setOpenaiWebSearch(config.openaiWebSearch ?? false)
 
       setShowResetConfirm(false)
       setTestResult(null)
@@ -279,7 +277,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     generationDepth,
     numCtx,
     autoAIFix,
-    openaiWebSearch,
+    // This preference lives in Chat; preserve it when saving other settings.
+    openaiWebSearch: getStoredConfig().openaiWebSearch ?? false,
     provider,
     embeddingProvider,
     openaiEndpoint,
@@ -330,7 +329,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     setTemperature(0.3)
     setGenerationDepth(5)
     setAutoAIFix(false)
-    setOpenaiWebSearch(false)
     setShowResetConfirm(false)
     setTestResult(null)
     setDeviceFlowState('idle')
@@ -719,24 +717,6 @@ Login with OpenAI Account
                   </div>
                 )}
                 <p className="settings-hint">The picker contains every model returned by the Codex catalog. You can still type a compatible model name manually.</p>
-              </div>
-
-              <div className="settings-field" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <label htmlFor="openai-web-search" style={{ cursor: 'pointer', marginBottom: 0 }}>
-                    Enable web search
-                  </label>
-                  <p className="settings-hint" style={{ marginTop: '2px' }}>
-                    Lets supported OpenAI/Codex models search the web for current information. OpenAI API-key requests use the Responses API while enabled.
-                  </p>
-                </div>
-                <input
-                  id="openai-web-search"
-                  type="checkbox"
-                  checked={openaiWebSearch}
-                  onChange={(e) => setOpenaiWebSearch(e.target.checked)}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                />
               </div>
 
               {/* ── Embedding Provider ── */}

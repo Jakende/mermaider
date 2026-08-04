@@ -1258,6 +1258,7 @@ export function storeConfig(config: OllamaConfig): void {
   const { openaiApiKey, openaiAccessToken, openaiRefreshToken, openaiIdToken, ...safeConfig } = config
   void openaiApiKey; void openaiAccessToken; void openaiRefreshToken; void openaiIdToken
   localStorage.setItem('ollama-config', JSON.stringify(safeConfig))
+  window.dispatchEvent(new Event('ai-config-changed'))
 }
 
 export function clearConfig(): void {
@@ -1266,6 +1267,7 @@ export function clearConfig(): void {
     void invoke('clear_openai_secrets').catch(error => console.error('Failed to clear OpenAI credentials securely', error))
   }
   localStorage.removeItem('ollama-config')
+  window.dispatchEvent(new Event('ai-config-changed'))
 }
 
 export async function askAboutCodeWithAI(

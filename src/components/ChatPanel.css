@@ -303,6 +303,38 @@
     background-color: var(--surface);
 }
 
+.chat-context-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    min-height: 24px;
+    margin-bottom: var(--space-2);
+    padding: 0 var(--space-4);
+    background-color: var(--surface);
+}
+
+.chat-context-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.chat-context-control input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    flex: 0 0 14px;
+    accent-color: var(--ink);
+    cursor: pointer;
+}
+
 .mode-btn {
     flex: 1;
     background: var(--surface);

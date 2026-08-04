@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, cleanCode, generateEmbedding } from '../utils/aiService'
+import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, getStoredConfigWithSecrets, storeConfig, cleanCode, generateEmbedding } from '../utils/aiService'
 import { searchSimilar } from '../utils/vectorStore'
 import './ChatPanel.css'
 
@@ -50,6 +50,8 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
     const [editingIndex, setEditingIndex] = useState<number | null>(null)
     const [editInput, setEditInput] = useState('')
     const [useKnowledgeBase, setUseKnowledgeBase] = useState(true)
+    const [isOpenAIProvider, setIsOpenAIProvider] = useState(() => getStoredConfig().provider === 'openai')
+    const [useWebSearch, setUseWebSearch] = useState(() => getStoredConfig().openaiWebSearch ?? false)
 
     // Pop-out state
     const [position, setPosition] = useState({ x: 20, y: 50 })
@@ -86,13 +88,36 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
         scrollToBottom()
     }, [messages])
 
+    // Settings can be changed while Chat remains open, so react to the
+    // same-window event emitted after the configuration is saved.
+    useEffect(() => {
+        if (!isOpen) return
+        const refreshProviderControls = () => {
+            const config = getStoredConfig()
+            setIsOpenAIProvider(config.provider === 'openai')
+            setUseWebSearch(config.openaiWebSearch ?? false)
+        }
+        refreshProviderControls()
+        window.addEventListener('ai-config-changed', refreshProviderControls)
+        return () => window.removeEventListener('ai-config-changed', refreshProviderControls)
+    }, [isOpen])
+
+    const handleWebSearchChange = (enabled: boolean) => {
+        setUseWebSearch(enabled)
+        // Load secrets before writing so changing this non-secret preference
+        // never overwrites credentials held in the OS keychain.
+        void getStoredConfigWithSecrets()
+            .then(config => storeConfig({ ...config, openaiWebSearch: enabled }))
+            .catch(error => console.error('Failed to save web search preference', error))
+    }
+
     // Calculate approx tokens (char count / 4)
     const totalTokens = messages.reduce((acc, m) => acc + m.content.length, 0) / 4 + (input.length / 4)
 
     const processMessage = async (userMessage: string, contextCode: string, currentMode: 'edit' | 'ask') => {
         setIsLoading(true)
         try {
-            const config = getStoredConfig()
+            const config = { ...getStoredConfig(), openaiWebSearch: isOpenAIProvider && useWebSearch }
 
             let enhancedContext = contextCode
             if (useKnowledgeBase && currentMode === 'ask') {
@@ -407,14 +432,27 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                         </button>
                     </div>
 
-                    <div style={{ padding: '0 12px', marginBottom: '8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <input
-                            type="checkbox"
-                            id="use-kb-checkbox"
-                            checked={useKnowledgeBase}
-                            onChange={(e) => setUseKnowledgeBase(e.target.checked)}
-                        />
-                        <label htmlFor="use-kb-checkbox" style={{ color: 'var(--muted)', cursor: 'pointer' }}>Use Local Knowledge Base</label>
+                    <div className="chat-context-controls">
+                        <label className="chat-context-control" htmlFor="use-kb-checkbox">
+                            <input
+                                type="checkbox"
+                                id="use-kb-checkbox"
+                                checked={useKnowledgeBase}
+                                onChange={(e) => setUseKnowledgeBase(e.target.checked)}
+                            />
+                            <span>Use Local Knowledge Base</span>
+                        </label>
+                        {isOpenAIProvider && (
+                            <label className="chat-context-control" htmlFor="use-web-search-checkbox">
+                                <input
+                                    type="checkbox"
+                                    id="use-web-search-checkbox"
+                                    checked={useWebSearch}
+                                    onChange={(e) => handleWebSearchChange(e.target.checked)}
+                                />
+                                <span>Use OpenAI Web Search</span>
+                            </label>
+                        )}
                     </div>
 
                     <form className="chat-input-form" onSubmit={handleSubmit}>
