@@ -6,8 +6,10 @@ Mermaider is a privacy-first, open-source live AI Mermaid editor that puts power
 
 Mermaider is designed for developers and technical teams who value privacy, speed, and intelligence in their documentation workflow.
 
-- **Local AI Intelligence**: Leverages Ollama to run large language models locally on your machine. All AI-driven diagram generation, fixing, and analysis happen on your hardware, ensuring your data never leaves your system.
-- **Privacy-First Architecture**: No cloud accounts, no subscriptions, and no tracking. Your diagrams and AI interactions are stored locally in your browser's storage or your filesystem.
+- **Provider Choice**: Use Ollama locally by default, or connect the desktop app to OpenAI/Codex with an API key, access token, or Device Code browser login.
+- **Local AI Intelligence**: Ollama runs large language models locally on your machine. All diagram generation, fixing, and analysis can remain on your hardware.
+- **Privacy-First Architecture**: Ollama requires no cloud account, subscription, or tracking. Diagrams, chat history, and knowledge-base data stay local. OpenAI is optional and sends prompts to OpenAI only when selected.
+- **Secure Desktop Credentials**: In native builds, OpenAI API keys and OAuth tokens are stored in the operating system credential store (macOS Keychain, Windows Credential Manager, or the Linux keyring), rather than browser local storage.
 - **Conversational Diagramming**: An integrated AI chat panel allows you to describe changes in natural language, ask questions about your architecture, or generate complex diagrams from simple prompts.
 - **Automated Syntax Fixing**: Real-time syntax validation combined with AI-powered fixing ensures that your diagrams always render correctly. If you have a broken diagram, the AI can analyze and repair it instantly.
 - **Advanced Data Conversion**: Import raw JSON data and let Mermaider's AI automatically transform it into structured Mermaid flowcharts or relationship diagrams.
@@ -22,7 +24,10 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - JSON to Mermaid: Convert structured data into visual representations using AI.
 - Code Extraction: Automatically detects and extracts Mermaid code blocks from Markdown files.
 - Local Knowledge Base (RAG): Index your unstructured text locally to generate context-aware diagrams or detailed AI Reports with source tracking.
-- Custom AI Settings: Control AI temperature, generation depth/complexity, and select custom models for chat and embeddings directly from the settings panel.
+- **Custom AI Settings**: Select Ollama or OpenAI, configure endpoints, authentication, temperature, generation depth/complexity, and custom chat and embedding models.
+- **OpenAI/Codex Login**: On desktop, authenticate an OpenAI/Codex account through Device Code / Browser login, paste an access token, or use an OpenAI API key. Account-provided Codex models can be loaded from Settings; compatible custom model names may also be entered manually. OpenAI embeddings for RAG require an API key; Codex OAuth users can keep Ollama embeddings.
+- **Provider-Aware AI Output**: Ollama retains its existing Mermaid prompt and workflow. OpenAI/Codex uses the same core Mermaid rules with transport-safe output handling that prevents response markers, YAML front matter, and duplicated diagrams from being inserted into the editor.
+- **Auto AI Fix**: Optionally run AI syntax repair automatically whenever Mermaid reports a parsing error.
 - MCP Server Integration: Exposes Mermaider's curated diagram templates and code validation logic to external AI assistants (like Claude Desktop) via the Model Context Protocol (`npm run mcp`).
 
 ### Professional Editing
@@ -31,6 +36,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - Syntax Validation: Instant feedback on Mermaid syntax errors.
 - Multiple Themes: Support for Slate, Earth, Cosmic, Sage, and Royal Mermaid themes.
 - Dark/Light Mode: Application-wide theme support.
+- Multiline AI Chat: The chat composer and edited messages expand with their content. Press `Enter` for a line break and `Cmd/Ctrl+Enter` to send.
 
 ### File and Data Management
 - Import Support: Open .mmd, .txt, .md, and .json files.
@@ -48,7 +54,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 Visit [mermaider.com](https://mermaider.com) to start creating diagrams immediately. No installation or sign-up is required.
 
 ### Desktop Application
-1. Download the latest version from the [GitHub Releases](https://github.com/highvoltag3/mermaider/releases) page.
+1. Download the latest version from the [GitHub Releases](https://github.com/Jakende/mermaider/releases) page.
 2. For Windows: Run the NSIS installer.
 3. For macOS: Open the DMG file and move Mermaider to your Applications folder.
 
@@ -108,22 +114,14 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-### Pushing and Creating Releases
-To push changes and create a new release on GitHub:
+### Creating Releases
+Use the release helper to synchronize versions, validate the build, commit, tag, and push a release:
 
-1. **Commit and Push Changes**:
-   ```bash
-   git add .
-   git commit -m "Your descriptive commit message"
-   git push origin main
-   ```
+```bash
+node .agents/skills/auto-release/scripts/release.cjs patch
+```
 
-2. **Create a Release Draft** (requires [GitHub CLI](https://cli.github.com/)):
-   ```bash
-   # Create a release draft with a tag
-   gh release create v1.5.0 --draft --title "v1.5.0" --notes "Release notes summary here"
-   ```
-   *If you don't have the GitHub CLI, you can create a release manually via the GitHub web interface.*
+Replace `patch` with `minor`, `major`, or an explicit version such as `1.9.0`. The helper runs `cargo check` and `npm run build`, creates a `chore: release vX.Y.Z` commit and tag, and pushes both to GitHub Actions.
 
 ## License
 
