@@ -37,6 +37,8 @@ export interface OllamaConfig {
   generationDepth?: number
   numCtx?: number
   autoAIFix?: boolean
+  /** Enables OpenAI's built-in web_search tool for OpenAI/Codex requests. */
+  openaiWebSearch?: boolean
   // Provider selection (defaults to 'ollama' when missing)
   provider?: 'ollama' | 'openai'
   // Independent embedding provider — allows mixing e.g. OpenAI chat + Ollama embeddings
@@ -334,6 +336,7 @@ async function callOpenAICodex(
       input,
       stream: true,
       store: false,
+      ...(config.openaiWebSearch ? { tools: [{ type: 'web_search' }] } : {}),
     }),
   })
 
@@ -392,6 +395,67 @@ async function callOpenAICodex(
   }
   if (!result.trim()) throw new Error('Codex API returned no text output.')
   return result.trim()
+}
+
+function getResponsesOutput(data: any): string {
+  if (typeof data.output_text === 'string' && data.output_text.trim()) return data.output_text.trim()
+
+  const text = (data.output || []).flatMap((item: any) => item.content || [])
+    .map((part: any) => part.text || part.value || '')
+    .filter((part: unknown): part is string => typeof part === 'string')
+    .join('')
+    .trim()
+  if (!text) throw new Error('OpenAI Responses API returned no text output.')
+  return text
+}
+
+/** The web_search tool is available through OpenAI's Responses API, rather
+ * than Chat Completions. Keep the existing Chat Completions path untouched
+ * when search is disabled. */
+async function callOpenAIWithWebSearch(
+  messages: OllamaMessage[],
+  config: OllamaConfig,
+  temperature: number = 0.3
+): Promise<string> {
+  const authHeader = getOpenAIAuthHeader(config)
+  if (!authHeader) throw new Error('OpenAI authentication is not configured.')
+
+  const model = config.openaiModel || DEFAULT_OPENAI_MODEL
+  if (!model) throw new Error('No OpenAI model is selected. Load the available models and choose one in Settings.')
+
+  const endpoint = `${(config.openaiEndpoint || DEFAULT_OPENAI_ENDPOINT).replace(/\/$/, '')}/responses`
+  const isReasoningModel = /^o\d/.test(model)
+  const instructions = messages.filter(message => message.role === 'system').map(message => message.content).join('\n\n')
+  const input = messages.filter(message => message.role !== 'system').map(message => ({
+    role: message.role,
+    content: [{ type: 'input_text', text: message.content }],
+  }))
+  const body: Record<string, any> = {
+    model,
+    instructions,
+    input,
+    tools: [{ type: 'web_search' }],
+    max_output_tokens: 6000,
+  }
+  if (!isReasoningModel) body.temperature = getTemperature(temperature, config)
+
+  try {
+    const response = await performFetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+      body: JSON.stringify(body),
+    })
+    const raw = await response.text()
+    if (!response.ok) {
+      let detail = raw
+      try { detail = JSON.parse(raw).error?.message || raw } catch { /* use raw body */ }
+      throw new Error(`OpenAI Responses API error: ${detail}`)
+    }
+    return getResponsesOutput(JSON.parse(raw))
+  } catch (error: any) {
+    const message = error?.message || String(error)
+    throw new Error(`OpenAI web search request failed: ${message}`)
+  }
 }
 
 async function callOpenAI(
@@ -475,8 +539,9 @@ async function callAI(
 ): Promise<string> {
   config = await withStoredOpenAISecrets(config)
   if (config.provider === 'openai') {
-    return usesCodexOAuth(config)
-      ? callOpenAICodex(messages, config, temperature)
+    if (usesCodexOAuth(config)) return callOpenAICodex(messages, config, temperature)
+    return config.openaiWebSearch
+      ? callOpenAIWithWebSearch(messages, config, temperature)
       : callOpenAI(messages, config, temperature)
   }
   return callOllama(messages, config, temperature)
@@ -1140,6 +1205,7 @@ export function getStoredConfig(): OllamaConfig {
         generationDepth: parsed.generationDepth !== undefined ? Number(parsed.generationDepth) : 5,
         numCtx: parsed.numCtx !== undefined ? Number(parsed.numCtx) : 16384,
         autoAIFix: parsed.autoAIFix !== undefined ? Boolean(parsed.autoAIFix) : false,
+        openaiWebSearch: parsed.openaiWebSearch === true,
         // Provider
         provider: parsed.provider === 'openai' ? 'openai' : 'ollama',
         embeddingProvider: parsed.embeddingProvider === 'openai' ? 'openai' : parsed.embeddingProvider === 'ollama' ? 'ollama' : undefined,
@@ -1166,6 +1232,7 @@ export function getStoredConfig(): OllamaConfig {
     generationDepth: 5,
     numCtx: 16384,
     autoAIFix: false,
+    openaiWebSearch: false,
     provider: 'ollama',
     embeddingProvider: undefined,
     openaiEndpoint: DEFAULT_OPENAI_ENDPOINT,

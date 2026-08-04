@@ -27,6 +27,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - **Custom AI Settings**: Select Ollama or OpenAI, configure endpoints, authentication, temperature, generation depth/complexity, and custom chat and embedding models.
 - **OpenAI/Codex Login**: On desktop, authenticate an OpenAI/Codex account through Device Code / Browser login, paste an access token, or use an OpenAI API key. Account-provided Codex models can be loaded from Settings; compatible custom model names may also be entered manually. OpenAI embeddings for RAG require an API key; Codex OAuth users can keep Ollama embeddings.
 - **Provider-Aware AI Output**: Ollama retains its existing Mermaid prompt and workflow. OpenAI/Codex uses the same core Mermaid rules with transport-safe output handling that prevents response markers, YAML front matter, and duplicated diagrams from being inserted into the editor.
+- **Optional OpenAI Web Search**: Enable web search in OpenAI Settings to let supported OpenAI/Codex models retrieve current information before generating or editing a diagram. It is off by default; API-key requests switch to the OpenAI Responses API only while enabled. Ollama remains fully local and does not use web search.
 - **Auto AI Fix**: Optionally run AI syntax repair automatically whenever Mermaid reports a parsing error.
 - MCP Server Integration: Exposes Mermaider's curated diagram templates and code validation logic to external AI assistants (like Claude Desktop) via the Model Context Protocol (`npm run mcp`).
 
