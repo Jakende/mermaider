@@ -58,7 +58,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const panelRef = useRef<HTMLDivElement>(null)
-    const inputRef = useRef<HTMLInputElement>(null)
+    const inputRef = useRef<HTMLTextAreaElement>(null)
 
     const toggleMode = () => {
         setMode(prev => prev === 'edit' ? 'ask' : 'edit')
@@ -70,6 +70,11 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
         },
         toggleMode
     }))
+
+    const autoResizeTextarea = (element: HTMLTextAreaElement) => {
+        element.style.height = 'auto'
+        element.style.height = `${Math.min(element.scrollHeight, 180)}px`
+    }
 
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
@@ -356,7 +361,11 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                                             <div className="edit-message-container">
                                                 <textarea
                                                     value={editInput}
-                                                    onChange={(e) => setEditInput(e.target.value)}
+                                                    onChange={(e) => {
+                                                        setEditInput(e.target.value)
+                                                        autoResizeTextarea(e.currentTarget)
+                                                    }}
+                                                    onInput={(e) => autoResizeTextarea(e.currentTarget)}
                                                     autoFocus
                                                 />
                                                 <div className="edit-actions">
@@ -409,11 +418,12 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                     </div>
 
                     <form className="chat-input-form" onSubmit={handleSubmit}>
-                        <input
+                        <textarea
                             ref={inputRef}
-                            type="text"
+                            rows={3}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
+                            onInput={(e) => autoResizeTextarea(e.currentTarget)}
                             onKeyDown={(e) => {
                                 const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
                                 const modifier = isMac ? e.metaKey : e.ctrlKey
@@ -425,7 +435,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                                     toggleMode()
                                 }
                             }}
-                            placeholder={mode === 'edit' ? "e.g., Change all boxes to circles... (⌘Enter)" : "e.g., What is linked to Node A? (⌘Enter)"}
+                            placeholder={mode === 'edit' ? "Describe the diagram change… (Cmd/Ctrl+Enter to send)" : "Ask about the diagram… (Cmd/Ctrl+Enter to send)"}
                             disabled={isLoading}
                         />
                         <button type="submit" disabled={isLoading || !input.trim()}>

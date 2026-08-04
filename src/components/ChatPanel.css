@@ -184,7 +184,8 @@
     padding: 8px;
     font-size: 13px;
     font-family: inherit;
-    resize: vertical;
+    resize: none;
+    overflow-y: auto;
 }
 
 .edit-actions {
@@ -219,6 +220,7 @@
     font-size: 13px;
     line-height: 1.5;
     word-break: break-word;
+    white-space: pre-wrap;
 }
 
 .message-content div {
@@ -258,10 +260,15 @@
     /* Important for flex child resizing */
 }
 
-.chat-input-form input {
+.chat-input-form textarea {
     flex: 1;
     min-width: 0;
-    /* Allow shrinking */
+    min-height: 64px;
+    max-height: 180px;
+    resize: none;
+    overflow-y: auto;
+    line-height: 1.4;
+    font-family: inherit;
 }
 
 .chat-input-form button {
