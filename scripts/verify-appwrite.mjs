@@ -13,9 +13,10 @@ async function api(path) {
   return response.json()
 }
 let site = await api(`/sites/${siteId}`)
-const deploymentId = process.argv[2] || site.latestDeploymentId
+const deploymentId = process.env.APPWRITE_DEPLOYMENT_ID || process.argv[2] || site.latestDeploymentId
 if (!deploymentId) throw new Error('No deployment exists for the configured site')
-const deadline = Date.now() + 10 * 60 * 1000
+console.log('Site deployment metadata:', JSON.stringify({active:site.deploymentId,latest:site.latestDeploymentId,latestStatus:site.latestDeploymentStatus,adapter:site.adapter,providerBranch:site.providerBranch}))
+const deadline = Date.now() + Number(process.env.APPWRITE_VERIFY_TIMEOUT_MS || 600000)
 let deployment
 let active = false
 while (Date.now() < deadline) {
@@ -26,7 +27,7 @@ while (Date.now() < deadline) {
   if (deployment.status === 'ready' && site.deploymentId === deploymentId) {active=true;break}
   await new Promise(resolve=>setTimeout(resolve,5000))
 }
-if (!active) throw new Error('Deployment was not ready and active within ten minutes')
+if (!active) throw new Error(`Deployment ${deploymentId} did not become ready and active before timeout; active=${site.deploymentId}`)
 if (!site.enabled) throw new Error('The deployed site is disabled')
 const report = {siteId,deploymentId,status:deployment.status,active,adapter:site.adapter,urls:[],liveChecks:[]}
 try {
