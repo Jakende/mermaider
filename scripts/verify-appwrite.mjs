@@ -1,4 +1,4 @@
-import { writeFileSync, appendFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync } from 'node:fs'
 const endpoint = process.env.APPWRITE_ENDPOINT?.replace(/\/$/, '')
 const project = process.env.APPWRITE_PROJECT_ID
 const siteId = process.env.APPWRITE_SITE_ID
@@ -13,7 +13,9 @@ async function api(path) {
   return response.json()
 }
 let site = await api(`/sites/${siteId}`)
-const deploymentId = process.env.APPWRITE_DEPLOYMENT_ID || process.argv[2] || site.latestDeploymentId
+const uploadedId = process.env.APPWRITE_DEPLOYMENT_FILE ? JSON.parse(readFileSync(process.env.APPWRITE_DEPLOYMENT_FILE, 'utf8')).$id : null
+if (process.env.APPWRITE_DEPLOYMENT_FILE && !uploadedId) throw new Error('Upload response is missing its deployment ID')
+const deploymentId = uploadedId || process.env.APPWRITE_DEPLOYMENT_ID || process.argv[2] || site.deploymentId
 if (!deploymentId) throw new Error('No deployment exists for the configured site')
 console.log('Site deployment metadata:', JSON.stringify({active:site.deploymentId,latest:site.latestDeploymentId,latestStatus:site.latestDeploymentStatus,adapter:site.adapter,providerBranch:site.providerBranch}))
 const deadline = Date.now() + Number(process.env.APPWRITE_VERIFY_TIMEOUT_MS || 600000)

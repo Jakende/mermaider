@@ -69,9 +69,22 @@ jobs:
             --install-command "true" \
             --build-command "true" \
             --output-directory "." \
-            --activate
+            --activate --json > "$RUNNER_TEMP/appwrite-deployment.json"
 
-      - name: Deployment Status
-        run: |
-          echo "Deployment uploaded; activation follows a successful Appwrite build."
-          echo "Check the deployment status and live URL in the Appwrite Console."
+      - name: Verify new deployment and public URL
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_DEPLOYMENT_FILE: ${{ runner.temp }}/appwrite-deployment.json
+        run: node scripts/verify-appwrite.mjs
+
+      - run: npx playwright install --with-deps chromium
+      - name: Test the live application
+        env:
+          E2E_BASE_URL: https://mermaider.appwrite.network
+        run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: appwrite-verification-${{ github.sha }}
+          path: appwrite-verification.json
+          if-no-files-found: error
