@@ -5,6 +5,8 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { readFileSync } from "node:fs";
+import { validateMermaidSyntax } from "./utils/mcpService.js";
 
 // We import the templates directly from Mermaider's codebase
 import { MERMAID_TEMPLATES } from "./utils/mermaidTemplates.js";
@@ -12,7 +14,7 @@ import { MERMAID_TEMPLATES } from "./utils/mermaidTemplates.js";
 const server = new Server(
   {
     name: "mermaider-mcp",
-    version: "1.0.0",
+    version: JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version,
   },
   {
     capabilities: {
@@ -39,16 +41,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: "get_diagram_template",
         description: "Get a starting Mermaid code template for a specific diagram type. This uses Mermaider's curated templates.",
-        inputSchema: z.object({
+        inputSchema: z.toJSONSchema(z.object({
           type: z.string().describe("The ID of the diagram type (e.g., 'flowcharts', 'sequence', 'mindmap')"),
-        }).passthrough(),
+        })),
       },
       {
         name: "validate_mermaid_syntax",
-        description: "Validate mermaid syntax. Note: This assumes standard mermaid compiler logic. Returns success or error.",
-        inputSchema: z.object({
+        description: "Check only the Mermaid diagram entry keyword. This does not validate the diagram body; full syntax validation requires rendering in Mermaider.",
+        inputSchema: z.toJSONSchema(z.object({
           code: z.string().describe("The Mermaid JS code to validate"),
-        }).passthrough(),
+        })),
       }
     ],
   };
@@ -89,91 +91,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     case "validate_mermaid_syntax": {
-      // Basic validation wrapper. Full rendering validation requires browser or headless environment,
-      // but we can provide a basic syntax structure check if needed, or simply let the user render it 
-      // in the Mermaider UI.
-      const code = request.params.arguments?.code as string;
-      if (!code) {
-        throw new Error("Missing code argument");
-      }
-      
-      // Split properly with \r?\n or fallback to escaped \n
-      let codeStr = code.trim();
-      let lines = codeStr.split(/\r?\n/);
-      if (lines.length === 1 && codeStr.includes('\\n')) {
-        lines = codeStr.split('\\n');
-      }
-
-      // Remove YAML Frontmatter
-      let cleanLines = [...lines];
-      if (cleanLines[0] && cleanLines[0].trim() === '---') {
-        let closingIndex = -1;
-        for (let i = 1; i < cleanLines.length; i++) {
-          if (cleanLines[i].trim() === '---') {
-            closingIndex = i;
-            break;
-          }
-        }
-        if (closingIndex !== -1) {
-          cleanLines = cleanLines.slice(closingIndex + 1);
-        }
-      }
-
-      // Filter empty lines and comments
-      const contentLines = cleanLines
-        .map(l => l.trim())
-        .filter(l => l !== '' && !l.startsWith('%%'));
-
-      const validStarts = [
-        'flowchart', 'graph', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 
-        'erDiagram', 'gantt', 'pie', 'requirementDiagram', 'gitGraph', 
-        'C4Context', 'mindmap', 'timeline', 'journey', 'quadrantChart', 
-        'sankey', 'xychart', 'block'
-      ];
-
-      let isValidStart = false;
-      let detectedKeyword = '';
-
-      if (contentLines.length > 0) {
-        const firstLine = contentLines[0];
-        const firstWord = firstLine.split(/\s+/)[0];
-        isValidStart = validStarts.some(start => {
-          if (firstWord.startsWith(start)) {
-            detectedKeyword = start;
-            return true;
-          }
-          return false;
-        });
-
-        // Fallback: search in subsequent lines if first line is metadata or something else
-        if (!isValidStart) {
-          for (const line of contentLines) {
-            const word = line.split(/\s+/)[0];
-            const found = validStarts.find(start => word.startsWith(start));
-            if (found) {
-              isValidStart = true;
-              detectedKeyword = found;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!isValidStart) {
-        return {
-          content: [{
-            type: "text",
-            text: `Validierung fehlgeschlagen: Der Code beginnt nicht mit einem erkannten Mermaid-Diagramm-Schlüsselwort (z. B. ${validStarts.slice(0, 5).join(', ')}...).`
-          }],
-          isError: true,
-        };
-      }
-
+      const args = z.object({ code: z.string() }).parse(request.params.arguments);
+      const result = validateMermaidSyntax(args.code);
       return {
-        content: [{
-          type: "text",
-          text: `Validierung erfolgreich: Gültiges Mermaid-Diagramm-Schlüsselwort '${detectedKeyword}' gefunden.`
-        }]
+        content: [{ type: "text", text: JSON.stringify(result) }],
+        isError: !result.valid,
       };
     }
 

@@ -2,109 +2,94 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  verify-web:
+    uses: ./.github/workflows/build-web.yml
+
+  prepare-release:
+    needs: verify-web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release-id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm run check:release
+      - name: Create or reuse draft once
+        id: release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
+            let release = releases.find(item => item.tag_name === tag);
+            if (release && !release.draft) throw new Error('Published release exists; use a new version tag.');
+            if (!release) {
+              release = (await github.rest.repos.createRelease({
+                ...context.repo, tag_name: tag, name: `Release ${tag}`, draft: true,
+                body: 'Release candidate. Native smoke tests and signing checks are required before publication.'
+              })).data;
+            }
+            core.setOutput('id', release.id);
+
   build-tauri:
+    needs: prepare-release
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: ''
-          - platform: 'windows-latest'
-            args: ''
-
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            args: '--target aarch64-apple-darwin --bundles app,dmg -- --locked'
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: '--target x86_64-pc-windows-msvc --bundles nsis -- --locked'
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Verify DMG tools (macOS only)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          echo "Checking DMG creation prerequisites..."
-          which hdiutil && echo "✓ hdiutil found" || echo "✗ hdiutil not found"
-          xcode-select -p && echo "✓ Xcode Command Line Tools found" || echo "✗ Xcode Command Line Tools not found"
-
-      - name: Check for existing release
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          echo "Checking for existing release: $TAG_NAME"
-          
-          if gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" &>/dev/null; then
-            RELEASE_STATE=$(gh release view "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)
-            if [ "$RELEASE_STATE" == "true" ]; then
-              echo "⚠️  Draft release already exists. Deleting it so tauri-action can create a new one..."
-              gh release delete "$TAG_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
-            else
-              echo "❌ ERROR: Published release already exists for tag $TAG_NAME"
-              echo "Published releases are immutable and cannot be modified."
-              echo "Please delete the existing release or use a different tag."
-              exit 1
-            fi
-          else
-            echo "✓ No existing release found. tauri-action will create a new draft release."
-          fi
-
+          node-version-file: '.nvmrc'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: npm ci
+      - run: npm run check:release
+      - run: npm run lint
+      - run: npm test
+      - name: Check native code against lockfile
+        run: cargo check --locked --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUST_BACKTRACE: 1
         with:
           projectPath: ./
-          tagName: ${{ github.ref }}
-          releaseName: Release ${{ github.ref_name }}
-          releaseDraft: true
+          releaseId: ${{ needs.prepare-release.outputs.release-id }}
           args: ${{ matrix.args }}
-
-      - name: Verify DMG was created (macOS only)
-        if: matrix.platform == 'macos-latest'
+      - name: Verify installer
         shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: |
-          echo "Checking for DMG file..."
-          DMG_PATH=$(find src-tauri/target/release/bundle -name "*.dmg" 2>/dev/null | head -n 1)
-          if [ -z "$DMG_PATH" ]; then
-            echo "❌ ERROR: DMG file not found!"
-            echo "Contents of bundle directory:"
-            ls -la src-tauri/target/release/bundle/ || echo "Bundle directory not found"
-            exit 1
+          if [[ "$PLATFORM" == macos-* ]]; then
+            find src-tauri/target/${{ matrix.target }}/release/bundle -name '*.dmg' -print -quit | grep .
           else
-            echo "✅ DMG file found: $DMG_PATH"
-            ls -lh "$DMG_PATH"
-          fi
-
-      - name: Verify EXE/MSI was created (Windows only)
-        if: matrix.platform == 'windows-latest'
-        shell: bash
-        run: |
-          echo "Checking for Windows installer..."
-          INSTALLER_PATH=$(find src-tauri/target/release/bundle -name "*.exe" -o -name "*.msi" 2>/dev/null | head -n 1)
-          if [ -z "$INSTALLER_PATH" ]; then
-            echo "❌ ERROR: Windows installer not found!"
-            echo "Contents of bundle directory:"
-            ls -R src-tauri/target/release/bundle/ || echo "Bundle directory not found"
-            exit 1
-          else
-            echo "✅ Windows installer found: $INSTALLER_PATH"
-            ls -lh "$INSTALLER_PATH"
+            find src-tauri/target/${{ matrix.target }}/release/bundle -name '*.exe' -print -quit | grep .
           fi

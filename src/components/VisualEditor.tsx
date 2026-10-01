@@ -237,8 +237,8 @@ export default function VisualEditor({ parsedDiagram, code, onCodeChange, layout
       return newNodes;
     });
 
-    setEdges(parsedDiagram.edges.map(edge => ({
-      id: `${edge.source}-${edge.target}`,
+    setEdges(parsedDiagram.edges.map((edge, index) => ({
+      id: `${edge.source}-${edge.target}-${index}`,
       source: edge.source,
       target: edge.target,
       label: edge.label ? MermaidModifier.stripHtml(edge.label) : undefined,

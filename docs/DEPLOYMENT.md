@@ -1,198 +1,110 @@
-# Deployment Guide for Appwrite Sites
+# Mermaider bereitstellen
 
-This guide explains how to deploy Mermaider to Appwrite Sites.
+Stand: 30.09.2026. Commit `b0a673d` wurde nach einem frischen `npm ci` mit
+Node 20.20.2 erfolgreich gebaut. Die Anwendung ist eine statische React-SPA;
+Editor und Vorschau benötigen kein Backend. AI benötigt einen erreichbaren Provider.
 
-## Prerequisites
-
-- An Appwrite account and project
-- Git repository connected to Appwrite (optional but recommended)
-- Node.js 18+ (for local testing)
-
-## Build Configuration
-
-The project is configured for static site deployment with the following settings:
-
-- **Build Command**: `npm run build`
-- **Install Command**: `npm install`
-- **Output Directory**: `dist`
-- **Framework Adapter**: `static` (static site)
-
-## Appwrite Console Configuration
-
-When setting up your site in the Appwrite Console, use these settings:
-
-### Site Settings
-
-1. **Site Name**: `Mermaider` (or your preferred name)
-2. **Framework**: `React` or `Static Site`
-3. **Runtime**: `Node.js 18` or `Node.js 20`
-
-### Build Settings
-
-Configure the following in the Appwrite Console:
-
-- **Install Command**: 
-  ```
-  npm install
-  ```
-
-- **Build Command**: 
-  ```
-  npm run build
-  ```
-
-- **Output Directory**: 
-  ```
-  dist
-  ```
-
-- **Framework Adapter**: 
-  ```
-  static
-  ```
-
-### Environment Variables
-
-Environment variables are optional for basic functionality but can be configured for enhanced features:
-
-**Available Environment Variables:**
-
-- `VITE_OPENAI_API_KEY` (optional) - OpenAI API key for AI error fixing feature
-- `VITE_APP_NAME` (optional) - Custom application name (defaults to "Mermaider")
-- `VITE_APP_VERSION` (optional) - Application version
-- `VITE_ANALYTICS_ID` (optional) - Analytics tracking ID
-- `VITE_ENABLE_AI_FIXER` (optional) - Enable/disable AI fixer feature (default: true)
-- `VITE_ENABLE_ANALYTICS` (optional) - Enable/disable analytics (default: false)
-
-**Configuring Environment Variables:**
-
-1. In Appwrite Console, navigate to your site settings
-2. Go to the "Environment Variables" section
-3. Add each variable with the `VITE_` prefix (required by Vite)
-4. Variables are available in code via `import.meta.env.VITE_*`
-5. Use the helper functions from `src/utils/env.ts` for type-safe access
-
-**Example:**
-```
-VITE_OPENAI_API_KEY=sk-...
-VITE_APP_NAME=Mermaider
-VITE_ENABLE_AI_FIXER=true
-```
-
-**Important:** 
-- All client-side environment variables must be prefixed with `VITE_`
-- Environment variables are embedded at build time, not runtime
-- For security, never commit `.env` files with actual API keys
-- Use `env.example` as a template (without sensitive data)
-
-### VCS Integration (Optional but Recommended)
-
-If deploying from a Git repository:
-
-1. **Repository Provider**: Connect your Git provider (GitHub, GitLab, etc.)
-2. **Repository**: Select your repository
-3. **Production Branch**: `main` (or your main branch)
-4. **Auto Deploy**: Enable to automatically deploy on pushes
-
-### Custom Domain (Optional)
-
-1. Add your custom domain in the Appwrite Console
-2. Configure DNS records as instructed by Appwrite
-3. SSL certificates are automatically provisioned
-
-## Local Build Testing
-
-Before deploying, test the build locally:
+## Webbuild prüfen und übergeben
 
 ```bash
-npm install
+# Node 20 verwenden, siehe .nvmrc
+npm ci
 npm run build
-npm run preview
+npm run preview -- --host 0.0.0.0 --port 5173
 ```
 
-The preview server will serve the built files from the `dist` directory, allowing you to verify everything works correctly.
+Den gesamten Inhalt von `dist/` einschließlich `assets/` und `diagram-docs/`
+auf einen statischen HTTPS-Host übertragen. Vite verwendet `base: '/'`;
+Hosting unter einem Unterpfad erfordert eine angepasste Basis und die Prüfung
+der absoluten Dokumentationspfade. `file://` ist keine unterstützte Startmethode.
 
-## Deployment Methods
+Der neue [Build-Web-Workflow](../.github/workflows/build-web.yml) erzeugt bei PRs,
+Pushes auf `main` und manuellem Start ein `mermaider-web-<commit>`-Artefakt aus
+`dist/`, aufbewahrt für 14 Tage. Er benötigt keine Appwrite-Secrets. Ein GitHub-Lauf
+dieser lokal vorbereiteten Änderung steht noch aus.
 
-### Method 1: GitHub Actions (Recommended)
+## Appwrite Sites
 
-Automated deployment via GitHub Actions is configured and ready to use.
+Die bisherige Pipeline scheitert vor Checkout und Build, weil
+`appwrite/setup-for-appwrite@v2` nicht als Tag existiert. Nachweis:
+[Lauf 30946848188](https://github.com/Jakende/mermaider/actions/runs/30946848188),
+Job `92118845076`, Log vom 04.08.2026.
 
-**Setup:**
+Der lokal korrigierte [Deployment-Workflow](../.github/workflows/deploy-appwrite.yml)
+installiert `appwrite-cli@28.1.0`. Auch `appwrite deploy sites` wurde ersetzt:
+Die installierte CLI hat kein `deploy`-Kommando. Die neuen Befehle und Optionen
+wurden gegen die Hilfe der tatsächlich installierten Version geprüft.
 
-1. Add the following secrets to your GitHub repository (Settings → Secrets and variables → Actions):
-   - `APPWRITE_API_KEY` - Your Appwrite API key with Sites permissions
-   - `APPWRITE_PROJECT_ID` - Your Appwrite Project ID
-   - `APPWRITE_SITE_ID` - Your Appwrite Site ID
-   - `APPWRITE_ENDPOINT` (optional) - Default: `https://cloud.appwrite.io/v1`
+| GitHub Secret | Bedeutung |
+| --- | --- |
+| `APPWRITE_API_KEY` | Schlüssel mit Berechtigungen für die Site und ihre Deployments |
+| `APPWRITE_PROJECT_ID` | Projekt, zu dem die Site gehört |
+| `APPWRITE_SITE_ID` | Vorhandene Ziel-Site |
+| `APPWRITE_ENDPOINT` | Erforderlich: tatsächlicher projektspezifischer/regionaler Endpoint |
 
-2. Push to `main` or `feature/appwrite-sites` branch to trigger automatic deployment
+Die Ziel-Site muss statisches Hosting verwenden. Hochgeladen wird der
+**bereits gebaute** Inhalt von `dist/`; Appwrite-Installations- und Buildkommando
+sind deshalb `true`, das Ausgabeverzeichnis ist `.`. Ein erneuter npm-Build
+auf diesem Paket wäre falsch, weil es keine Quellen oder `package.json` enthält.
 
-3. Monitor deployment in the **Actions** tab
-
-**Benefits:**
-- ✅ Automatic deployment on every push
-- ✅ Consistent build environment
-- ✅ Deployment history in GitHub Actions
-- ✅ No manual steps required
-
-See [.github/workflows/README.md](.github/workflows/README.md) for detailed setup instructions.
-
-### Method 2: Appwrite Console (Manual)
-
-Once configured in the Appwrite Console:
-
-1. Click "Deploy" in your site settings
-2. Appwrite will:
-   - Install dependencies (`npm install`)
-   - Build the project (`npm run build`)
-   - Deploy the `dist` directory
-3. Your site will be available at the Appwrite-provided URL
-
-### Method 3: Appwrite CLI (Local)
-
-Deploy from your local machine using Appwrite CLI:
+Bei bereits gesetzten Variablen entsprechen die lokalen Befehle dem Workflow:
 
 ```bash
-# Install Appwrite CLI
-npm install -g appwrite-cli
-
-# Login and setup
-appwrite login
-appwrite init project
-
-# Deploy
-appwrite deploy sites --siteId YOUR_SITE_ID --entrypoint dist/index.html --output dist
+npm install --global appwrite-cli@28.1.0
+appwrite client \
+  --endpoint "$APPWRITE_ENDPOINT" \
+  --project-id "$APPWRITE_PROJECT_ID" \
+  --key "$APPWRITE_API_KEY"
+appwrite sites create-deployment \
+  --site-id "$APPWRITE_SITE_ID" \
+  --code dist \
+  --install-command "true" \
+  --build-command "true" \
+  --output-directory "." \
+  --activate
 ```
 
-## Troubleshooting
+Ein akzeptierter Upload bestätigt noch keine erfolgreiche Aktivierung.
+In Appwrite den fertigen Build, die aktive Deployment-ID und die Live-URL prüfen.
+Der korrigierte Workflow wurde noch nicht gegen eine Ziel-Site ausgeführt:
+Appwrite-Zugang und Site-Konfiguration fehlen in dieser Arbeitsumgebung.
+Der Live-Zustand von `mermaider.com` wurde nicht bestätigt.
 
-### Build Fails
+Alternativ direkt aus Git bauen: `npm ci`, `npm run build`, Output `dist`,
+statischer Adapter. Einen primären Deployment-Weg verwenden, damit Git-Integration
+und Actions einander nicht ungeplant überschreiben.
 
-- Check that all dependencies are listed in `package.json`
-- Verify Node.js version compatibility (18+)
-- Review build logs in Appwrite Console
+## Browser und AI
 
-### Site Not Loading
+Für den Editor ist keine `.env` erforderlich. Provider und Benutzerzugangsdaten
+werden in der Anwendung eingestellt. Alle `VITE_*`-Werte sind öffentlich im
+Browserbuild sichtbar; keine API-Schlüssel als `VITE_OPENAI_API_KEY` einbauen.
 
-- Verify the output directory is set to `dist`
-- Check that `index.html` exists in the `dist` directory
-- Ensure routing is configured correctly (all routes should serve `index.html` for SPA routing)
+Die alte Anleitung nannte Appname, Version, Analytics und Featureflags.
+Die Hilfsfunktionen in `src/utils/env.ts` haben derzeit keine aktiven Aufrufer.
+Auch die Appwrite-Platzhalter in `.env.example` werden nicht verwendet.
 
-### 404 Errors on Routes
+Im Browser läuft Ollama auf dem Rechner des Besuchers, nicht auf dem Hostingserver.
+CORS, HTTPS/HTTP-Regeln und Browserberechtigungen für lokale Verbindungen für
+die Zielumgebung prüfen. AI-Provider wurden hier nicht live getestet.
+Monaco wird derzeit über jsDelivr geladen, Fonts über Google; der Webbuild
+ist deshalb keine vollständige Offline-Garantie.
 
-- Ensure Appwrite Sites routing is configured to serve `index.html` for all routes (see `.appwrite.json`)
+## Desktop und öffentliche Downloads
 
-## Build Optimization
+`npm run tauri:build` benötigt Rust/Cargo und die Werkzeuge des jeweiligen OS.
+Die bestätigten v1.8.6-Artefakte sind Apple-Silicon-DMG und Windows-x64-NSIS;
+Intel-macOS und Linux sind keine bestätigten Releaseziele.
 
-The current build configuration includes:
+Das Repository ist privat und alle 16 erfassten Releases sind Entwürfe.
+Öffentliche Downloadbuttons benötigen eine öffentliche Downloadquelle und
+einen veröffentlichten, geprüften Release. Das kann auch ein separates
+öffentliches Distributionsrepository bei weiterhin privaten Quellen sein.
 
-- Minification via esbuild
-- No source maps (reduces bundle size)
-- Empty output directory on each build (ensures clean builds)
+Der [Release-Helper](../.agents/skills/auto-release/scripts/release.cjs) verändert
+Versionen, verlangt einen sauberen Arbeitsbaum, prüft Build und Tests, erstellt
+Commit und Tag und pusht beides. Er ist kein lokaler Buildcheck. Vorher Änderungen prüfen und die
+Voraussetzungen aus [ROADMAP.md](ROADMAP.md) abarbeiten.
 
-For further optimization, consider:
-
-- Code splitting for large chunks
-- Dynamic imports for Monaco Editor
-- Lazy loading for Mermaid diagram types
+Auf der echten Live-URL Editor, Änderungen, Persistenz, Import/Export,
+Providerverbindung und öffentliche Downloadlinks prüfen.

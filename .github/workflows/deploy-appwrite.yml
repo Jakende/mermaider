@@ -7,8 +7,19 @@ on:
       - feature/appwrite-sites
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: appwrite-production
+  cancel-in-progress: false
+
 jobs:
+  verify-web:
+    uses: ./.github/workflows/build-web.yml
+
   deploy:
+    needs: verify-web
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,25 +34,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - run: npm run check:release
+      - run: npm run lint
+      - run: npm test
       - name: Build project
         run: npm run build
 
-      - name: Setup Appwrite CLI
-        uses: appwrite/setup-for-appwrite@v2
-        with:
-          method: key
-          key: ${{ secrets.APPWRITE_API_KEY }}
-          project: ${{ secrets.APPWRITE_PROJECT_ID }}
-          endpoint: ${{ secrets.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1' }}
+      # The upstream action documents @v2 but does not publish that tag.
+      - name: Install Appwrite CLI
+        run: npm install --global appwrite-cli@28.1.0
 
-      - name: Deploy to Appwrite Sites
+      - name: Configure Appwrite CLI
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_SITE_ID: ${{ secrets.APPWRITE_SITE_ID }}
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
         run: |
-          appwrite deploy sites \
-            --siteId ${{ secrets.APPWRITE_SITE_ID }} \
-            --entrypoint dist/index.html \
-            --output dist
+          : "${APPWRITE_ENDPOINT:?Set APPWRITE_ENDPOINT in repository secrets}"
+          : "${APPWRITE_API_KEY:?Set APPWRITE_API_KEY in repository secrets}"
+          : "${APPWRITE_PROJECT_ID:?Set APPWRITE_PROJECT_ID in repository secrets}"
+          : "${APPWRITE_SITE_ID:?Set APPWRITE_SITE_ID in repository secrets}"
+          appwrite client \
+            --endpoint "$APPWRITE_ENDPOINT" \
+            --project-id "$APPWRITE_PROJECT_ID" \
+            --key "$APPWRITE_API_KEY"
+
+      - name: Upload built web application to Appwrite Sites
+        env:
+          APPWRITE_SITE_ID: ${{ secrets.APPWRITE_SITE_ID }}
+        run: |
+          appwrite sites create-deployment \
+            --site-id "$APPWRITE_SITE_ID" \
+            --code dist \
+            --install-command "true" \
+            --build-command "true" \
+            --output-directory "." \
+            --activate
 
       - name: Deployment Status
         run: |
-          echo "✅ Deployment completed successfully!"
-          echo "🌐 Your site should be available shortly"
+          echo "Deployment uploaded; activation follows a successful Appwrite build."
+          echo "Check the deployment status and live URL in the Appwrite Console."

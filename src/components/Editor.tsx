@@ -265,7 +265,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
         editorContainer.removeEventListener('paste', handlePaste, true)
       }
     }
-  }, [setCode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setCode])
 
   return (
     <div className="editor-container">

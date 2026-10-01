@@ -1,3 +1,5 @@
+import { readMermaidNode, parseMermaidFlowchart, flowchartStatements, type MermaidNode } from './mermaidParser'
+
 
 export class MermaidModifier {
   /**
@@ -5,62 +7,32 @@ export class MermaidModifier {
    * Preserves formatting by using regex replacement on the original code.
    */
   static updateNodeLabel(code: string, nodeId: string, newLabel: string): string {
-    const lines = code.split('\n');
-    let updated = false;
-
-    // Helper to escape regex special characters
-    const escapeRegExp = (string: string) => {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    const newNodeLabel = newLabel.replace(/"/g, "'"); // minimal sanitization
-
-    // Iterate through lines to find the definition line
-    const newLines = lines.map(line => {
-      if (updated) return line;
-
-      // We are looking for lines like: nodeId[label] or nodeId(label)
-      // The nodeId must match exactly.
-      // We check if the line starts with the nodeId and is followed by one of the opening brackets
-
-      const brackets = [
-        ['[[', ']]'], // subroutine
-        ['[(', ')]'], // cylinder
-        ['((', '))'], // stadium/circle
-        ['([', '])'], // stadium/pill
-        ['{{', '}}'], // hexagon
-        ['[/', '/]'], // parallelogram
-        ['[\\', '\\]'], // trapezoidAlt
-        ['[/', '\\]'], // trapezoid
-        ['[', ']'],   // rect
-        ['(', ')'],   // rounded
-        ['{', '}'],   // diamond
-        ['>', ']'],   // asymmetric
-      ];
-
-      for (const [open, close] of brackets) {
-        // Construct regex: ^(\s*nodeId\s*open)(.*?)(close\s*)$
-        // We match non-greedy .*? for the label content
-        const regex = new RegExp(`^(\\s*${escapeRegExp(nodeId)}\\s*${escapeRegExp(open)})(.*?)(${escapeRegExp(close)}\\s*.*)$`);
-
-        if (regex.test(line)) {
-          updated = true;
-          // Replace only the label part
-          return line.replace(regex, `$1${newNodeLabel}$3`);
-        }
+    const escapedId = nodeId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const pattern = new RegExp(`(^|[\\s>;])${escapedId}(?=\\s*[\\[({])`, 'gm')
+    const replacements: Array<{ start: number; end: number }> = []
+    let scan = 0, depth = 0, quoted = false, pipeLabel = false, comment = false
+    for (const match of code.matchAll(pattern)) {
+      const offset = match.index! + match[1].length
+      for (; scan < offset; scan++) {
+        const c = code[scan]
+        if (c === '\n') comment = false
+        if (!quoted && c === '%' && code[scan + 1] === '%') comment = true
+        if (comment) continue
+        if (c === '"' && code[scan - 1] !== '\\') quoted = !quoted
+        if (!quoted && c === '|') pipeLabel = !pipeLabel
+        if (!quoted && !pipeLabel && '[({'.includes(c)) depth++
+        if (!quoted && !pipeLabel && '])}'.includes(c)) depth--
       }
-      return line;
-    });
-
-    if (!updated) {
-      // If we didn't find a definition with brackets, it might be defined via connections only like A --> B
-      // In this case, we prefer to ADD a definition line at the end rather than mess with the connection line.
-      // Append: nodeId[newLabel]
-      // Try to determine shape? Default to [].
-      return code.trimEnd() + `\n    ${nodeId}[${newNodeLabel}]`;
+      if (quoted || pipeLabel || comment || depth !== 0) continue
+      const token = readMermaidNode(code, offset)
+      if (token?.labelStart !== undefined && token.labelEnd !== undefined) {
+        replacements.push({ start: token.labelStart, end: token.labelEnd })
+      }
     }
-
-    return newLines.join('\n');
+    const label = `"${newLabel.replace(/&/g, '&amp;').replace(/"/g, '#quot;').replace(/\n/g, '<br/>')}"`
+    let result = code
+    for (const range of replacements.reverse()) result = result.slice(0, range.start) + label + result.slice(range.end)
+    return replacements.length ? result : code.trimEnd() + `\n    ${nodeId}[${label}]`
   }
 
   static addEdge(code: string, source: string, target: string, label: string = '', type: string = 'arrow'): string {
@@ -98,7 +70,7 @@ export class MermaidModifier {
 
     const newLines = lines.map(line => {
       const trimmed = line.trim();
-      if (trimmed.startsWith(`style ${nodeId}`)) {
+      if (new RegExp(`^style\\s+${nodeId}\\s`).test(trimmed)) {
         found = true;
         // Extract existing styles
         // format: style nodeId styleString
@@ -130,44 +102,45 @@ export class MermaidModifier {
   }
 
   static deleteEdge(code: string, source: string, target: string): string {
-    const lines = code.split('\n');
-    const s = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const t = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Matches patterns like:
-    // A --> B
-    // A-->B
-    // A---|label|B
-    // A ==label==> B
-    // A-.->B;
-    // We look for source, then an arrow part, then target.
-    // The arrow part starts with -, =, or . and usually ends with > or - or a label.
-
-    const edgePattern = new RegExp(`^\\s*${s}\\s*([-=.]+.*)\\s+${t}(\\s|;|$)`);
-
-    const newLines = lines.filter(line => {
-      const trimmed = line.trim();
-      // Check if the line matches the edge pattern
-      // We handle A --> B and variations
-      return !edgePattern.test(trimmed);
-    });
-
-    return newLines.join('\n');
+    return this.removeGraphElements(code, undefined, { source, target })
   }
 
   static deleteNode(code: string, nodeId: string): string {
-    const lines = code.split('\n');
-    const s = nodeId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.removeGraphElements(code, nodeId)
+  }
 
-    const nodeDefRegex = new RegExp(`^\\s*${s}\\s*([\\[\\(\\{\\>].*|$)`);
-    const styleRegex = new RegExp(`^\\s*style\\s+${s}(\\s|$)`);
-
-    const newLines = lines.filter(line => {
-      const trimmed = line.trim();
-      return !nodeDefRegex.test(trimmed) && !styleRegex.test(trimmed);
-    });
-
-    return newLines.join('\n');
+  private static removeGraphElements(code: string, nodeId?: string, edge?: { source: string; target: string }): string {
+    const shapeDelimiters: Record<MermaidNode['shape'], [string, string]> = {
+      rect: ['[', ']'], rounded: ['(', ')'], stadium: ['([', '])'],
+      subroutine: ['[[', ']]'], cylinder: ['[(', ')]'], circle: ['((', '))'],
+      doublecircle: ['(((', ')))'], diamond: ['{', '}'], hexagon: ['{{', '}}'],
+      parallelogram: ['[/', '/]'], trapezoid: ['[/', '\\]'], trapezoidAlt: ['[\\', '/]'], rhombus: ['{', '}'],
+    }
+    const declaration = code.match(/^(?:graph|flowchart)\s+(?:TD|TB|BT|LR|RL|DT)\b/m)
+    if (!declaration) return code
+    const prefix = code.slice(0, declaration.index)
+    let changed = false
+    const replacement = flowchartStatements(code).flatMap(statement => {
+        if (nodeId && new RegExp(`^style\\s+${nodeId}\\s`).test(statement)) { changed = true; return [] }
+        const diagram = parseMermaidFlowchart(`graph TD\n${statement}`)
+        if (!diagram) return [statement]
+        const affected = nodeId ? diagram.nodes.some(node => node.id === nodeId)
+          : diagram.edges.some(item => item.source === edge!.source && item.target === edge!.target)
+        if (!affected) return [statement]
+        changed = true
+        const nodes = diagram.nodes.filter(node => node.id !== nodeId).map(node => {
+          const [open, close] = shapeDelimiters[node.shape]
+          const label = node.label.replace(/"/g, '#quot;')
+          return `${node.id}${open}"${label}"${close}${node.class ? `:::${node.class}` : ''}`
+        })
+        const edges = diagram.edges.filter(item => nodeId ? item.source !== nodeId && item.target !== nodeId
+          : item.source !== edge!.source || item.target !== edge!.target).map(item => {
+          const arrow = { arrow: '-->', line: '---', thick: '==>', dotted: '-.->' }[item.type]
+          return `${item.source} ${arrow}${item.label ? `|${item.label}|` : ''} ${item.target}`
+        })
+        return [...nodes, ...edges]
+    })
+    return changed ? prefix + replacement.join('\n') : code
   }
 
   static stripHtml(text: string): string {

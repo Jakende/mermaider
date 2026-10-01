@@ -14,14 +14,10 @@ function error(msg) {
 }
 
 // 1. Check git status
-let isDirty = false;
 try {
   const status = execSync('git status --porcelain').toString().trim();
   if (status) {
-    isDirty = true;
-    log('Working directory has uncommitted changes:');
-    console.log(status);
-    log('These changes will be staged and committed as part of this release.');
+    error('Working directory has uncommitted changes. Commit the reviewed changes before running the release helper.');
   }
 } catch (e) {
   error('Failed to run git status. Is git installed and is this a git repo?');
@@ -166,7 +162,7 @@ try {
 // 9. Run compile/build check to prevent release of broken code
 try {
   log('Running frontend build validation...');
-  execSync('npm run build', { stdio: 'inherit' });
+  execSync('npm run check:release && npm test && npm run build && npm run test:e2e', { stdio: 'inherit' });
   log('Build verification passed successfully!');
 } catch (e) {
   error('Build verification failed. Please fix compilation issues before releasing.');
@@ -175,7 +171,7 @@ try {
 // 10. Stage and commit
 try {
   log('Staging files...');
-  execSync('git add .', { stdio: 'inherit' });
+  execSync('git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock', { stdio: 'inherit' });
   
   const commitMsg = `chore: release v${nextVersion}`;
   log(`Committing as "${commitMsg}"...`);

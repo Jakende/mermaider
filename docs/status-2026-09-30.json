@@ -1,0 +1,733 @@
+{
+  "checked_at": "2026-09-30",
+  "repository": "Jakende/mermaider",
+  "visibility": "private",
+  "source_commit": "b0a673dcb869739acd2b8f8576ea2ea0c4ed0d68",
+  "latest_release_build_jobs": {
+    "jobs": [
+      {
+        "id": 92021373799,
+        "name": "build-tauri (windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 30918123075,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node.js",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install Rust stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install frontend dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Build frontend",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Verify DMG tools (macOS only)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 7
+          },
+          {
+            "name": "Check for existing release",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run tauri-apps/tauri-action@v0",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Verify DMG was created (macOS only)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 10
+          },
+          {
+            "name": "Verify EXE/MSI was created (Windows only)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Post Setup Node.js",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      },
+      {
+        "id": 92021373904,
+        "name": "build-tauri (macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 30918123075,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Setup Node.js",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install Rust stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Install frontend dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Build frontend",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Verify DMG tools (macOS only)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Check for existing release",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Run tauri-apps/tauri-action@v0",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Verify DMG was created (macOS only)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Verify EXE/MSI was created (Windows only)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 11
+          },
+          {
+            "name": "Post Setup Node.js",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 22
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 23
+          }
+        ]
+      }
+    ]
+  },
+  "latest_deploy_failure": "Unable to resolve action `appwrite/setup-for-appwrite@v2`, unable to find version `v2`",
+  "releases": [
+    {
+      "id": 364930435,
+      "tag": "v1.8.6",
+      "commit": "d6d96091ff18eb4716daf6f80603d5d3f586115a",
+      "draft": true,
+      "created_at": "2026-08-04T14:16:49Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.6_aarch64.dmg",
+          "size": 6495945,
+          "digest": "sha256:181d8d40f06e7ea10c6d869b203d09aecfb3201529477e814a6dc8f3c0ee1df9"
+        },
+        {
+          "name": "Mermaider_1.8.6_x64-setup.exe",
+          "size": 4921306,
+          "digest": "sha256:e87748e33b6ba01132f38e1b94338c1f71fb8b60473aab6507e344ef6a9df032"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6466237,
+          "digest": "sha256:5b103b28e64850e97b5c1340d9fb3cb826560aaa607aeade7336573312ad1bbc"
+        }
+      ]
+    },
+    {
+      "id": 352955517,
+      "tag": "v1.8.5",
+      "commit": "6fd0d4a9f075b36de742d84ed78b84dec79f8ca5",
+      "draft": true,
+      "created_at": "2026-07-13T06:08:18Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.5_aarch64.dmg",
+          "size": 6462428,
+          "digest": "sha256:77cf728293b2da46172a6e4822a91047b0c3bfbccbf69984f439ee7079fa05b4"
+        },
+        {
+          "name": "Mermaider_1.8.5_x64-setup.exe",
+          "size": 4897025,
+          "digest": "sha256:dfcce76230fe0b2fbe182ad0ac08472f701e7fda67d07851f71cf0541007815f"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6438603,
+          "digest": "sha256:fa3cf220350108d2c50d82ee8d22dcdd910031e7ae6ee37e583498734c0cb732"
+        }
+      ]
+    },
+    {
+      "id": 349498650,
+      "tag": "v1.8.4",
+      "commit": "3bc3cc24f629ac71b422d8be150cef1de362ce6b",
+      "draft": true,
+      "created_at": "2026-07-06T11:00:28Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.4_aarch64.dmg",
+          "size": 6702931,
+          "digest": "sha256:4ed06bd01458412c611ea962c9c4c7fb372a6210662250e20af2c058aa7c6730"
+        },
+        {
+          "name": "Mermaider_1.8.4_x64-setup.exe",
+          "size": 4917439,
+          "digest": "sha256:a8eaf623b379d050497dd005fe791ffe6dd3771f8bed9e967ad521e5aee224ff"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6674161,
+          "digest": "sha256:28431f371dfbc677585284b2aa1550e889eb152f5838390faca63c02ad9d6c32"
+        }
+      ]
+    },
+    {
+      "id": 344236481,
+      "tag": "v1.8.3",
+      "commit": "cea22138273bcfd1287d78e2a152aa9b093325b0",
+      "draft": true,
+      "created_at": "2026-06-24T16:23:54Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.3_aarch64.dmg",
+          "size": 6704492,
+          "digest": "sha256:a542fcaefa5cc6d86ed85e293b38b653c54dcd1d70fdb135367e21d1e09171a6"
+        },
+        {
+          "name": "Mermaider_1.8.3_x64-setup.exe",
+          "size": 4921323,
+          "digest": "sha256:2e8b6a587fb19f89eca8f8678041506d06932798f1d494e51cd9f22f4fead319"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6677431,
+          "digest": "sha256:33a67a69441694d35d9be8bb3b389cfcf4f7f07424d944af008b5c52aadff154"
+        }
+      ]
+    },
+    {
+      "id": 343480906,
+      "tag": "v1.8.2",
+      "commit": "27e9b02f2cfd78c8c373eb9fe74cc51bd0db46dd",
+      "draft": true,
+      "created_at": "2026-06-23T12:20:01Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.2_aarch64.dmg",
+          "size": 6703244,
+          "digest": "sha256:b93c17388c80c5be8e8988e779b0acc93d4f1b024635e3f4f3ce828b8d1cc3a7"
+        },
+        {
+          "name": "Mermaider_1.8.2_x64-setup.exe",
+          "size": 4925172,
+          "digest": "sha256:6ff490e06a294c7e2f218fdd9be405756e1e0a0085c5a42866bd6b5a4dd1a1fc"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6676380,
+          "digest": "sha256:29d5e3d3c1574d239153765270f8ad40fc25ffe2271a7f2496f53d6a145044f4"
+        }
+      ]
+    },
+    {
+      "id": 323904712,
+      "tag": "v1.8.1",
+      "commit": "f5fe5834ec284ce488ff4e38f850a4b6609b9c4c",
+      "draft": true,
+      "created_at": "2026-05-17T14:34:41Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.1_aarch64.dmg",
+          "size": 6712424,
+          "digest": "sha256:2a353bfdda015dff183e687eb441c32ab94d681b6844f49a32600e106f002d87"
+        },
+        {
+          "name": "Mermaider_1.8.1_x64-setup.exe",
+          "size": 4915551,
+          "digest": "sha256:44754e43b1fd73ae463868098197ec11dd95c7670ee67edf8b4ac32d7ab4771f"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 6689893,
+          "digest": "sha256:90a445f02a56a345ca978fc8afa098e2977bfbd43cbc74c09662c0364cba7575"
+        }
+      ]
+    },
+    {
+      "id": 302740870,
+      "tag": "v1.8.0",
+      "commit": "0128f00bdfb9363b53e6b2d267f897842f236701",
+      "draft": true,
+      "created_at": "2026-03-28T19:52:23Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.8.0_aarch64.dmg",
+          "size": 4246246,
+          "digest": "sha256:c79512ba3eacc8db91f289cddca3a02fc4112b540213276c62e08bb6da992ba0"
+        },
+        {
+          "name": "Mermaider_1.8.0_x64-setup.exe",
+          "size": 3264906,
+          "digest": "sha256:2d2c9da93af8e4ebeee6308cbdabbc3870c9016c6d2af3fda30b4c2755d55fd4"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4215412,
+          "digest": "sha256:46883890b88c7fc263e321412ee68a5a8501c2a2f5414a0d131e7a8a98d62c31"
+        }
+      ]
+    },
+    {
+      "id": 302115469,
+      "tag": "v1.7.0",
+      "commit": "e360c08f61a5c55872a182ef9c6f9b9ed884429f",
+      "draft": true,
+      "created_at": "2026-03-26T21:51:07Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.6.4_aarch64.dmg",
+          "size": 4250043,
+          "digest": "sha256:3064a2bfa906e4e7c7f414bc92bab3700c005a1578dbea0f6e935cd5499d8afe"
+        },
+        {
+          "name": "Mermaider_1.6.4_x64-setup.exe",
+          "size": 3262574,
+          "digest": "sha256:bee2f07666bdd39dd528d9d6cab4dde64df51136b4686c25cb42903c5b44b969"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4218906,
+          "digest": "sha256:3951d8fc455c677edf3578e427ed13e9ea226ab8708ed40a2b57797b830a1a03"
+        }
+      ]
+    },
+    {
+      "id": 291831660,
+      "tag": "v1.6.4",
+      "commit": "355cc4c502d753e4cc61a1011d26d1a1ee598601",
+      "draft": true,
+      "created_at": "2026-03-01T18:48:45Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.6.4_aarch64.dmg",
+          "size": 4236955,
+          "digest": "sha256:897d7ad52c9fccfee9c1e5592ba489d67717f12aa83a94db4dc64d6e3dd549ad"
+        },
+        {
+          "name": "Mermaider_1.6.4_x64-setup.exe",
+          "size": 3254894,
+          "digest": "sha256:216873a965806f7093a54be1c19d0ab74d561bc77327c77b4c9f78fcc2294e1a"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4206573,
+          "digest": "sha256:0a68a258f592379910cfc0e5f36aed009403c48a7b35bcebe967a85072d2f8d4"
+        }
+      ]
+    },
+    {
+      "id": 289131917,
+      "tag": "v1.6.2",
+      "commit": "4628d53aa03cfbae4b9dc75d404bf6a10d640bb7",
+      "draft": true,
+      "created_at": "2026-02-22T12:06:26Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.6.2_aarch64.dmg",
+          "size": 4005987,
+          "digest": "sha256:c6d0ae36cd26c6a1eb5f44cc6de517a4ad461d337dfe15215d9651459078df34"
+        },
+        {
+          "name": "Mermaider_1.6.2_x64-setup.exe",
+          "size": 3020022,
+          "digest": "sha256:f2f339468b25b5cabbb26f8ecaeb63f45c07f84e765363916b4f210d02d66f3b"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 3974075,
+          "digest": "sha256:563c5124d371f0d2125a47f8f3f4719ebcb2127c19fdd84e61af2548923b50c4"
+        }
+      ]
+    },
+    {
+      "id": 286276408,
+      "tag": "v1.6.1",
+      "commit": "3ebd24fa6f17482eeedbc6651e36b013672da207",
+      "draft": true,
+      "created_at": "2026-02-13T23:31:01Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.5.0_aarch64.dmg",
+          "size": 4005642,
+          "digest": "sha256:27932c3240ac2afb150245b2ebccf00cdf740ad7cca5042c0ab1b56312020703"
+        },
+        {
+          "name": "Mermaider_1.5.0_x64-setup.exe",
+          "size": 3019170,
+          "digest": "sha256:4435d58dd17b6e03f0d6539fb7285f030f145eac570960fda4e5a1951d82b513"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 3974029,
+          "digest": "sha256:5e0ab715a7f607ab8d1ae2f08f0e5132e3a0d2d63ce20e5f8bd58b768f3614bf"
+        }
+      ]
+    },
+    {
+      "id": 286267151,
+      "tag": "v1.6.0",
+      "commit": "5cf6844078681313da3571a7bd683681845e5021",
+      "draft": true,
+      "created_at": "2026-02-13T22:44:01Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.5.0_aarch64.dmg",
+          "size": 4054884,
+          "digest": "sha256:d2788d2f04a0c9ea8559018cf60233a2ed139c7a1b4daade37f5af82e57e451e"
+        },
+        {
+          "name": "Mermaider_1.5.0_x64-setup.exe",
+          "size": 3061378,
+          "digest": "sha256:2a9d8e9b503445ac6812a0210ad53657571d70e013edb74806003b56eb8ddf77"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4017137,
+          "digest": "sha256:af5f9819a5cb19776388327e1b6875256d275158a86ea4ee737473004a8689a7"
+        }
+      ]
+    },
+    {
+      "id": 285209114,
+      "tag": "v1.5.0",
+      "commit": "5bb0422c11450f31b25e74f32ccc63522820810d",
+      "draft": true,
+      "created_at": "2026-02-11T11:28:46Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.3.0_aarch64.dmg",
+          "size": 4053977,
+          "digest": "sha256:682ab457f621db4dca075fe1e2d1ba8658c1134ac7884e01fd0b6182f5f3cd20"
+        },
+        {
+          "name": "Mermaider_1.3.0_x64-setup.exe",
+          "size": 3058621,
+          "digest": "sha256:2509fcb6ba86111a07f7b75cb91279a0465083e6521ab4bd876bcf421db1b90e"
+        },
+        {
+          "name": "Mermaider_1.5.0_aarch64.dmg",
+          "size": 4053984,
+          "digest": "sha256:b94b77cef352ebae881b41beabc9aac9a15e0e042035389bb915fa1b66df7c54"
+        },
+        {
+          "name": "Mermaider_1.5.0_x64-setup.exe",
+          "size": 3061415,
+          "digest": "sha256:cd4c990dc70706df673779c58421cde4f3fc2298c5fe151c23b4dd066fabb505"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4014854,
+          "digest": "sha256:9562c1541a4a6fb264721f1d8ca9af79b1222b5e54aa7501c7d3477815386e08"
+        }
+      ]
+    },
+    {
+      "id": 282673877,
+      "tag": "v1.4.0",
+      "commit": "ea4c5992b73c0d5aaeaf4fe0154d8e9c8628415e",
+      "draft": true,
+      "created_at": "2026-02-03T17:58:41Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.3.0_aarch64.dmg",
+          "size": 4042648,
+          "digest": "sha256:071c2ffcbe1d1d8799f51013c6941505dd6fc405e9cdf561135bf44eda6d49a0"
+        },
+        {
+          "name": "Mermaider_1.3.0_x64-setup.exe",
+          "size": 3055957,
+          "digest": "sha256:498f65eae026362634a4276949914cc8dbb0198937a6cd8f859a9f31402ece02"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4009807,
+          "digest": "sha256:e29fde27da271d2d0bb0e2e6320d2562531aa1002376a3b7b7f6e6ef2094dc56"
+        }
+      ]
+    },
+    {
+      "id": 282529561,
+      "tag": "v1.3.0",
+      "commit": "6df0c22b486c15ed7d601feec7ee2a615089f282",
+      "draft": true,
+      "created_at": "2026-02-03T11:47:57Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.3.0_aarch64.dmg",
+          "size": 4038576,
+          "digest": "sha256:391706f0eae82b7291eeaf79c1dfaa4562b5b805c49c25c72ea515c087f3e8e4"
+        },
+        {
+          "name": "Mermaider_1.3.0_x64-setup.exe",
+          "size": 3049557,
+          "digest": "sha256:144fc16d9cdd9cd2562866b3e0538de2549cdff9f61865524e660aaaee7504f3"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4006517,
+          "digest": "sha256:e44e3056986eed8dec3169932b84c7bdb5da174a6cf07d03c365291b4b4be49d"
+        }
+      ]
+    },
+    {
+      "id": 282309845,
+      "tag": "v1.2.0",
+      "commit": "d1f72e7adcf676d383373113d701b0d2cf66e531",
+      "draft": true,
+      "created_at": "2026-02-02T19:01:24Z",
+      "published_at": null,
+      "assets": [
+        {
+          "name": "Mermaider_1.2.0_aarch64.dmg",
+          "size": 4037218,
+          "digest": "sha256:1be8d3eecfd094ab80a7b21e7894a9d429c1fdcd0b75799cb6dd0b6e662a81e7"
+        },
+        {
+          "name": "Mermaider_1.2.0_x64-setup.exe",
+          "size": 3050617,
+          "digest": "sha256:cc4f3452efe7e5f23cce7950dea9c43ecb8493d018546358fee31698558e61c2"
+        },
+        {
+          "name": "Mermaider_aarch64.app.tar.gz",
+          "size": 4005138,
+          "digest": "sha256:846fca7fea4c8aef3244cc6953f09bd87eaa71e283a5235d289d524575c82ccd"
+        }
+      ]
+    }
+  ],
+  "recent_workflow_runs": [
+    {
+      "id": 30946848188,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "b0a673dcb869739acd2b8f8576ea2ea0c4ed0d68",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-04T20:13:09Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30946848188"
+    },
+    {
+      "id": 30943653286,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "1cf5d2467a0e85029f4c730246e5ac193481e70f",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-04T19:31:14Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30943653286"
+    },
+    {
+      "id": 30918395446,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "d1bbc21d90678a21a84cf1e28cd1dcb8f775298d",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-04T14:20:04Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30918395446"
+    },
+    {
+      "id": 30918123075,
+      "name": "Release",
+      "ref": "v1.8.6",
+      "commit": "d6d96091ff18eb4716daf6f80603d5d3f586115a",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-08-04T14:16:55Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30918123075"
+    },
+    {
+      "id": 30918119820,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "d6d96091ff18eb4716daf6f80603d5d3f586115a",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-04T14:16:53Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30918119820"
+    },
+    {
+      "id": 30714118001,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "6a5a7dc6a0b21ea7aec1d2f3c668576ecdfd7cf4",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-01T19:08:24Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30714118001"
+    },
+    {
+      "id": 30714066973,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "f9f797ab1e4e88ca8360375c0024594d194d548e",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-01T19:07:01Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30714066973"
+    },
+    {
+      "id": 30712126356,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "25c2d80e2203e4884a7808ea6cf1c77161e518e6",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-01T18:15:43Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30712126356"
+    },
+    {
+      "id": 30706105064,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "bdbe5e41aecd9a8b01e2361f729d33b33a3d01de",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-01T15:31:35Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/30706105064"
+    },
+    {
+      "id": 29228096498,
+      "name": "Release",
+      "ref": "v1.8.5",
+      "commit": "6fd0d4a9f075b36de742d84ed78b84dec79f8ca5",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-07-13T06:08:22Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/29228096498"
+    },
+    {
+      "id": 29228096097,
+      "name": "Deploy to Appwrite Sites",
+      "ref": "main",
+      "commit": "6fd0d4a9f075b36de742d84ed78b84dec79f8ca5",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-07-13T06:08:21Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/29228096097"
+    },
+    {
+      "id": 28786747674,
+      "name": "Release",
+      "ref": "v1.8.4",
+      "commit": "3bc3cc24f629ac71b422d8be150cef1de362ce6b",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-07-06T11:01:08Z",
+      "url": "https://github.com/Jakende/mermaider/actions/runs/28786747674"
+    }
+  ]
+}

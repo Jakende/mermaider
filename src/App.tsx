@@ -9,6 +9,7 @@ import ResizableSplitter from './components/ResizableSplitter'
 import NewDiagramModal from './components/NewDiagramModal'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
 import { getStoredConfig } from './utils/aiService'
+import { restoreWorkspace } from './utils/workspaceStorage'
 import type { Tab, ChatSession } from './types'
 import './App.css'
 
@@ -24,23 +25,15 @@ function AppContent() {
   const { theme } = useTheme()
 
   // Tabs State
-  const [tabs, setTabs] = useState<Tab[]>([{
-    id: 'initial',
-    name: 'diagram',
-    code: DEFAULT_CODE,
-    chatSessions: [createInitialSession()],
-    activeChatSessionId: '' // Will be set in useMemo or useEffect if missing
-  }])
-  const [activeTabId, setActiveTabId] = useState<string>('initial')
-
-  // Migration and Active Session resolution
-  const activeTab = useMemo(() => {
-    const tab = tabs.find(t => t.id === activeTabId) || tabs[0]
-    if (!tab.activeChatSessionId && tab.chatSessions.length > 0) {
-      tab.activeChatSessionId = tab.chatSessions[0].id
-    }
-    return tab
-  }, [tabs, activeTabId])
+  const [initialWorkspace] = useState(() => {
+    const session = createInitialSession()
+    const fallback: Tab[] = [{ id: 'initial', name: 'diagram', code: DEFAULT_CODE,
+      chatSessions: [session], activeChatSessionId: session.id }]
+    return restoreWorkspace(window.localStorage, fallback)
+  })
+  const [tabs, setTabs] = useState<Tab[]>(initialWorkspace.tabs)
+  const [activeTabId, setActiveTabId] = useState(initialWorkspace.activeTabId)
+  const activeTab = useMemo(() => tabs.find(t => t.id === activeTabId) || tabs[0], [tabs, activeTabId])
 
   const activeSession = useMemo(() => {
     return activeTab.chatSessions.find(s => s.id === activeTab.activeChatSessionId) || activeTab.chatSessions[0]
@@ -235,43 +228,12 @@ function AppContent() {
     }
   }
 
-  // Load from localStorage and Migration
-  useEffect(() => {
-    const savedTabs = localStorage.getItem('mermaider-tabs')
-    const savedActiveId = localStorage.getItem('mermaider-active-tab')
-    if (savedTabs) {
-      try {
-        let parsed = JSON.parse(savedTabs)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Migration logic
-          const migrated = parsed.map((tab: any) => {
-            if (tab.chatSessions) return tab
-            const session: ChatSession = {
-              id: 'initial-session-' + tab.id,
-              messages: tab.chatHistory || [],
-              timestamp: Date.now()
-            }
-            return {
-              ...tab,
-              chatSessions: [session],
-              activeChatSessionId: session.id
-            }
-          })
-          setTabs(migrated)
-        }
-      } catch (e) {
-        console.error('Failed to parse or migrate saved tabs')
-      }
-    }
-    if (savedActiveId) {
-      setActiveTabId(savedActiveId)
-    }
-  }, [])
-
   // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('mermaider-tabs', JSON.stringify(tabs))
-    localStorage.setItem('mermaider-active-tab', activeTabId)
+    try {
+      localStorage.setItem('mermaider-tabs', JSON.stringify(tabs))
+      localStorage.setItem('mermaider-active-tab', activeTabId)
+    } catch (error) { console.warn('Workspace could not be saved', error) }
   }, [tabs, activeTabId])
 
   useEffect(() => {

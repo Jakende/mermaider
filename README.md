@@ -93,14 +93,20 @@ Mermaider is built using modern, efficient technologies:
 
 ## Development
 
+See [the project overview and verified status](docs/PROJECT_OVERVIEW.md),
+[deployment instructions](docs/DEPLOYMENT.md), and
+[the release, website, and live-decision roadmap](docs/ROADMAP.md).
+The planned hosted Jev and local Laya integration is described in
+[decision providers](docs/DECISION_PROVIDERS.md).
+
 ### Prerequisites
-- Node.js 18+
+- Node.js 20 (see `.nvmrc`)
 - Rust and Cargo (for desktop builds)
 
 ### Local Setup
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Run web version in development mode
 npm run dev
@@ -111,6 +117,9 @@ npm run tauri:dev
 
 ### Production Build
 ```bash
+# Build the static web application into dist/
+npm run build
+
 # Build web assets and desktop application
 npm run tauri:build
 ```
@@ -131,3 +140,11 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 ---
 
 Mermaider is an open-source project dedicated to making technical documentation easier and more private.
+
+### Release checks
+
+With Node 20: `npm ci`, `npm run check:release`, `npm run lint`, `npm test`,
+`npm run build`, `npx playwright install chromium`, and `npm run test:e2e`.
+Native release checks and remaining gates: [Release stabilization](docs/RELEASE_STABILIZATION.md).
+
+Current release candidate: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).

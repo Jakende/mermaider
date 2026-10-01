@@ -1,0 +1,48 @@
+name: Build Desktop Candidates
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: npm ci
+      - run: npm run check:release
+      - run: npm test
+      - run: cargo check --locked --target ${{ matrix.target }} --manifest-path src-tauri/Cargo.toml
+      - name: Build unsigned installer candidate
+        run: npm run tauri:build -- --ci --no-sign --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Generate installer checksums
+        run: node scripts/installer-checksums.mjs src-tauri/target/${{ matrix.target }}/release/bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mermaider-desktop-${{ matrix.target }}-${{ github.sha }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

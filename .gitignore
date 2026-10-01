@@ -64,3 +64,6 @@ dist-ssr
 *.local
 
 .env
+# Browser verification output
+/test-results/
+/playwright-report/
