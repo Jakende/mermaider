@@ -16,6 +16,8 @@ stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
 - Native API-Schlüssel verwenden auf macOS und Windows den Systemschlüsselspeicher.
 - Korrigierte MCP-Eingabeschemas und transparente Prüfung des Diagramm-Einstiegs.
 - Aktualisierte Abhängigkeiten und automatisierte Web-/Desktop-Releaseprüfungen.
+- MIT-Lizenz in LICENSE, README und Manifesten abgestimmt; bestehende Fremd-
+  Copyright-Hinweise bleiben erhalten.
 
 ## Gemeinsamer Bereitstellungsablauf
 

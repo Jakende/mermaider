@@ -135,7 +135,7 @@ Replace `patch` with `minor`, `major`, or an explicit version such as `1.9.0`. T
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) license. You are free to share and adapt the material for non-commercial purposes, provided you give appropriate credit.
+Mermaider is licensed under the [MIT License](LICENSE). Existing third-party copyright notices are retained.
 
 ---
 
