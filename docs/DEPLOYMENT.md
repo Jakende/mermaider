@@ -35,12 +35,18 @@ installiert `appwrite-cli@28.1.0`. Auch `appwrite deploy sites` wurde ersetzt:
 Die installierte CLI hat kein `deploy`-Kommando. Die neuen Befehle und Optionen
 wurden gegen die Hilfe der tatsächlich installierten Version geprüft.
 
-| GitHub Secret | Bedeutung |
+Konkretes Ziel (vom Projektinhaber am 01.10.2026 bereitgestellt):
+
+| Konfiguration | Wert |
 | --- | --- |
-| `APPWRITE_API_KEY` | Schlüssel mit Berechtigungen für die Site und ihre Deployments |
-| `APPWRITE_PROJECT_ID` | Projekt, zu dem die Site gehört |
-| `APPWRITE_SITE_ID` | Vorhandene Ziel-Site |
-| `APPWRITE_ENDPOINT` | Erforderlich: tatsächlicher projektspezifischer/regionaler Endpoint |
+| Endpoint | `https://fra.cloud.appwrite.io/v1` |
+| Projekt-ID | `6abe2e810023326f2b87` |
+| Site-ID | `6abe2ff1000fd13c6ca6` |
+| GitHub Secret `APPWRITE_API_KEY` | Direkt in GitHub hinterlegen; nicht im Repository |
+
+Endpoint und IDs sind im Deploymentjob konfiguriert. Nur der API-Schlüssel
+wird als Actions-Secret benötigt. Die Zugehörigkeit der Site zum Projekt,
+Deployment-Rechte und der Live-Zustand sind noch nicht per API bestätigt.
 
 Die Ziel-Site muss statisches Hosting verwenden. Hochgeladen wird der
 **bereits gebaute** Inhalt von `dist/`; Appwrite-Installations- und Buildkommando

@@ -21,6 +21,10 @@ jobs:
   deploy:
     needs: verify-web
     runs-on: ubuntu-latest
+    env:
+      APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+      APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+      APPWRITE_SITE_ID: 6abe2ff1000fd13c6ca6
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,22 +51,17 @@ jobs:
       - name: Configure Appwrite CLI
         env:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
-          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
-          APPWRITE_SITE_ID: ${{ secrets.APPWRITE_SITE_ID }}
-          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
         run: |
-          : "${APPWRITE_ENDPOINT:?Set APPWRITE_ENDPOINT in repository secrets}"
+          : "${APPWRITE_ENDPOINT:?Missing configured APPWRITE_ENDPOINT}"
           : "${APPWRITE_API_KEY:?Set APPWRITE_API_KEY in repository secrets}"
-          : "${APPWRITE_PROJECT_ID:?Set APPWRITE_PROJECT_ID in repository secrets}"
-          : "${APPWRITE_SITE_ID:?Set APPWRITE_SITE_ID in repository secrets}"
+          : "${APPWRITE_PROJECT_ID:?Missing configured APPWRITE_PROJECT_ID}"
+          : "${APPWRITE_SITE_ID:?Missing configured APPWRITE_SITE_ID}"
           appwrite client \
             --endpoint "$APPWRITE_ENDPOINT" \
             --project-id "$APPWRITE_PROJECT_ID" \
             --key "$APPWRITE_API_KEY"
 
       - name: Upload built web application to Appwrite Sites
-        env:
-          APPWRITE_SITE_ID: ${{ secrets.APPWRITE_SITE_ID }}
         run: |
           appwrite sites create-deployment \
             --site-id "$APPWRITE_SITE_ID" \

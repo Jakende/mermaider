@@ -14,8 +14,8 @@ macOS und Windows laden in dessen Release-ID hoch. Veröffentlichten Releases
 wird nicht nachträglich hinzugefügt. Versionsabweichungen und falsche Tags
 stoppen den Lauf. Native Bundles werden pro Plattform ausgewählt.
 
-Deployment benötigt `APPWRITE_API_KEY`, `APPWRITE_PROJECT_ID`, `APPWRITE_SITE_ID`
-und `APPWRITE_ENDPOINT`. Der Webbuild benötigt keine Deployment-Secrets.
+Deployment benötigt das Secret `APPWRITE_API_KEY`; der Frankfurt-Endpoint
+und die bereitgestellten Projekt-/Site-IDs sind im Deploymentjob konfiguriert. Der Webbuild benötigt keine Deployment-Secrets.
 Der Desktopworkflow verwendet `GITHUB_TOKEN`.
 
 Die alte `appwrite/setup-for-appwrite@v2`-Referenz führte zu einem Fehler vor

@@ -26,8 +26,8 @@ stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
    nach Architektur benannt und enthalten SHA256SUMS.txt.
 2. Kandidaten aus den Workflow-Artefakten laden; untenstehende Abnahme auf
    macOS Apple Silicon und Windows x64 durchführen. Prüfresultate festhalten.
-3. Appwrite-Projekt/Site prüfen und vier Actions-Secrets hinterlegen:
-   `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`, `APPWRITE_SITE_ID`, `APPWRITE_API_KEY`.
+3. Appwrite-Projekt/Site prüfen und das Actions-Secret `APPWRITE_API_KEY`
+   hinterlegen. Endpoint sowie Projekt-/Site-ID sind im Deploymentjob konfiguriert.
    API-Schlüssel direkt in GitHub eintragen; nicht im Chat oder Repository.
    Die veralteten `VITE_APPWRITE_*`-Platzhalter konfigurieren kein Deployment.
 4. Nach bestandenen Prüfungen PR mergen. Deploymentworkflow auf main läuft
@@ -72,5 +72,5 @@ festhalten und den Kandidaten korrigieren; keine fehlgeschlagene Abnahme abhaken
 
 ## Noch benötigte externe Angaben
 
-Appwrite-Endpoint, Projekt-/Site-ID und direkt gesetzter GitHub-Secret-Key;
+Direkt gesetzter GitHub-Secret-Key (Endpoint und IDs wurden bereitgestellt);
 Zielsystem-Testresultate; Entscheidung über Signierung und öffentliche Downloadquelle.
