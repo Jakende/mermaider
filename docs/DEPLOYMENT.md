@@ -73,12 +73,12 @@ appwrite sites create-deployment \
 Ein akzeptierter Upload bestätigt noch keine erfolgreiche Aktivierung.
 In Appwrite den fertigen Build, die aktive Deployment-ID und die Live-URL prüfen.
 Am 01.10.2026 wurde der Kandidat tatsächlich hochgeladen und aktiviert:
-Deployment `6abe31d88e596cd49fb0`, Adapter `static`. Die öffentliche Anwendung
+Deployment `6abe36b399fd937b46ec`, Adapter `static`. Die öffentliche Anwendung
 ist unter **https://mermaider.appwrite.network/** erreichbar (HTTP 200).
 Drei Chromium-Browsertests auf der Live-URL bestanden: Editor/Änderungen,
 Persistenz und Fehler-Recovery, SVG-Download, alle 17 Diagrammvorlagen und
 Visual Edit mit parallelen Kanten. Nachweis:
-[Liveprüfung 36848880930](https://github.com/Jakende/mermaider/actions/runs/36848880930).
+[Liveprüfung 36849491182](https://github.com/Jakende/mermaider/actions/runs/36849491182).
 
 Automatische Commit-/Branch-Previewdomains verlangen Appwrite-Anmeldung
 (`preview_signin`, HTTP 401). Sie sind keine öffentlichen Produktlinks.
@@ -86,7 +86,8 @@ Die vorhandene VCS-Anbindung erzeugt weiterhin solche Previews. Der Verifier
 prüft deshalb das aktive bzw. ausdrücklich hochgeladene Deployment und dessen
 manuelle Produktionsdomains, statt die neueste Preview als Produktion anzunehmen.
 Die neue Deploypipeline bestätigt Erfolg erst nach Build, Aktivierung und
-Live-Browsertests. Der Live-Zustand von `mermaider.com` wurde nicht bestätigt.
+Live-Browsertests. Dieser vollständige Ablauf wurde im verlinkten Lauf
+erfolgreich geprüft. Der Live-Zustand von `mermaider.com` wurde nicht bestätigt.
 
 Alternativ direkt aus Git bauen: `npm ci`, `npm run build`, Output `dist`,
 statischer Adapter. Einen primären Deployment-Weg verwenden, damit Git-Integration

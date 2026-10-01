@@ -79,7 +79,7 @@ bestätigt. Noch benötigt werden Zielsystem-Testresultate; Entscheidung über S
 
 Öffentliche App: https://mermaider.appwrite.network/
 
-Deployment `6abe31d88e596cd49fb0` ist fertig und aktiv. Alle drei Live-
+Deployment `6abe36b399fd937b46ec` ist fertig und aktiv. Alle drei Live-
 Browsertests bestanden am 01.10.2026. Native MIT-Kandidaten für Apple Silicon
 und Windows x64 wurden erfolgreich gebaut und ihre Prüfsummen kontrolliert.
 Das ersetzt keine Installations-, Credential- und Providerprüfung auf Zielsystemen.
