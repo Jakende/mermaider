@@ -33,7 +33,7 @@ const report = {siteId,deploymentId,status:deployment.status,active,adapter:site
 try {
   const rules = await api('/proxy/rules')
   console.log('Site domains:', JSON.stringify(rules.rules.filter(rule=>rule.deploymentResourceId === siteId).map(rule=>({domain:rule.domain,type:rule.type,trigger:rule.trigger,status:rule.status,deploymentId:rule.deploymentId}))))
-  report.urls = rules.rules.filter(rule=>rule.deploymentResourceId === siteId && rule.type === 'deployment').map(rule=>new URL(`https://${rule.domain}`).href)
+  report.urls = rules.rules.filter(rule=>rule.deploymentResourceId === siteId && rule.type === 'deployment' && rule.trigger === 'manual' && rule.deploymentId === deploymentId).map(rule=>new URL(`https://${rule.domain}`).href)
 } catch (error) {
   console.warn(`Domain lookup unavailable: ${error.message}. Confirm the live URL in Appwrite.`)
 }
@@ -47,5 +47,5 @@ for (const url of report.urls) {
 }
 writeFileSync('appwrite-verification.json', JSON.stringify(report,null,2)+'\n')
 console.log(JSON.stringify(report,null,2))
-if (report.liveChecks.length && !report.liveChecks.some(check=>check.servesApp)) throw new Error('No verified domain serves the deployed application; inspect public response diagnostics')
+if (!report.liveChecks.some(check=>check.servesApp)) throw new Error('No verified domain serves the deployed application; inspect public response diagnostics')
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY,`Appwrite deployment **${deploymentId}** is ready and active.\n\n${report.urls.map(url=>`- ${url}`).join('\n')}\n`)

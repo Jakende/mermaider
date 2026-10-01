@@ -3,7 +3,7 @@ name: Verify Appwrite Deployment
 on:
   push:
     branches: ['release/1.8.7-stabilization']
-    paths: ['.github/workflows/verify-appwrite.yml', 'scripts/verify-appwrite.mjs']
+    paths: ['.github/workflows/verify-appwrite.yml', 'scripts/verify-appwrite.mjs', 'playwright.config.ts']
   workflow_dispatch:
 
 permissions:
@@ -27,6 +27,12 @@ jobs:
           APPWRITE_VERIFY_TIMEOUT_MS: 30000
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: node scripts/verify-appwrite.mjs
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Test deployed application in Chromium
+        env:
+          E2E_BASE_URL: https://mermaider.appwrite.network
+        run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: always()
         with:
