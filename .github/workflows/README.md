@@ -20,7 +20,9 @@ Der Desktopworkflow verwendet `GITHUB_TOKEN`.
 
 Die alte `appwrite/setup-for-appwrite@v2`-Referenz führte zu einem Fehler vor
 Checkout und Build. Der lokale Fix installiert CLI 28.1.0 und verwendet
-`sites create-deployment`. Ein realer Lauf des geänderten Workflows steht aus.
+`sites create-deployment`. Ein realer Upload und die Liveprüfung auf mermaider.appwrite.network sind
+erfolgreich. Die ergänzte Prüfung unterscheidet Produktionsdomains von
+geschützten Previewdomains.
 
 Build und Upload bestätigen keine Live-Aktivierung. Appwrite-Status prüfen;
 Desktop-Releases werden weiterhin als Entwürfe erstellt.
@@ -29,3 +31,6 @@ Siehe [Bereitstellung](../../docs/DEPLOYMENT.md),
 [Projektstand](../../docs/PROJECT_OVERVIEW.md) und [Roadmap](../../docs/ROADMAP.md).
 
 Gemeinsamer Kandidat und Abnahmeliste: [Release 1.8.7](../../docs/RELEASE_1.8.7.md).
+
+`verify-appwrite.yml` prüft das aktive Deployment und die öffentliche App
+mit Chromium. Der Deployjob prüft zusätzlich genau die neu hochgeladene ID.

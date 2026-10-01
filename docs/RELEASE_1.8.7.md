@@ -1,7 +1,7 @@
 # Mermaider 1.8.7 – Releasekandidat
 
-Status: lokal vorbereitet; native CI, Zielsystem-Abnahme und Appwrite-Liveprüfung
-stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
+Status: Native MIT-Kandidaten und Appwrite-Liveprüfung sind erfolgreich;
+Zielsystem-Abnahme, Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
 1.8.7 abgestimmt. Keine Jev-/Laya-Integration in diesem Release.
 
 ## Vorgesehene Release Notes
@@ -72,5 +72,14 @@ festhalten und den Kandidaten korrigieren; keine fehlgeschlagene Abnahme abhaken
 
 ## Noch benötigte externe Angaben
 
-Direkt gesetzter GitHub-Secret-Key (Endpoint und IDs wurden bereitgestellt);
-Zielsystem-Testresultate; Entscheidung über Signierung und öffentliche Downloadquelle.
+Appwrite-Endpoint, IDs und API-Key sind konfiguriert und im echten Deployment
+bestätigt. Noch benötigt werden Zielsystem-Testresultate; Entscheidung über Signierung und öffentliche Downloadquelle.
+
+## Bestätigte Bereitstellung
+
+Öffentliche App: https://mermaider.appwrite.network/
+
+Deployment `6abe31d88e596cd49fb0` ist fertig und aktiv. Alle drei Live-
+Browsertests bestanden am 01.10.2026. Native MIT-Kandidaten für Apple Silicon
+und Windows x64 wurden erfolgreich gebaut und ihre Prüfsummen kontrolliert.
+Das ersetzt keine Installations-, Credential- und Providerprüfung auf Zielsystemen.
