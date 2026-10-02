@@ -296,6 +296,7 @@ function AppContent() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector('[role="dialog"][aria-modal="true"]')) return
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const modifier = isMac ? e.metaKey : e.ctrlKey
 

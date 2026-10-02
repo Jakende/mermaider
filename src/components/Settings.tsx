@@ -48,8 +48,12 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
       if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
     }
+    const focusin = (event: FocusEvent) => {
+      if (!modalRef.current?.contains(event.target as Node)) modalRef.current?.querySelector<HTMLButtonElement>('.close-button')?.focus()
+    }
     document.addEventListener('keydown', keydown, true)
-    return () => { document.removeEventListener('keydown', keydown, true); if (opener?.isConnected) opener.focus() }
+    document.addEventListener('focusin', focusin)
+    return () => { document.removeEventListener('keydown', keydown, true); document.removeEventListener('focusin', focusin); if (opener?.isConnected) opener.focus() }
   }, [isOpen])
 
   // ── Provider selection ────────────────────────────────────────────────────
