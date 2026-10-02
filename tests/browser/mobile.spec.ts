@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.use({ viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true })
 
-test('iPhone-sized forms use safe text sizing and scroll independently of diagram zoom', async ({ page }) => {
+test('iPhone-sized forms use safe text sizing and scroll independently of diagram zoom', async ({ page, browserName }) => {
   await page.goto('/')
   await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
   const zoom = await page.locator('.zoom-level').textContent()
@@ -18,8 +18,14 @@ test('iPhone-sized forms use safe text sizing and scroll independently of diagra
   }
   await page.getByRole('tab', { name: 'Connection', exact: true }).tap()
   const content = page.locator('.settings-content')
-  await content.hover()
-  await page.mouse.wheel(0, 400)
+  if (browserName === 'webkit') {
+    // Playwright cannot inject native wheel or swipe gestures into mobile WebKit.
+    expect(await content.evaluate(element => getComputedStyle(element).touchAction)).toContain('pan-y')
+    await content.evaluate(element => { element.scrollTop = 400 })
+  } else {
+    await content.hover()
+    await page.mouse.wheel(0, 400)
+  }
   await expect.poll(() => content.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
   expect(await page.locator('.zoom-level').textContent()).toBe(zoom)
   expect(await page.evaluate(() => window.visualViewport!.scale)).toBe(1)
@@ -93,7 +99,8 @@ test('two-finger touch pans and pinches the diagram without rerendering; tapping
   await client.detach()
 })
 
-test('ordinary two-finger trackpad scrolling pans; Ctrl-wheel zooms only the diagram', async ({ page }) => {
+test('ordinary two-finger trackpad scrolling pans; Ctrl-wheel zooms only the diagram', async ({ page, browserName }) => {
+  test.skip(browserName === 'webkit', 'Playwright does not support wheel injection in mobile WebKit; Chromium verifies trackpad gestures.')
   await page.goto('/')
   await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
   const id = await page.locator('.preview-content svg').getAttribute('id')

@@ -74,6 +74,7 @@ aktiviert die automatische Anpassung wie bisher erneut.
 
 Die Browserprüfung umfasst zusätzlich ein mobiles WebKit-Projekt. Installieren:
 `npx playwright install chromium webkit`. Chromium simuliert außerdem echte
-Multi-Touch-Ereignisse; dessen Protokollfall wird in WebKit ausdrücklich
-übersprungen. Bildschirmtastatur-Resizes werden kontrolliert simuliert. Das
+Multi-Touch-Ereignisse; dieser Protokollfall und der native Wheel-Fall werden in mobilem
+WebKit mangels Ereignisinjektion ausdrücklich übersprungen. WebKit prüft die
+Formular-Scrollbarkeit und deren Touch-Regeln ohne simulierte Wischgeste. Bildschirmtastatur-Resizes werden kontrolliert simuliert. Das
 ersetzt keine Bedienungsabnahme mit einer echten iPhone-Bildschirmtastatur.
