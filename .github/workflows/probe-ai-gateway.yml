@@ -1,0 +1,22 @@
+name: Check hosted AI prerequisites
+on:
+  push:
+    branches: [release/1.8.7-stabilization]
+    paths: [scripts/probe-appwrite-ai.mjs, .github/workflows/probe-ai-gateway.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Check function access and browser origin
+        env:
+          APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/probe-appwrite-ai.mjs
