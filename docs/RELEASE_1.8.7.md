@@ -103,3 +103,18 @@ Fremdhinweise bleiben erhalten. Der Projektverantwortliche bestätigte eine
 MIT-Freigabe für die übernommenen Dario-Beiträge. Lizenzgrundlage und Prüf-
 umfang sind in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert.
 Das Repository bleibt privat; Release und Downloads sind nicht veröffentlicht.
+
+## Browser-Provider-Verbindungen vom 02.10.2026
+
+Eine optionale lokale Browser-Brücke ermöglicht Web-Zugriff auf ChatGPT/Codex-
+Konten und Ollama. Der Build stellt die eigenständig ausführbare Node-Datei zum
+Download bereit. Fehler beim Modellabruf werden sichtbar, API-Key-Auswahl wird
+von alten OAuth-Tokens getrennt, Proxy-Pfadpräfixe bleiben erhalten und Browser-
+Zugangsdaten überleben Reloads desselben Tabs in sessionStorage. Desktop-HTTP und
+Systemschlüsselspeicher bleiben erhalten. Anleitung: [BROWSER_AI.md](BROWSER_AI.md).
+
+23 Node-/Regressionstests und sechs Chromium-Tests bestanden lokal, einschließlich
+realer HTTP-Verbindung zu einer lokalen Brücke mit kontrollierten Anbieterantworten.
+Das prüft Transport und UI, ersetzt aber keinen Test mit Benutzerkonto und Ollama
+auf dem tatsächlichen Rechner. Node.js 20+ und lokaler Netzwerkzugriff im Browser
+sind für die Brücke erforderlich; sie wird nicht vom Appwrite-Server ausgeführt.

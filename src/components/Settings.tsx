@@ -30,6 +30,10 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const { theme } = useTheme()
 
   // ── Provider selection ────────────────────────────────────────────────────
+  const browserRuntime = !(window as any).__TAURI_INTERNALS__
+  const [browserBridgeEndpoint, setBrowserBridgeEndpoint] = useState('')
+  const [ollamaDiscoveryError, setOllamaDiscoveryError] = useState('')
+  const [openaiDiscoveryError, setOpenaiDiscoveryError] = useState('')
   const [provider, setProvider] = useState<Provider>('ollama')
   // Independent embedding provider — can differ from the chat provider
   const [embeddingProvider, setEmbeddingProvider] = useState<Provider>('ollama')
@@ -87,6 +91,9 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setEmbeddingProvider(config.embeddingProvider ?? (config.provider === 'openai' ? 'openai' : 'ollama'))
 
       // Ollama
+      setBrowserBridgeEndpoint(config.browserBridgeEndpoint || '')
+      setOllamaDiscoveryError('')
+      setOpenaiDiscoveryError('')
       setEndpoint(config.endpoint)
       setModel(config.model)
       setEmbeddingModel(config.embeddingModel || 'nomic-embed-text')
@@ -113,7 +120,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setDeviceAuthInfo(null)
       setDeviceFlowError('')
 
-      fetchModels(config.endpoint)
+      fetchModels(config.endpoint, config.browserBridgeEndpoint || '')
       // Credentials are loaded from the OS keychain in Tauri, not from the
       // localStorage settings metadata.
       void getStoredConfigWithSecrets().then((secureConfig) => {
@@ -128,13 +135,15 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   }, [isOpen])
 
   // ── Ollama model discovery ────────────────────────────────────────────────
-  const fetchModels = async (endpointUrl: string) => {
+  const fetchModels = async (endpointUrl: string, bridgeEndpoint = browserBridgeEndpoint) => {
+    setOllamaDiscoveryError('')
     if (!endpointUrl.trim()) return
     try {
-      const models = await getAvailableModels(endpointUrl.trim())
+      const models = await getAvailableModels(endpointUrl.trim(), bridgeEndpoint)
       setAvailableModels(models)
     } catch (err) {
-      console.warn('Failed to fetch available models', err)
+      setAvailableModels([])
+      setOllamaDiscoveryError(err instanceof Error ? err.message : 'Ollama model discovery failed.')
     }
   }
 
@@ -144,7 +153,9 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
 
   // ── OpenAI model discovery ─────────────────────────────────────────────────
   const fetchOpenAIModels = async (partialConfig?: any) => {
+    setOpenaiDiscoveryError('')
     const config = partialConfig || {
+      browserBridgeEndpoint,
       openaiEndpoint,
       openaiApiKey,
       openaiAccessToken,
@@ -163,8 +174,10 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       if (models.embedding.length > 0 && !openaiEmbeddingModel.trim()) {
         setOpenaiEmbeddingModel(models.embedding[0])
       }
-    } catch {
-      // Silent
+    } catch (error) {
+      setAvailableOpenAIChatModels([])
+      setAvailableOpenAIEmbedModels([])
+      setOpenaiDiscoveryError(error instanceof Error ? error.message : 'OpenAI model discovery failed.')
     }
   }
 
@@ -181,7 +194,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
           fetchOpenAIModels()
         }
       } else {
-        const result = await testOllamaConnection(endpoint, model, embeddingModel)
+        const result = await testOllamaConnection(endpoint, model, embeddingModel, browserBridgeEndpoint)
         setTestResult(result)
         if (result.success || result.message.includes('not found')) {
           await fetchModels(endpoint)
@@ -270,6 +283,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   // ── Build config from current state ──────────────────────────────────────
   const buildCurrentConfig = () => ({
     endpoint,
+    browserBridgeEndpoint: browserBridgeEndpoint.trim(),
     model,
     embeddingModel,
     systemPrompt: systemPrompt.trim(),
@@ -312,6 +326,9 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const handleReset = () => {
     clearConfig()
     const config = getStoredConfig()
+    setBrowserBridgeEndpoint('')
+    setOllamaDiscoveryError('')
+    setOpenaiDiscoveryError('')
     setProvider('ollama')
     setEmbeddingProvider('ollama')
     setEndpoint(config.endpoint)
@@ -335,7 +352,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     setDeviceAuthInfo(null)
     setDeviceFlowError('')
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-    fetchModels(config.endpoint)
+    fetchModels(config.endpoint, '')
   }
 
   if (!isOpen) return null
@@ -377,6 +394,24 @@ Ollama (Local)
               </button>
             </div>
           </div>
+
+          {browserRuntime && (
+            <div className="settings-section">
+              <label htmlFor="browser-ai-bridge">Browser Connection Bridge</label>
+              <input id="browser-ai-bridge" type="text" value={browserBridgeEndpoint}
+                onChange={event => setBrowserBridgeEndpoint(event.target.value)}
+                placeholder="http://127.0.0.1:11435" />
+              <p className="settings-hint">
+                For ChatGPT/Codex account login, <a href="/website/mermaider-browser-bridge.mjs" download>download the local bridge</a>
+                and run <code>node mermaider-browser-bridge.mjs</code> on your computer (Node.js 20 or newer),
+                enter <code>http://127.0.0.1:11435</code> here and keep the terminal open.
+                The bridge also connects to local Ollama. Allow local-network access for this site in your browser.
+                Leave blank for direct OpenAI API-key access or Ollama with browser access configured.
+              </p>
+              <p className="settings-hint">Browser credentials are kept for this tab session, including reloads.
+                They are not saved in persistent browser settings.</p>
+            </div>
+          )}
 
           {/* ── Connection Test Result ── */}
           {testResult && (
@@ -421,6 +456,7 @@ Ollama (Local)
                 <p className="settings-hint">Default: http://127.0.0.1:11434/v1</p>
               </div>
 
+              {ollamaDiscoveryError && <p className="settings-hint" role="alert">{ollamaDiscoveryError}</p>}
               <div className="settings-field">
                 <label htmlFor="ollama-model">Ollama Model</label>
                 <input
@@ -487,9 +523,10 @@ Ollama (Local)
           {provider === 'openai' && (
             <div className="settings-section" role="tabpanel" aria-labelledby="provider-tab-openai">
               <p className="settings-description">
-                Connect Mermaider to OpenAI's API. Supports API Key or Device Code / Browser login.
+                Connect with an OpenAI API key or a ChatGPT/Codex account. In the web app, account login requires the local Browser Connection Bridge.
               </p>
 
+              {openaiDiscoveryError && <p className="settings-hint" role="alert">{openaiDiscoveryError}</p>}
               {/* ── Auth Type Selector ── */}
               <div className="settings-field">
                 <label>Authentication Method</label>

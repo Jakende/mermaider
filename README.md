@@ -154,3 +154,5 @@ Native release checks and remaining gates: [Release stabilization](docs/RELEASE_
 Current release candidate: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).
 
 Product website and reviewed download configuration: [Website guide](docs/WEBSITE.md).
+
+Browser Ollama/ChatGPT connections and the optional standalone local bridge: [Browser AI setup](docs/BROWSER_AI.md).

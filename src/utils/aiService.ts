@@ -12,6 +12,7 @@ import {
 } from './mcpService'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { invoke } from '@tauri-apps/api/core'
+import { browserProviderFetch } from './browserTransport'
 
 interface OllamaMessage {
   role: 'system' | 'user' | 'assistant'
@@ -30,6 +31,8 @@ interface OllamaResponse {
 
 export interface OllamaConfig {
   endpoint: string
+  /** Optional loopback bridge for browser access to ChatGPT/Codex and Ollama. */
+  browserBridgeEndpoint?: string
   model: string
   embeddingModel?: string
   systemPrompt?: string
@@ -85,7 +88,13 @@ function isTauriRuntime(): boolean {
 
 async function loadOpenAISecrets(): Promise<OpenAISecrets> {
   if (cachedOpenAISecrets) return cachedOpenAISecrets
-  if (!isTauriRuntime()) return { apiKey: '', accessToken: '', refreshToken: '', idToken: '' }
+  if (!isTauriRuntime()) {
+    try {
+      const saved = sessionStorage.getItem('mermaider-openai-session')
+      if (saved) { cachedOpenAISecrets = JSON.parse(saved); return cachedOpenAISecrets! }
+    } catch { /* Browser storage may be unavailable. */ }
+    return { apiKey: '', accessToken: '', refreshToken: '', idToken: '' }
+  }
   cachedOpenAISecrets = await invoke<OpenAISecrets>('load_openai_secrets')
   return cachedOpenAISecrets
 }
@@ -93,6 +102,10 @@ async function loadOpenAISecrets(): Promise<OpenAISecrets> {
 async function saveOpenAISecrets(secrets: OpenAISecrets): Promise<void> {
   cachedOpenAISecrets = secrets
   if (isTauriRuntime()) await invoke('save_openai_secrets', { secrets })
+  else {
+    try { sessionStorage.setItem('mermaider-openai-session', JSON.stringify(secrets)) }
+    catch { /* Retain credentials in memory if storage is unavailable. */ }
+  }
 }
 
 async function withStoredOpenAISecrets(config: OllamaConfig): Promise<OllamaConfig> {
@@ -157,20 +170,14 @@ function getSystemPrompt(config: OllamaConfig): string {
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function getBaseUrl(endpoint: string): string {
-  let cleanEndpoint = endpoint.replace(/\/$/, '')
-  try {
-    const url = new URL(cleanEndpoint)
-    return `${url.protocol}//${url.host}`
-  } catch (e) {
-    return cleanEndpoint.replace('/v1', '')
-  }
+  return endpoint.trim().replace(/\/+$/, '').replace(/\/(?:v1(?:\/chat\/completions)?|api(?:\/(?:tags|chat|generate|embeddings|embed))?)$/, '')
 }
 
 function getTemperature(preferred: number, config: OllamaConfig): number {
   return config.temperature !== undefined ? config.temperature : preferred;
 }
 
-async function performFetch(url: string, options: RequestInit) {
+async function performFetch(url: string, options: RequestInit, config?: Partial<OllamaConfig>) {
   const isTauri = !!(window as any).__TAURI_INTERNALS__
   if (isTauri) {
     // Always use the native HTTP plugin in packaged apps. Falling back to the
@@ -183,13 +190,13 @@ async function performFetch(url: string, options: RequestInit) {
       throw new Error(`Native HTTP request to ${url} failed: ${detail}`)
     }
   } else {
-    return await fetch(url, options)
+    return await browserProviderFetch(url, options, config?.browserBridgeEndpoint ?? getStoredConfig().browserBridgeEndpoint)
   }
 }
 
 /** Returns the bearer token or API key to use for OpenAI requests, or null if none set. */
 function getOpenAIAuthHeader(config: OllamaConfig): string | null {
-  if (config.openaiAccessToken) return `Bearer ${config.openaiAccessToken}`
+  if (config.openaiAuthType !== 'apikey' && config.openaiAccessToken) return `Bearer ${config.openaiAccessToken}`
   if (config.openaiApiKey) return `Bearer ${config.openaiApiKey}`
   return null
 }
@@ -229,7 +236,7 @@ async function callOllama(
   const finalTemperature = getTemperature(temperature, config);
 
   // Ensure endpoint ends with /chat/completions if not present, but handle v1 base
-  let endpoint = config.endpoint.replace(/\/$/, '')
+  let endpoint = config.endpoint.trim().replace(/\/+$/, '')
   if (!endpoint.endsWith('/chat/completions')) {
     if (endpoint.endsWith('/v1')) {
       endpoint += '/chat/completions'
@@ -256,7 +263,7 @@ async function callOllama(
           num_ctx: config.numCtx || 16384
         }
       })
-    })
+    }, config)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -338,7 +345,7 @@ async function callOpenAICodex(
       store: false,
       ...(config.openaiWebSearch ? { tools: [{ type: 'web_search' }] } : {}),
     }),
-  })
+  }, config)
 
   const raw = await response.text()
   if (!response.ok) {
@@ -444,7 +451,7 @@ async function callOpenAIWithWebSearch(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
       body: JSON.stringify(body),
-    })
+    }, config)
     const raw = await response.text()
     if (!response.ok) {
       let detail = raw
@@ -502,7 +509,7 @@ async function callOpenAI(
         'Authorization': authHeader,
       },
       body: JSON.stringify(body)
-    })
+    }, config)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -569,7 +576,7 @@ async function generateOpenAIEmbedding(text: string, config: OllamaConfig): Prom
         model: config.openaiEmbeddingModel || DEFAULT_OPENAI_EMBEDDING_MODEL,
         input: text,
       })
-    })
+    }, config)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -616,7 +623,7 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
           num_ctx: config.numCtx || 16384
         }
       })
-    })
+    }, config)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -645,37 +652,13 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
 
 // ─── Ollama Model Discovery ───────────────────────────────────────────────────
 
-export async function getAvailableModels(endpoint: string): Promise<string[]> {
+export async function getAvailableModels(endpoint: string, browserBridgeEndpoint?: string): Promise<string[]> {
   const baseUrl = getBaseUrl(endpoint).replace('localhost', '127.0.0.1')
   const tagsUrl = `${baseUrl}/api/tags`
 
-  const isTauri = !!(window as any).__TAURI_INTERNALS__
-
-  async function performFetchLocal(url: string) {
-    if (isTauri) {
-      try {
-        return await tauriFetch(url, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        })
-      } catch (tauriErr) {
-        // Fallback to native window.fetch if tauriFetch fails (e.g. plugin IPC issues)
-        console.warn('tauriFetch failed in getAvailableModels, falling back to window.fetch:', tauriErr)
-        return await fetch(url, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' }
-        })
-      }
-    } else {
-      return await fetch(url, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      })
-    }
-  }
 
   try {
-    const response = await performFetchLocal(tagsUrl)
+    const response = await performFetch(tagsUrl, { method: 'GET', headers: { Accept: 'application/json' } }, { browserBridgeEndpoint })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -709,10 +692,11 @@ export async function getAvailableModels(endpoint: string): Promise<string[]> {
 export async function testOllamaConnection(
   endpoint: string,
   model: string,
-  embeddingModel: string
+  embeddingModel: string,
+  browserBridgeEndpoint?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const models = await getAvailableModels(endpoint)
+    const models = await getAvailableModels(endpoint, browserBridgeEndpoint)
     
     const cleanModel = model.trim().toLowerCase()
     const cleanEmbeddingModel = embeddingModel.trim().toLowerCase()
@@ -763,13 +747,13 @@ export async function testOllamaConnection(
 
 /**
  * Fetches available models from the OpenAI /v1/models endpoint.
- * Falls back to the well-known list if the request fails (e.g. network issues).
+ * Reports network/authentication failures instead of silently returning an empty catalog.
  */
 export async function getAvailableOpenAIModels(config: OllamaConfig): Promise<{ chat: string[]; embedding: string[] }> {
   config = await withStoredOpenAISecrets(config)
   const authHeader = getOpenAIAuthHeader(config)
   if (!authHeader) {
-    return { chat: [], embedding: [] }
+    throw new Error('No OpenAI credentials configured. Enter an API key or connect your ChatGPT/Codex account.')
   }
 
   const baseEndpoint = usesCodexOAuth(config)
@@ -792,8 +776,11 @@ export async function getAvailableOpenAIModels(config: OllamaConfig): Promise<{ 
     const modelItems: any[] = []
     let pageUrl: string | null = modelsUrl
     for (let page = 0; pageUrl && page < 20; page++) {
-      const response = await performFetch(pageUrl, { method: 'GET', headers })
-      if (!response.ok) return { chat: [], embedding: [] }
+      const response = await performFetch(pageUrl, { method: 'GET', headers }, config)
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}))
+        throw new Error(`Model discovery failed (HTTP ${response.status}): ${detail.error?.message || detail.error || response.statusText}`)
+      }
       const data = await response.json()
       const items = Array.isArray(data) ? data : (data.data || data.models || [])
       modelItems.push(...items)
@@ -812,11 +799,11 @@ export async function getAvailableOpenAIModels(config: OllamaConfig): Promise<{ 
     // This keeps newly released and account-specific model slugs selectable.
     const chatModels = usesCodexOAuth(config)
       ? allModels
-      : allModels.filter(id => id.startsWith('gpt-') || id.startsWith('o1') || id.startsWith('o3'))
+      : allModels.filter(id => /^(gpt-|chatgpt-|o\d(?:-|$))/.test(id))
 
     return { chat: [...new Set(chatModels)], embedding: [...new Set(embeddingModels)] }
-  } catch {
-    return { chat: [], embedding: [] }
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'OpenAI model discovery failed.')
   }
 }
 
@@ -897,7 +884,7 @@ interface OpenAIDeviceTokenResponse {
  * returns an authorization code which must subsequently be exchanged at the
  * OAuth token endpoint.
  */
-export async function startOpenAIDeviceAuth(_config: OllamaConfig): Promise<OpenAIDeviceAuthResponse> {
+export async function startOpenAIDeviceAuth(config: OllamaConfig): Promise<OpenAIDeviceAuthResponse> {
   const authBase = 'https://auth.openai.com'
   const deviceAuthUrl = `${authBase}/api/accounts/deviceauth/usercode`
   const clientId = 'app_EMoamEEZ73f0CkXaXp7hrann'
@@ -907,7 +894,7 @@ export async function startOpenAIDeviceAuth(_config: OllamaConfig): Promise<Open
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ client_id: clientId })
-    })
+    }, config)
 
     const body = await response.text()
     if (!response.ok) {
@@ -939,7 +926,7 @@ export async function startOpenAIDeviceAuth(_config: OllamaConfig): Promise<Open
 export async function pollOpenAIDeviceToken(
   deviceCode: string,
   userCode: string,
-  _config: OllamaConfig
+  config: OllamaConfig
 ): Promise<OpenAITokenResponse> {
   const oauthBase = 'https://auth.openai.com'
   const deviceTokenUrl = `${oauthBase}/api/accounts/deviceauth/token`
@@ -951,7 +938,7 @@ export async function pollOpenAIDeviceToken(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ device_auth_id: deviceCode, user_code: userCode })
-    })
+    }, config)
 
     const body = await response.text()
     // 403/404 means the user has not completed the browser step yet.
@@ -975,7 +962,7 @@ export async function pollOpenAIDeviceToken(
         code_verifier: device.code_verifier,
         redirect_uri: `${oauthBase}/deviceauth/callback`,
       }).toString()
-    })
+    }, config)
     const tokenBody = await tokenResponse.text()
     if (!tokenResponse.ok) {
       throw new Error(`Token exchange failed (HTTP ${tokenResponse.status}): ${tokenBody}`)
@@ -1198,6 +1185,7 @@ export function getStoredConfig(): OllamaConfig {
       return {
         // Ollama fields
         endpoint: parsed.endpoint || DEFAULT_ENDPOINT,
+        browserBridgeEndpoint: parsed.browserBridgeEndpoint || undefined,
         model: parsed.model || DEFAULT_MODEL,
         embeddingModel: parsed.embeddingModel || DEFAULT_EMBEDDING_MODEL,
         systemPrompt: parsed.systemPrompt, // might be undefined, which is fine, fallback to default
@@ -1218,6 +1206,7 @@ export function getStoredConfig(): OllamaConfig {
         openaiRefreshToken: parsed.openaiRefreshToken || '',
         openaiIdToken: parsed.openaiIdToken || '',
         openaiTokenExpiresAt: parsed.openaiTokenExpiresAt,
+        openaiAccountId: parsed.openaiAccountId,
         openaiAuthType: parsed.openaiAuthType || 'apikey',
       }
     } catch (e) {
@@ -1263,6 +1252,7 @@ export function storeConfig(config: OllamaConfig): void {
 
 export function clearConfig(): void {
   cachedOpenAISecrets = null
+  if (!isTauriRuntime()) { try { sessionStorage.removeItem('mermaider-openai-session') } catch { /* Unavailable storage. */ } }
   if (isTauriRuntime()) {
     void invoke('clear_openai_secrets').catch(error => console.error('Failed to clear OpenAI credentials securely', error))
   }

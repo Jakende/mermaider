@@ -128,3 +128,11 @@ Voraussetzungen aus [ROADMAP.md](ROADMAP.md) abarbeiten.
 
 Auf der echten Live-URL Editor, Änderungen, Persistenz, Import/Export,
 Providerverbindung und öffentliche Downloadlinks prüfen.
+
+## Web-Verbindungen zu Ollama und ChatGPT/Codex
+
+Für Browser-Kontozugriff auf ChatGPT/Codex und optional Ollama stellt der Build
+`/website/mermaider-browser-bridge.mjs` bereit. Diese lokale Node-HTTP-Brücke
+läuft auf dem Rechner des Besuchers; Appwrite hostet nur die Download-Datei.
+Kein zusätzliches Appwrite-Secret oder Serverproxy wird benötigt. Setup,
+Origins und Tab-Zugangsdaten: [BROWSER_AI.md](BROWSER_AI.md).
