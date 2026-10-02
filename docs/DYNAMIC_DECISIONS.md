@@ -41,6 +41,31 @@ Option, nicht unterschiedlich definierte Provider-Konfidenzfelder. Automatik
 startet nach Öffnen der Sitzung immer deaktiviert. Strukturplanung und
 Antwortautomatik sind unabhängig und können zusätzliche Modellaufrufe erzeugen.
 
+## Panel, Wiederholen und Dateiaustausch
+
+Der Ziehgriff am linken Panelrand passt die Breite mit Maus, Touch oder Stift an.
+Mit fokussiertem Griff vergrößert Pfeil links das Panel, Pfeil rechts verkleinert
+es; Home/End wählen die Grenzen. Doppelklick setzt die Breite auf den Standard.
+Die gewünschte Breite bleibt lokal gespeichert; kleine Fenster begrenzen sie
+vorübergehend. Editor und Vorschau teilen den verbleibenden Platz.
+
+Undo und Redo stellen den gesamten Zustand einschließlich Fragen, Ziel, Update
+und Antwortpfad wieder her. Die Revision bleibt aufsteigend; laufende Ergebnisse
+werden dadurch ungültig. Beide Aktionen pausieren die Automatik, damit diese die
+wiederhergestellte Entscheidung nicht sofort überschreibt. Eine neue Änderung
+verwirft den Redo-Zweig. Beide Stapel bleiben nach Reload erhalten (je zehn Schritte).
+
+„Save / load flow“ exportiert eine `.decision.json` mit Ziel, aktuellem Zustand,
+Fragen, Antwortmöglichkeiten, Verknüpfungen und ausgewählten Antworten. Keys,
+Provider-Einstellungen, Avatar und Undo/Redo-Inhalte sind nicht enthalten.
+Das Format trägt `format: mermaider-decision` und `version: 1`.
+
+Import öffnet einen neuen Tab mit neuer Sitzungs-ID und deaktivierter Automatik.
+Ungültige JSON-Dateien, fremde Versionen, Dateien über 1 MB, beschädigte Graphen
+oder unerreichbare Antwortauswahlen werden mit Fehlermeldung zurückgewiesen.
+Bestehende Tabs bleiben erhalten. Ändert sich der Zustand während des Dateilesens
+oder wird der Tab geschlossen, wird das späte Importergebnis verworfen.
+
 ## Daten und Konsistenz
 
 Jeder Tab speichert eine versionierte Sitzung: Ziel, Zustand, Fragen mit stabilen
@@ -86,7 +111,8 @@ ATTRIBUTION.md und den Website-Credits.
 
 Automatisierte Tests prüfen Branch-Wechsel, Undo, Persistenz, ungültige Graphen,
 veraltete Antworten, Vorschlags-/Automatikmodi, automatische Strukturentwürfe,
-Knotenklicks und unverändertes SVG-Layout bei Auswahl. Providerantworten sind
+Knotenklicks, Panel-Resize/Persistenz, Redo, Datei-Roundtrip, abgelehnte Importe
+und unverändertes SVG-Layout bei Auswahl. Providerantworten sind
 kontrollierte Fixtures. Der Nutzer hat OpenAI-, Jev- und Embedding-Zugriff am
 02.10.2026 bestätigt; die Qualität der neuen dynamischen Planung mit realen
 Eingaben benötigt eine eigene Abnahme. Lokales Laya und dessen Browser-CORS

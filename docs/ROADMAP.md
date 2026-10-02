@@ -1,6 +1,6 @@
 # Roadmap: Release, Website und Live-Entscheidungen
 
-Stand: 30.09.2026. Erster Lauf: Projekt verstehen, Build prüfen und
+Stand: 02.10.2026. Erster Lauf: Projekt verstehen, Build prüfen und
 Bereitstellung vorbereiten. Produktziel: Ideen, Entscheidungen und Abläufe
 als visuelle Kommunikationsgrundlage darstellen.
 
@@ -8,8 +8,8 @@ als visuelle Kommunikationsgrundlage darstellen.
 
 Verifizierten Webbuild übergeben, CI-Artefakte bereitstellen, Appwrite-Pipeline
 korrigieren, Ziel-Site konfigurieren und echte Aktivierung prüfen. Für Installer
-eine öffentliche Release-/Downloadquelle bestimmen. Lokale Vorbereitungen
-liegen vor; tatsächliches Deployment und öffentliche Distribution stehen aus.
+eine öffentliche Release-/Downloadquelle bestimmen. Die Web-App und Produktseite sind auf Appwrite bereitgestellt und live geprüft.
+Öffentliche Installerdistribution bleibt offen.
 
 ## 2. Release-Ready Build
 
@@ -64,7 +64,9 @@ Das offizielle TypeSafe-SDK bestätigt diesen Endpunkt für Jev. Gemeinsame
 Primitive sind `choice`, `score` und `noul`; Konfidenzmetadaten und Schwellenwerte
 werden providerabhängig behandelt. Architektur, Quellen, Credential-/Transport-
 fragen und Abnahmeschritte stehen in [DECISION_PROVIDERS.md](DECISION_PROVIDERS.md).
-Die technische Integration ist noch nicht implementiert.
+Die technische Integration und dynamische Choice-Oberfläche sind implementiert;
+der Nutzer hat Jev/OpenAI/Embeddings und die neue Oberfläche bestätigt.
+Lokales Laya, Browser-CORS und repräsentative Qualitätsmessungen bleiben offen.
 
 Beispiel: „Budget freigegeben“ aktiviert im Diagramm „Umsetzung starten“;
 die Alternative „Rückfrage“ bleibt sichtbar. Antworten beider Provider werden
@@ -90,10 +92,16 @@ Bekannte Optionen unmittelbar deterministisch anwenden. Ein Klick auf
 „freigegeben“ braucht keinen Modellaufruf. AI interpretiert neue Texte;
 mehrdeutige Aussagen erzeugen bearbeitbare Vorschläge.
 
-MVP: benannte Entscheidung mit zwei Optionen, aktiver Pfad,
-Rückgängig/Wiederholen, lokale Historie, Mermaid-/SVG-Export. Später:
-Bedingungen, mehrere Optionen, Ablaufzustände, Historienwiedergabe,
-strukturierter Import und externe Ereignisse über MCP/API.
+Umgesetzt: bearbeitbare Fragen mit mehreren Optionen und Folgefragen,
+KI-Strukturentwürfe, Live-Vorschläge und optionales Auto-Follow, aktiver Pfad ohne
+neues Mermaid-Layout, persistente Sitzungen mit Undo/Redo, strukturierter
+JSON-Import/-Export und größenverstellbares Panel. Architektur und Grenzen:
+[DYNAMIC_DECISIONS.md](DYNAMIC_DECISIONS.md).
+
+Nächste Ausbaustufen: explizite Regeln für Score/Noul und Bedingungen,
+Entscheidungsprotokoll mit Verlaufwiedergabe, gemessene Modellqualität und lokale
+Laya-Abnahme, externe Ereignisse über MCP/API. Diese Funktionen sind noch nicht
+als fertig ausgewiesen.
 
 Auswertung und Diagrammregeln bleiben explizit in der Anwendung. Die gemeinsame
 Antwortstruktur erhält Provider, Modellversion, Verteilungen und Konfidenz-

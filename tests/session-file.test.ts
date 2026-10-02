@@ -1,0 +1,25 @@
+import {test} from 'node:test'
+import assert from 'node:assert/strict'
+import {newFlowSession,changeFlow,chooseFlow} from '../src/decision/flow'
+import {exportFlow,importFlow,MAX_FLOW_FILE_BYTES} from '../src/decision/sessionFile'
+const session=()=>chooseFlow(changeFlow(newFlowSession(),{goal:'Prepare release',context:'Tests pass',plan:{title:'Release',startId:'ready',questions:[{id:'ready',text:'Ready?',options:[{id:'yes',label:'Yes',nextId:undefined},{id:'no',label:'No',nextId:undefined}]}]}},'Plan'),'ready','yes')
+test('portable files round trip question state and exclude credentials, suggestions and private undo history',()=>{
+  const original=session()
+  const text=exportFlow({...original,apiKey:'must-not-export',history:[{...original.history[0],context:'old-private-context'}]} as any)
+  assert.ok(!text.includes('must-not-export'));assert.ok(!text.includes('old-private-context'));assert.ok(!text.includes('suggestions'))
+  const restored=importFlow(text)
+  assert.deepEqual(restored.plan,JSON.parse(JSON.stringify(original.plan)));assert.deepEqual(restored.selections,JSON.parse(JSON.stringify(original.selections)))
+  assert.equal(restored.goal,original.goal);assert.equal(restored.context,original.context)
+  assert.notEqual(restored.id,original.id);assert.deepEqual(restored.history,[]);assert.deepEqual(restored.future,[])
+  const reordered=JSON.parse(text);reordered.session.selections.ready={source:'manual',optionId:'yes'}
+  assert.equal(importFlow(JSON.stringify(reordered)).selections.ready.optionId,'yes')
+})
+test('unsupported files, oversized files, bad graph links and undefined selections are rejected',()=>{
+  assert.throws(()=>importFlow('{'),/valid JSON/)
+  assert.throws(()=>importFlow(JSON.stringify({format:'mermaider-decision',version:2})),/version 1/)
+  assert.throws(()=>importFlow('x'.repeat(MAX_FLOW_FILE_BYTES+1)),/1 MB/)
+  const file=JSON.parse(exportFlow(session()));file.session.plan.questions[0].options[0].nextId='missing'
+  assert.throws(()=>importFlow(JSON.stringify(file)),/invalid decision/)
+  file.session.plan.questions[0].options[0].nextId=null;file.session.selections.ready.optionId='missing'
+  assert.throws(()=>importFlow(JSON.stringify(file)),/invalid or unreachable/)
+})

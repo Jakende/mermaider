@@ -11,10 +11,10 @@ export interface FlowSuggestion { optionId: string; probability: number; revisio
 export interface FlowSnapshot { plan: FlowPlan | null; goal: string; context: string; selections: Record<string, FlowSelection>; note: string }
 export interface FlowSession {
   version: 1; id: string; revision: number; goal: string; context: string; plan: FlowPlan | null
-  selections: Record<string, FlowSelection>; suggestions: Record<string, FlowSuggestion>; history: FlowSnapshot[]; linked: boolean
+  selections: Record<string, FlowSelection>; suggestions: Record<string, FlowSuggestion>; history: FlowSnapshot[]; future: FlowSnapshot[]; linked: boolean
 }
 export const flowId = (prefix = 'q') => `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0,16)}`
-export const newFlowSession = (): FlowSession => ({ version:1, id:flowId('session'), revision:0, goal:'', context:'', plan:null, selections:{}, suggestions:{}, history:[], linked:false })
+export const newFlowSession = (): FlowSession => ({ version:1, id:flowId('session'), revision:0, goal:'', context:'', plan:null, selections:{}, suggestions:{}, history:[], future:[], linked:false })
 export function validateFlow(value: unknown): FlowPlan {
   const parsed = flowSchema.safeParse(value)
   if (!parsed.success) throw new Error('The flow has invalid questions or answer options. Retry generation or edit the questions manually.')
@@ -67,16 +67,26 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
   const visible = flowPath({ plan, selections }).questions
   for (const questionId of Object.keys(selections)) if (!visible.includes(questionId)) delete selections[questionId]
   return { ...session, ...patch, plan, context, selections, suggestions:{}, revision:session.revision + 1,
-    history:['Updated state','Updated goal'].includes(note) && session.history[session.history.length-1]?.note===note ? session.history : [...session.history, { plan:session.plan, goal:session.goal, context:session.context, selections:session.selections, note }].slice(-10) }
+    future:[], history:!session.future.length && ['Updated state','Updated goal'].includes(note) && session.history[session.history.length-1]?.note===note ? session.history : [...session.history, { plan:session.plan, goal:session.goal, context:session.context, selections:session.selections, note }].slice(-10) }
 }
 export function chooseFlow(session: FlowSession, questionId: string, optionId: string, source: FlowSelection['source'] = 'manual', probability?: number) {
   if (!flowPath(session).questions.includes(questionId) || !session.plan?.questions.find(question => question.id === questionId)?.options.some(option => option.id === optionId)) throw new Error('Only a reachable, defined answer can select the path.')
   return changeFlow(session, { selections:{ ...session.selections, [questionId]:{ optionId, source, probability } } }, 'Selected answer')
 }
+function snapshotFlow(session:FlowSession, note:string):FlowSnapshot {
+  return {plan:session.plan,goal:session.goal,context:session.context,selections:session.selections,note}
+}
 export function undoFlow(session: FlowSession): FlowSession {
   const previous = session.history[session.history.length - 1]
   if (!previous) return session
-  return { ...session, ...previous, revision:session.revision + 1, suggestions:{}, history:session.history.slice(0,-1) }
+  return { ...session, ...previous, revision:session.revision + 1, suggestions:{}, history:session.history.slice(0,-1),
+    future:[...session.future,snapshotFlow(session,previous.note)].slice(-10) }
+}
+export function redoFlow(session: FlowSession): FlowSession {
+  const next = session.future[session.future.length - 1]
+  if (!next) return session
+  return { ...session, ...next, revision:session.revision + 1, suggestions:{}, future:session.future.slice(0,-1),
+    history:[...session.history,snapshotFlow(session,next.note)].slice(-10) }
 }
 export function restoreFlow(value: unknown): FlowSession | undefined {
   try {
@@ -85,12 +95,13 @@ export function restoreFlow(value: unknown): FlowSession | undefined {
     const selections = Object.fromEntries(Object.entries(parsed.selections).filter(([questionId, selection]) => plan?.questions.find(question=>question.id===questionId)?.options.some(option=>option.id===selection.optionId)))
     const reachable = flowPath({plan,selections}).questions
     for (const questionId of Object.keys(selections)) if (!reachable.includes(questionId)) delete selections[questionId]
-    const historyValue = (value as FlowSession).history
-    const history: FlowSnapshot[] = Array.isArray(historyValue) ? historyValue.slice(-10).flatMap(snapshot => {
-      const checked = restoreFlow({ ...parsed, ...snapshot, history:[] })
+    const restoreSnapshots=(items:unknown):FlowSnapshot[] => Array.isArray(items) ? items.slice(-10).flatMap(snapshot => {
+      if(!snapshot || typeof snapshot!=='object')return []
+      const checked = restoreFlow({ ...parsed, ...snapshot, history:[], future:[] })
       return checked ? [{plan:checked.plan, goal:checked.goal, context:checked.context, selections:checked.selections,note:typeof snapshot.note==='string'?snapshot.note.slice(0,100):'Changed flow'}] : []
     }) : []
-    return { ...parsed, plan, selections, history, suggestions:{} }
+    const stored=value as FlowSession
+    return { ...parsed, plan, selections, history:restoreSnapshots(stored.history), future:restoreSnapshots(stored.future), suggestions:{} }
   } catch { return undefined }
 }
 export function flowRequest(session: FlowSession, questionId: string): DecisionRequest {

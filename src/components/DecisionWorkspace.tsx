@@ -1,21 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow } from '../decision/flow'
+import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow, redoFlow } from '../decision/flow'
 import type { FlowPlan, FlowQuestion, FlowSession } from '../decision/flow'
 import { decisionDefaults, evaluateDecision, loadDecisionKey, saveDecisionKey } from '../decision/service'
 import type { DecisionConfig, DecisionProvider } from '../decision/types'
 import { planFlow } from '../decision/planner'
 import UserBlob from './UserBlob'
+import DecisionResizeHandle from './DecisionResizeHandle'
+import { exportFlow, importFlow, MAX_FLOW_FILE_BYTES } from '../decision/sessionFile'
 import './DecisionWorkspace.css'
 interface Props {
+  width:number; minWidth:number; maxWidth:number; onResize:(width:number)=>void
   session:FlowSession; focusedId:string|null; nodeProposal?:FlowQuestion; diagram:string; onChange:(session:FlowSession)=>void
-  onApplyPlan:(session:FlowSession)=>void; onFocus:(id:string)=>void; onClose:()=>void
+  onApplyPlan:(session:FlowSession)=>void; onImportSession:(session:FlowSession)=>void; onFocus:(id:string)=>void; onClose:()=>void
 }
 type Mode='manual'|'suggest'|'follow'
 const defaultConfig=()=>{
   try { const stored=JSON.parse(localStorage.getItem('mermaider-decision-config')||'null'); if(stored&&['jev','laya'].includes(stored.provider))return {...decisionDefaults(stored.provider),endpoint:typeof stored.endpoint==='string'?stored.endpoint:decisionDefaults(stored.provider).endpoint,model:typeof stored.model==='string'?stored.model:decisionDefaults(stored.provider).model} as DecisionConfig }catch{/* Default if unavailable. */}
   return decisionDefaults('jev')
 }
-export default function DecisionWorkspace({session,focusedId,nodeProposal,diagram,onChange,onApplyPlan,onFocus,onClose}:Props){
+export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,session,focusedId,nodeProposal,diagram,onChange,onApplyPlan,onImportSession,onFocus,onClose}:Props){
   const [config,setConfig]=useState<DecisionConfig>(defaultConfig)
   const [apiKey,setApiKey]=useState('')
   const [mode,setMode]=useState<Mode>('manual')
@@ -29,6 +32,7 @@ export default function DecisionWorkspace({session,focusedId,nodeProposal,diagra
   const operation=useRef(0);const abort=useRef<AbortController|null>(null)
   const lastAuto=useRef('');const lastAdapt=useRef('')
   const keyEdited=useRef(false)
+  const fileInput=useRef<HTMLInputElement>(null)
   const cancel=()=>{operation.current++;abort.current?.abort();setBusy(null)}
   useEffect(()=>{
     let current=true;keyEdited.current=false;setApiKey('')
@@ -115,12 +119,36 @@ export default function DecisionWorkspace({session,focusedId,nodeProposal,diagra
   const select=(questionId:string,optionId:string,model=false)=>{
     try{const suggestion=session.suggestions[questionId];onChange(chooseFlow(session,questionId,optionId,model?'model':'manual',model?suggestion?.probability:undefined))}catch(failure){setError(failure instanceof Error?failure.message:'Could not select answer')}
   }
-  return <aside className="decision-workspace" aria-label="Decision workspace">
+  const exportSession=()=>{
+    try {
+      const url=URL.createObjectURL(new Blob([exportFlow(session)],{type:'application/json'}))
+      const anchor=document.createElement('a');anchor.href=url
+      anchor.download=`${(session.plan?.title||'decision').replace(/[^A-Za-z0-9_-]/g,'_').slice(0,80)}.decision.json`
+      anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+      setError('')
+    }catch(failure){setError(failure instanceof Error?failure.message:'Could not export the flow')}
+  }
+  const importSession=async(file:File)=>{
+    // File reading is asynchronous too: switching tabs or editing must not apply a late import.
+    cancel();const token=operation.current
+    try {
+      if(file.size>MAX_FLOW_FILE_BYTES)throw new Error('Decision files must be smaller than 1 MB.')
+      const imported=importFlow(await file.text())
+      if(token===operation.current){setMode('manual');setAutoAdapt(false);onImportSession(imported)}
+    }catch(failure){if(token===operation.current)setError(failure instanceof Error?failure.message:'Could not import the flow')}
+  }
+  return <aside id="decision-workspace" className="decision-workspace" aria-label="Decision workspace" style={{width}}>
+    <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>
     <header><UserBlob/><strong>DECISIONS</strong><button onClick={onClose} aria-label="Close decision workspace">×</button></header>
     <div className="decision-scroll">
       <label htmlFor="flow-goal">Goal</label><textarea id="flow-goal" rows={2} maxLength={12000} value={session.goal} placeholder="Describe the decision or process…" onChange={event=>onChange(changeFlow(session,{goal:event.target.value},'Updated goal'))}/>
       <label htmlFor="flow-context">Live state / update</label><textarea id="flow-context" rows={3} maxLength={12000} value={context} placeholder="What has changed? Facts, text or JSON…" onChange={event=>{cancel();setDraft(null);onChange(changeFlow(latest.current,{context:event.target.value},'Updated state'))}}/>
-      <div className="flow-actions"><button onClick={()=>void generate()} disabled={!!busy||!session.goal.trim()||context!==session.context}>{session.plan?'Adapt flow with AI':'Generate flow with AI'}</button><button onClick={()=>addQuestion()} disabled={!!busy||(session.plan?.questions.length||0)>=20}>Add question</button><button onClick={()=>onChange(undoFlow(session))} disabled={!session.history.length||!!busy}>Undo</button></div>
+      <div className="flow-actions"><button onClick={()=>void generate()} disabled={!!busy||!session.goal.trim()||context!==session.context}>{session.plan?'Adapt flow with AI':'Generate flow with AI'}</button><button onClick={()=>addQuestion()} disabled={!!busy||(session.plan?.questions.length||0)>=20}>Add question</button><button onClick={()=>{setMode('manual');setAutoAdapt(false);onChange(undoFlow(session))}} disabled={!session.history.length||!!busy}>Undo</button><button onClick={()=>{setMode('manual');setAutoAdapt(false);onChange(redoFlow(session))}} disabled={!session.future.length||!!busy}>Redo</button></div>
+      <details className="flow-settings"><summary>Save / load flow</summary>
+        <div className="flow-actions"><button onClick={exportSession} disabled={!session.plan||!!busy}>Export decision JSON</button><button onClick={()=>fileInput.current?.click()} disabled={!!busy}>Import decision JSON</button></div>
+        <input ref={fileInput} type="file" accept=".json,application/json" aria-label="Decision JSON file" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void importSession(file)}}/>
+        <p>Includes goal, current state, questions and selected answers. Import opens a new tab.</p>
+      </details>
       <label className="flow-toggle"><input type="checkbox" checked={autoAdapt} onChange={event=>{lastAdapt.current='';setAutoAdapt(event.target.checked)}}/>Suggest question updates automatically</label>
       <details className="flow-settings"><summary>Provider connection</summary>
         <label htmlFor="decision-provider">Decision provider</label><select id="decision-provider" value={config.provider} onChange={event=>setConfig(decisionDefaults(event.target.value as DecisionProvider))}><option value="jev">Jev · TypeSafe (hosted)</option><option value="laya">Laya (local)</option></select>

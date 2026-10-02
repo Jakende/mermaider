@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {newFlowSession,validateFlow,changeFlow,chooseFlow,flowPath,flowDiagram,flowRequest,restoreFlow,undoFlow} from '../src/decision/flow'
+import {newFlowSession,validateFlow,changeFlow,chooseFlow,flowPath,flowDiagram,flowRequest,restoreFlow,undoFlow,redoFlow} from '../src/decision/flow'
 const plan=()=>validateFlow({title:'Release',startId:'ready',questions:[
   {id:'ready',text:'Ready?',options:[{id:'yes',label:'Ready',nextId:'ship'},{id:'no',label:'Needs changes'}]},
   {id:'ship',text:'Which channel?',options:[{id:'public',label:'Public release'},{id:'private',label:'Private test'}]}
@@ -50,5 +50,32 @@ test('typing coalesces into one undo step and retains revision protection',()=>{
   session=changeFlow(session,{context:'ab'},'Updated state')
   session=changeFlow(session,{context:'abc'},'Updated state')
   assert.equal(session.history.length,1);assert.equal(session.revision,3)
+  assert.equal(undoFlow(session).context,'')
+})
+
+
+test('redo restores a pruned branch after reload and a new edit discards the redo branch',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),context:'Ready'},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public','model',0.95)
+  const before=session
+  session=chooseFlow(session,'ready','no');session=undoFlow(session)
+  assert.deepEqual(session.selections,before.selections)
+  assert.equal(session.future.length,1)
+  session=restoreFlow(JSON.parse(JSON.stringify(session)))!
+  const redone=redoFlow(session)
+  assert.equal(redone.selections.ready.optionId,'no');assert.equal(redone.selections.ship,undefined)
+  assert.equal(redone.revision,session.revision+1);assert.equal(redone.future.length,0)
+  assert.deepEqual(undoFlow(redone).selections,JSON.parse(JSON.stringify(before.selections)))
+  const edited=changeFlow(session,{context:'New update'},'Updated state')
+  assert.equal(edited.future.length,0);assert.equal(redoFlow(edited),edited)
+})
+
+test('older sessions migrate without redo and corrupted history cannot recurse',()=>{
+  const old={...newFlowSession(),future:undefined}
+  assert.deepEqual(restoreFlow(old)?.future,[])
+  assert.deepEqual(restoreFlow({...old,history:[null],future:[null]})?.history,[])
+  let session=changeFlow(newFlowSession(),{context:'a'},'Updated state')
+  session=changeFlow(session,{context:'b'},'Updated state');session=undoFlow(session)
+  session=changeFlow(session,{context:'c'},'Updated state')
   assert.equal(undoFlow(session).context,'')
 })

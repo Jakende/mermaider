@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test'
+import {readFile} from 'node:fs/promises'
 const plan={title:'Release decision',startId:'ready',questions:[{id:'ready',text:'Is the release ready?',options:[{id:'yes',label:'Ready',nextId:'channel'},{id:'no',label:'Needs work'}]},{id:'channel',text:'Which channel?',options:[{id:'public',label:'Public release'},{id:'private',label:'Private test'}]}]}
 async function prepare(page:any){
   await page.addInitScript(()=>{
@@ -99,4 +100,68 @@ test('automatic question adaptation proposes changes without replacing the activ
   await page.getByRole('button',{name:'Apply draft',exact:true}).click()
   await expect(page.getByLabel('Question text').first()).toHaveValue('Is the private release ready?')
   await expect(page.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','false')
+})
+
+
+test('decision panel resizes with dragging and keyboard, persists its width and remains bounded on mobile',async({page})=>{
+  await prepare(page)
+  const panel=page.getByRole('complementary',{name:'Decision workspace'})
+  const grip=page.getByRole('separator',{name:'Resize decision panel'})
+  const svgId=await page.locator('.preview-container svg').getAttribute('id')
+  const bounds=(await grip.boundingBox())!
+  await page.mouse.move(bounds.x+bounds.width/2,bounds.y+150)
+  await page.mouse.down();await page.mouse.move(bounds.x+bounds.width/2-150,bounds.y+150);await page.mouse.up()
+  await expect(grip).toHaveAttribute('aria-valuenow','530')
+  expect(Math.round((await panel.boundingBox())!.width)).toBe(530)
+  expect(await page.locator('.preview-container svg').getAttribute('id')).toBe(svgId)
+  await grip.focus();await page.keyboard.press('ArrowLeft')
+  await expect(grip).toHaveAttribute('aria-valuenow','550')
+  await page.reload();await page.getByTitle('Decisions (Preview)').click()
+  await expect(grip).toHaveAttribute('aria-valuenow','550')
+  await page.setViewportSize({width:390,height:844})
+  await expect(grip).toHaveAttribute('aria-valuenow','351')
+  expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(351)
+  await page.setViewportSize({width:1440,height:1000})
+  await expect(grip).toHaveAttribute('aria-valuenow','550')
+  await grip.focus();await page.keyboard.press('Home');await expect(grip).toHaveAttribute('aria-valuenow','280')
+  await page.keyboard.press('End');await expect(grip).toHaveAttribute('aria-valuenow','760')
+  expect((await page.locator('.preview-container').boundingBox())!.width).toBeGreaterThan(250)
+  const touchBounds=(await grip.boundingBox())!
+  const client=await page.context().newCDPSession(page)
+  const point={x:touchBounds.x+4,y:touchBounds.y+150}
+  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]})
+  await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...point,x:point.x+80}]})
+  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
+  await expect(grip).toHaveAttribute('aria-valuenow','680')
+  expect(await page.evaluate(()=>document.body.style.cursor)).toBe('')
+})
+
+test('redo survives reload and exported decisions import into a separate tab; invalid files preserve the flow',async({page})=>{
+  await prepare(page)
+  await page.getByRole('button',{name:'Choose Ready',exact:true}).click()
+  await page.getByRole('button',{name:'Choose Needs work',exact:true}).click()
+  await page.getByRole('button',{name:'Undo',exact:true}).click()
+  await page.reload();await page.getByTitle('Decisions (Preview)').click()
+  await expect(page.getByRole('button',{name:'Redo',exact:true})).toBeEnabled()
+  await page.getByRole('button',{name:'Redo',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Choose Needs work',exact:true})).toHaveAttribute('aria-pressed','true')
+  await page.getByText('Save / load flow',{exact:true}).click()
+  const downloadPromise=page.waitForEvent('download')
+  await page.getByRole('button',{name:'Export decision JSON'}).click()
+  const download=await downloadPromise
+  expect(download.suggestedFilename()).toMatch(/\.decision\.json$/)
+  const exported=await readFile((await download.path())!,'utf8')
+  expect(exported).not.toContain('test-typesafe-key');expect(exported).not.toContain('test-openai-key')
+  await page.locator('#flow-goal').fill('Changed after export')
+  await page.getByLabel('Decision JSON file').setInputFiles({name:'release.decision.json',mimeType:'application/json',buffer:Buffer.from(exported)})
+  await expect(page.locator('.tab-item')).toHaveCount(3)
+  await expect(page.locator('#flow-goal')).toHaveValue('Prepare a release decision')
+  await expect(page.getByRole('button',{name:'Choose Needs work',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(page.locator('#flow-mode')).toHaveValue('manual')
+  await page.getByText('Save / load flow',{exact:true}).click()
+  await page.getByLabel('Decision JSON file').setInputFiles({name:'broken.json',mimeType:'application/json',buffer:Buffer.from('{"format":"mermaider-decision","version":99}')})
+  await expect(page.getByRole('complementary',{name:'Decision workspace'}).getByRole('alert')).toContainText('version 1')
+  await expect(page.locator('.tab-item')).toHaveCount(3)
+  await page.locator('.tab-item').nth(1).click()
+  await expect(page.locator('#flow-goal')).toHaveValue('Changed after export')
 })

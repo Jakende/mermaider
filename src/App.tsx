@@ -47,6 +47,22 @@ function AppContent() {
   const [isNewDiagramModalOpen, setIsNewDiagramModalOpen] = useState(false)
 
   const [isDecisionsOpen, setIsDecisionsOpen] = useState(false)
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth)
+  const [decisionWidth, setDecisionWidth] = useState(() => {
+    try { const saved=Number(localStorage.getItem('mermaider-decision-width')); return Number.isFinite(saved)&&saved>=200&&saved<=760?saved:380 } catch { return 380 }
+  })
+  const decisionMaxWidth = Math.min(760, viewportWidth * (viewportWidth<=800?0.9:0.65))
+  const decisionMinWidth = Math.min(viewportWidth<=800?240:280, decisionMaxWidth)
+  const visibleDecisionWidth = Math.max(decisionMinWidth, Math.min(decisionWidth, decisionMaxWidth))
+  useEffect(() => {
+    const resize=()=>setViewportWidth(window.innerWidth)
+    window.addEventListener('resize',resize)
+    return()=>window.removeEventListener('resize',resize)
+  },[])
+  useEffect(() => {
+    try { localStorage.setItem('mermaider-decision-width',String(decisionWidth)) } catch { /* Width stays available in memory. */ }
+  },[decisionWidth])
+  const resizeDecision=(width:number)=>setDecisionWidth(Math.max(decisionMinWidth,Math.min(width,decisionMaxWidth)))
   const emptyDecision = useMemo(() => newFlowSession(), [activeTab.id])
   const decisionSession = activeTab.decision || emptyDecision
   const decisionHighlights = useMemo(() => activeTab.decision?.linked ? flowPath(activeTab.decision) : undefined, [activeTab.decision])
@@ -95,13 +111,16 @@ function AppContent() {
       code:next.linked ? next.plan ? flowDiagram(next.plan) : '' : tab.code
     } : tab))
   }
-  const applyDecisionPlan = (next: FlowSession) => {
+  const openDecisionTab = (next: FlowSession) => {
     if (!next.plan) return
-    if (activeTab.decision?.linked) { updateDecision({...next, linked:true}); return }
     const session = createInitialSession()
     const tab:Tab = {id:flowId('tab'),name:next.plan.title||'Decision flow',code:flowDiagram(next.plan),
       chatSessions:[session],activeChatSessionId:session.id,decision:{...next,id:flowId('session'),linked:true}}
     setTabs(previous=>[...previous,tab]);setActiveTabId(tab.id);setIsDecisionsOpen(true)
+  }
+  const applyDecisionPlan = (next: FlowSession) => {
+    if (activeTab.decision?.linked) { updateDecision({...next, linked:true}); return }
+    openDecisionTab(next)
   }
   const decisionNodeClick = (nodeId:string) => {
     const session = activeTab.decision
@@ -247,7 +266,7 @@ function AppContent() {
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      const availableWidth = width - (isDecisionsOpen ? 380 : isChatOpen && !isChatPoppedOut ? chatWidth : 0)
+      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut ? chatWidth : 0)
       if (availableWidth <= 0) return
 
       const newWidth = ((clientX - left) / availableWidth) * 100
@@ -392,6 +411,7 @@ function AppContent() {
 
       <div className="app-content" ref={appContentRef}>
         <div style={{ display: 'flex', flex: 1, minWidth: 0, position: 'relative' }}>
+          <div className="diagram-workspace" style={{display:'flex',flex:1,minWidth:0}}>
           {showEditor && (
             <>
               <div style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -420,15 +440,17 @@ function AppContent() {
             />
           </div>
 
-          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
-            onChange={updateDecision} onApplyPlan={applyDecisionPlan} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
+          </div>
+
+          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} width={visibleDecisionWidth} minWidth={decisionMinWidth} maxWidth={decisionMaxWidth} onResize={resizeDecision} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
+            onChange={updateDecision} onApplyPlan={applyDecisionPlan} onImportSession={openDecisionTab} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
 
           {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
             <ResizableSplitter onResize={handleResizeChat} />
           )}
 
           {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
-            <div style={{ width: chatWidth }}>
+            <div style={{ width: chatWidth, flexShrink:0 }}>
               <ChatPanel
                 code={activeTab.code}
                 setCode={setCode}
