@@ -1,6 +1,10 @@
 # Produktwebsite
 
 Die Produktseite liegt unter `/website/`, der Editor bleibt unter `/`.
+Die Website verwendet direkt die Design-Tokens und Basis-Komponenten der App:
+Monospace-Schrift, Schwarz/Weiß, eckige Konturen und schlichte Buttons. Hell/Dunkel
+nutzt dieselbe gespeicherte `mermaider-theme`-Einstellung wie der Editor.
+
 Beide HTML-Einstiegspunkte werden gemeinsam mit `npm run build` gebaut und
 über den bestehenden Appwrite-Workflow ausgeliefert. Keine Migration von
 Bookmarks oder Browser-Speicherdaten erforderlich. Die Website lädt weder
@@ -25,6 +29,11 @@ die vorhandenen Hinweise stehen.
 Nutzervorgabe vom 02.10.2026: Repository bis zur Bereinigung und Prüfung der
 Urheberzuordnung privat lassen. Die Website weist beim GitHub-Link darauf hin.
 Eine MIT-Lizenz ist keine automatische Zustimmung zur Veröffentlichung.
+
+Die erste Herkunftssichtung und konkrete historische Lizenzwechsel sind in
+[SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert. Eine alleinige
+Urheberschaft und eine vollständige MIT-Freigabe aller übernommenen Teile sind
+noch nicht belegt.
 
 Vor einer Freigabe separat prüfen:
 
