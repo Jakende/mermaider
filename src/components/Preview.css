@@ -149,3 +149,7 @@
   text-decoration: underline;
   border-color: var(--ink);
 }
+.preview-header { flex-wrap:wrap; gap:8px; }
+.preview-controls { flex-wrap:wrap; gap:6px; }
+.preview-header { flex-shrink:0; }
+.preview-container,.preview-viewport { min-height:0; }

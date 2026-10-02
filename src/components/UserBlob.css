@@ -1,0 +1,6 @@
+.user-blob { display:inline-flex; flex:none; align-items:center; justify-content:center; }
+.user-blob img,.user-blob svg { display:block; overflow:visible; }
+.user-blob[data-motion="hover"] svg:not(:hover),.user-blob[data-motion="hover"] svg:not(:hover) * { animation-play-state:paused; }
+@media (prefers-reduced-motion:reduce) {
+  .user-blob svg,.user-blob svg * { animation:none!important; transition:none!important; transform:none!important; }
+}

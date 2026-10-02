@@ -15,3 +15,17 @@
   flex: 1;
   overflow: hidden;
 }
+.app { height:100dvh; }
+.chat-dock-splitter { display:flex; flex-shrink:0; }
+@media(max-width:800px) {
+  .chat-dock { position:absolute; right:0; top:0; bottom:0; width:min(380px,100%)!important; max-width:100%; z-index:15; }
+  .chat-dock-splitter { display:none; }
+}
+@media(prefers-reduced-motion:reduce) { .app { transition:none; } }
+.editor-splitter { display:flex; flex-shrink:0; }
+@media(max-width:700px) {
+  .diagram-workspace { flex-direction:column; }
+  .diagram-editor { flex:0 0 38%!important; min-height:0; border-bottom:1px solid var(--border); }
+  .editor-splitter { display:none; }
+}
+.diagram-workspace,.diagram-workspace>div { min-height:0; }

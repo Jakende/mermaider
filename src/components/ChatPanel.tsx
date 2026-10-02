@@ -295,12 +295,12 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
             } : undefined}
         >
             <div className="chat-header" onMouseDown={handleMouseDown}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="chat-heading"><UserBlob size={28} busy={isLoading}/><div>
                     <h3>AI Assistant</h3>
                     <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
                         Est. Tokens: {Math.round(totalTokens)}
                     </span>
-                </div>
+                </div></div>
                 <div className="chat-header-actions">
                     <button
                         className="chat-action-btn"

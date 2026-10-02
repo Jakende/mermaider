@@ -26,6 +26,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - JSON to Mermaid: Convert structured data into visual representations using AI.
 - Code Extraction: Automatically detects and extracts Mermaid code blocks from Markdown files.
 - Local Knowledge Base (RAG): Index your unstructured text locally to generate context-aware diagrams or detailed AI Reports with source tracking.
+- **Minimal workspace**: File and View menus keep every action accessible on desktop and phones. Settings separates Connection, Embeddings, Generation and Appearance; personal blobs animate gently and respect reduced-motion preferences.
 - **Custom AI Settings**: Select Ollama or OpenAI, configure endpoints, authentication, temperature, generation depth/complexity, and custom chat and embedding models.
 - **OpenAI/Codex Login**: On desktop, authenticate an OpenAI/Codex account through Device Code / Browser login, paste an access token, or use an OpenAI API key. Account-provided Codex models can be loaded from Settings; compatible custom model names may also be entered manually. OpenAI embeddings for RAG require an API key; Codex OAuth users can keep Ollama embeddings.
 - **Provider-Aware AI Output**: Ollama retains its existing Mermaid prompt and workflow. OpenAI/Codex uses the same core Mermaid rules with transport-safe output handling that prevents response markers, YAML front matter, and duplicated diagrams from being inserted into the editor.

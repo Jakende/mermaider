@@ -13,6 +13,8 @@ import {
   pollOpenAIDeviceToken,
   type OpenAIDeviceAuthResponse,
 } from '../utils/aiService'
+import { getBlobMotion, setBlobMotion } from '../hooks/useBlobMotion'
+import UserBlob from './UserBlob'
 import './Settings.css'
 
 interface SettingsProps {
@@ -27,7 +29,28 @@ type OpenAIAuthType = 'apikey' | 'token' | 'device'
 type DeviceFlowState = 'idle' | 'fetching' | 'awaiting' | 'polling' | 'success' | 'error'
 
 export default function Settings({ isOpen, onClose }: SettingsProps) {
-  const { theme } = useTheme()
+  const { theme, toggleTheme, mermaidTheme, setMermaidTheme, textTransform, setTextTransform } = useTheme()
+  const [section, setSection] = useState<'connection' | 'embeddings' | 'generation' | 'appearance'>('connection')
+  const [blobMotion, updateBlobMotion] = useState(getBlobMotion)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    if (!isOpen) return
+    const opener = document.activeElement as HTMLElement | null
+    modalRef.current?.querySelector<HTMLButtonElement>('#settings-tab-connection')?.focus()
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeRef.current(); return }
+      if (event.key !== 'Tab') return
+      const elements = [...(modalRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),summary,a[href],[tabindex="0"]') || [])]
+        .filter(element => element.getClientRects().length > 0 && element.tabIndex >= 0)
+      const first = elements[0], last = elements[elements.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    document.addEventListener('keydown', keydown, true)
+    return () => { document.removeEventListener('keydown', keydown, true); if (opener?.isConnected) opener.focus() }
+  }, [isOpen])
 
   // ── Provider selection ────────────────────────────────────────────────────
   const browserRuntime = !(window as any).__TAURI_INTERNALS__
@@ -83,7 +106,12 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
 
   // ── Load config when opened ───────────────────────────────────────────────
   useEffect(() => {
+    let active = true
     if (isOpen) {
+      setSection('connection')
+      updateBlobMotion(getBlobMotion())
+      setShowApiKey(false)
+      setShowAccessToken(false)
       const config = getStoredConfig()
       setProvider(config.provider === 'openai' ? 'openai' : 'ollama')
       // embeddingProvider defaults to the same as provider when not explicitly set
@@ -118,10 +146,11 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setDeviceAuthInfo(null)
       setDeviceFlowError('')
 
-      fetchModels(config.endpoint)
+      if (config.provider !== 'openai' || config.embeddingProvider === 'ollama') fetchModels(config.endpoint)
       // Credentials are loaded from the OS keychain in Tauri, not from the
       // localStorage settings metadata.
       void getStoredConfigWithSecrets().then((secureConfig) => {
+        if (!active) return
         setOpenaiApiKey(secureConfig.openaiApiKey || '')
         setOpenaiAccessToken(secureConfig.openaiAccessToken || '')
         setOpenaiIdToken(secureConfig.openaiIdToken || '')
@@ -130,6 +159,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         }
       }).catch((error) => console.error('Failed to load secure OpenAI credentials', error))
     }
+    return () => { active = false; if (pollIntervalRef.current) clearInterval(pollIntervalRef.current) }
   }, [isOpen])
 
   // ── Ollama model discovery ────────────────────────────────────────────────
@@ -355,26 +385,37 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`settings-modal ${theme}`} onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="settings-title" className={`settings-modal ${theme}`} onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
-          <h2>Settings</h2>
-          <button className="close-button" onClick={onClose}>
-            [X]
+          <div><h2 id="settings-title">Settings</h2><p className="settings-hint">Connections, generation and appearance</p></div>
+          <button className="close-button" aria-label="Close settings" onClick={onClose}>
+            ×
           </button>
         </div>
 
+        <div className="settings-navigation" role="tablist" aria-label="Settings sections" onKeyDown={event => {
+          const tabs = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+          const index = tabs.indexOf(document.activeElement as HTMLButtonElement)
+          const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1
+          if (next >= 0) { event.preventDefault(); tabs[next].click(); tabs[next].focus() }
+        }}>
+          {([['connection', 'Connection'], ['embeddings', 'Embeddings'], ['generation', 'Generation'], ['appearance', 'Appearance']] as const).map(([id, label]) =>
+            <button key={id} id={`settings-tab-${id}`} role="tab" aria-selected={section === id} aria-controls={`settings-panel-${id}`} tabIndex={section === id ? 0 : -1} onClick={() => setSection(id)}>{label}</button>
+          )}
+        </div>
         <div className="settings-content">
+          <div id="settings-panel-connection" role="tabpanel" aria-labelledby="settings-tab-connection" hidden={section !== 'connection'}>
 
           {/* ── Provider Selector ── */}
           <div className="settings-section">
-            <h3>AI Provider</h3>
-            <div className="provider-tabs" role="tablist">
+            <h3>Chat & flow planning</h3><p className="settings-description">Choose the provider used by the assistant, diagram generation and flow planning.</p>
+            <div className="provider-tabs" role="tablist" aria-label="Chat provider">
               <button
                 id="provider-tab-ollama"
                 role="tab"
                 aria-selected={provider === 'ollama'}
                 className={`provider-tab ${provider === 'ollama' ? 'active' : ''}`}
-                onClick={() => { setProvider('ollama'); setTestResult(null) }}
+                onClick={() => { setProvider('ollama'); setTestResult(null); if (!availableModels.length) void fetchModels(endpoint) }}
               >
 Ollama (Local)
               </button>
@@ -408,7 +449,7 @@ Ollama (Local)
 
           {/* ── Connection Test Result ── */}
           {testResult && (
-            <div className={`test-result-alert ${testResult.success ? 'success' : 'error'}`}>
+            <div role="status" className={`test-result-alert ${testResult.success ? 'success' : 'error'}`}>
               <div className="alert-title">
                 {testResult.success ? 'Connection Succeeded' : 'Connection Failed'}
               </div>
@@ -469,30 +510,6 @@ Ollama (Local)
                 <p className="settings-hint">
                   Default: gpt-oss:20b {availableModels.length > 0 && `(found ${availableModels.length} models locally)`}
                 </p>
-              </div>
-
-              <div className="settings-field">
-                <label htmlFor="ollama-embedding-model">Embedding Model</label>
-                <input
-                  id="ollama-embedding-model"
-                  type="text"
-                  list="available-embeddings-list"
-                  value={embeddingModel}
-                  onChange={(e) => setEmbeddingModel(e.target.value)}
-                  placeholder="nomic-embed-text"
-                  className="api-key-input"
-                />
-                <datalist id="available-embeddings-list">
-                  {availableModels.filter(m => m.includes('embed') || m.includes('nomic')).map((m) => (
-                    <option key={m} value={m} />
-                  ))}
-                  {availableModels.length > 0 && !availableModels.some(m => m.includes('embed') || m.includes('nomic')) &&
-                    availableModels.map((m) => (
-                      <option key={m} value={m} />
-                    ))
-                  }
-                </datalist>
-                <p className="settings-hint">Model used for RAG embeddings. Default: nomic-embed-text</p>
               </div>
 
               <div className="settings-field">
@@ -750,9 +767,29 @@ Login with OpenAI Account
                     </select>
                   </div>
                 )}
-                <p className="settings-hint">The picker contains every model returned by the Codex catalog. You can still type a compatible model name manually.</p>
+                <p className="settings-hint">The picker contains every model returned by your provider. You can still type a compatible model name manually.</p>
               </div>
 
+              <div className="settings-field">
+                <label htmlFor="openai-endpoint">OpenAI API Endpoint</label>
+                <input
+                  id="openai-endpoint"
+                  type="text"
+                  value={openaiEndpoint}
+                  onChange={(e) => setOpenaiEndpoint(e.target.value)}
+                  placeholder="https://api.openai.com/v1"
+                  className="api-key-input"
+                />
+                <p className="settings-hint">Default: https://api.openai.com/v1. Change only if using a custom proxy or Azure OpenAI.</p>
+              </div>
+            </div>
+          )}
+
+          </div>
+          <div id="settings-panel-embeddings" role="tabpanel" aria-labelledby="settings-tab-embeddings" hidden={section !== 'embeddings'}>
+            <div className="settings-section">
+              <h3>Knowledge base & embeddings</h3>
+              <p className="settings-description">Select an embedding provider independently of chat. OpenAI uses the key and endpoint in Connection; Ollama uses the local endpoint below.</p>
               {/* ── Embedding Provider ── */}
               <div className="settings-field">
                 <label>Embedding Provider (for RAG / Knowledge Base)</label>
@@ -796,7 +833,7 @@ Ollama Embeddings
                 </div>
               )}
 
-              {/* Ollama embedding fields — shown when mixing OpenAI chat + Ollama embeddings */}
+              {/* Local embedding fields are independent of the chat provider. */}
               {embeddingProvider === 'ollama' && (
                 <div className="embed-ollama-mix-box">
                   <div className="settings-field">
@@ -812,54 +849,42 @@ Ollama Embeddings
                     />
                     <p className="settings-hint">Default: http://127.0.0.1:11434/v1</p>
                   </div>
-                  <div className="settings-field">
-                    <label htmlFor="ollama-embed-model-mix">Ollama Embedding Model</label>
-                    <input
-                      id="ollama-embed-model-mix"
-                      type="text"
-                      list="available-embeddings-list-mix"
-                      value={embeddingModel}
-                      onChange={(e) => setEmbeddingModel(e.target.value)}
-                      placeholder="nomic-embed-text"
-                      className="api-key-input"
-                    />
-                    <datalist id="available-embeddings-list-mix">
-                      {availableModels.filter(m => m.includes('embed') || m.includes('nomic')).map((m) => (
-                        <option key={m} value={m} />
-                      ))}
-                      {availableModels.length > 0 && !availableModels.some(m => m.includes('embed') || m.includes('nomic')) &&
-                        availableModels.map((m) => (
-                          <option key={m} value={m} />
-                        ))
-                      }
-                    </datalist>
-                    <p className="settings-hint">Default: nomic-embed-text</p>
-                  </div>
+              <div className="settings-field">
+                <label htmlFor="ollama-embedding-model">Embedding Model</label>
+                <input
+                  id="ollama-embedding-model"
+                  type="text"
+                  list="available-embeddings-list"
+                  value={embeddingModel}
+                  onChange={(e) => setEmbeddingModel(e.target.value)}
+                  placeholder="nomic-embed-text"
+                  className="api-key-input"
+                />
+                <datalist id="available-embeddings-list">
+                  {availableModels.filter(m => m.includes('embed') || m.includes('nomic')).map((m) => (
+                    <option key={m} value={m} />
+                  ))}
+                  {availableModels.length > 0 && !availableModels.some(m => m.includes('embed') || m.includes('nomic')) &&
+                    availableModels.map((m) => (
+                      <option key={m} value={m} />
+                    ))
+                  }
+                </datalist>
+                <p className="settings-hint">Model used for RAG embeddings. Default: nomic-embed-text</p>
+              </div>
+
+
                 </div>
               )}
 
-              <div className="settings-field">
-                <label htmlFor="openai-endpoint">OpenAI API Endpoint</label>
-                <input
-                  id="openai-endpoint"
-                  type="text"
-                  value={openaiEndpoint}
-                  onChange={(e) => setOpenaiEndpoint(e.target.value)}
-                  placeholder="https://api.openai.com/v1"
-                  className="api-key-input"
-                />
-                <p className="settings-hint">Default: https://api.openai.com/v1. Change only if using a custom proxy or Azure OpenAI.</p>
-              </div>
+              <p className="settings-hint">Chat and local embeddings share the same Ollama endpoint.</p>
             </div>
-          )}
-
-          {/* ══════════════════════════════════════════════════
-              SHARED SETTINGS (both providers)
-          ══════════════════════════════════════════════════ */}
+          </div>
+          <div id="settings-panel-generation" role="tabpanel" aria-labelledby="settings-tab-generation" hidden={section !== 'generation'}>
           <div className="settings-section">
-            <h3>General AI Settings</h3>
+            <h3>Generation behavior</h3><p className="settings-description">Fine-tune how the assistant creates and repairs diagrams.</p>
 
-            <div className="settings-field" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="settings-field settings-toggle" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <label htmlFor="ollama-auto-fix" style={{ cursor: 'pointer', marginBottom: 0 }}>
                   Auto AI Fix Syntax Errors
@@ -928,6 +953,19 @@ Ollama Embeddings
               <p className="settings-hint">
                 Leave empty to use the default specialized Mermaid prompt.
               </p>
+            </div>
+          </div>
+
+          </div>
+          <div id="settings-panel-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden={section !== 'appearance'}>
+            <div className="settings-section">
+              <h3>Workspace appearance</h3>
+              <p className="settings-description">Appearance changes take effect immediately and are saved on this device.</p>
+              <div className="settings-field settings-toggle"><div><label>Color theme</label><p className="settings-hint">Current: {theme}</p></div><button onClick={toggleTheme}>Use {theme === 'dark' ? 'light' : 'dark'}</button></div>
+              <div className="settings-field"><label htmlFor="settings-diagram-palette">Diagram palette</label><select id="settings-diagram-palette" value={mermaidTheme} onChange={event => setMermaidTheme(event.target.value as typeof mermaidTheme)}>{(['slate', 'earth', 'cosmic', 'sage', 'royal'] as const).map(palette => <option key={palette} value={palette}>{palette}</option>)}</select></div>
+              <div className="settings-field"><label htmlFor="settings-diagram-case">Diagram label case</label><select id="settings-diagram-case" value={textTransform} onChange={event => setTextTransform(event.target.value as typeof textTransform)}><option value="none">Original</option><option value="uppercase">Uppercase</option><option value="lowercase">Lowercase</option></select></div>
+              <div className="settings-field settings-toggle"><div><label htmlFor="settings-blob-motion">Animate your blob</label><p className="settings-hint">Gentle breathing, blinking and a thinking pose while AI works. Reduced-motion preferences always take priority.</p></div><input id="settings-blob-motion" type="checkbox" checked={blobMotion} onChange={event => { updateBlobMotion(event.target.checked); setBlobMotion(event.target.checked) }} /></div>
+              <div className="settings-profile"><UserBlob size={64} ambient /><span className="settings-hint">Your personal blob stays the same on this device.</span></div>
             </div>
           </div>
 

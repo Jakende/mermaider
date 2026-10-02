@@ -68,7 +68,7 @@ function AppContent() {
   const decisionHighlights = useMemo(() => activeTab.decision?.linked ? flowPath(activeTab.decision) : undefined, [activeTab.decision])
 
   // Chat Panel State
-  const [isChatOpen, setIsChatOpen] = useState(true)
+  const [isChatOpen, setIsChatOpen] = useState(() => window.innerWidth > 800)
   const [isChatPoppedOut, setIsChatPoppedOut] = useState(false)
   const [chatWidth, setChatWidth] = useState(300)
 
@@ -266,7 +266,7 @@ function AppContent() {
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut ? chatWidth : 0)
+      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut && viewportWidth > 800 ? chatWidth : 0)
       if (availableWidth <= 0) return
 
       const newWidth = ((clientX - left) / availableWidth) * 100
@@ -321,9 +321,11 @@ function AppContent() {
         setIsEditorVisible(prev => !prev)
       } else if (modifier && e.key === 'j') {
         e.preventDefault()
-        setIsChatOpen(prev => !prev)
+        setIsDecisionsOpen(false)
+        setIsChatOpen(prev => isDecisionsOpen ? true : !prev)
       } else if (modifier && e.key === 'l') {
         e.preventDefault()
+        setIsDecisionsOpen(false)
         setIsChatOpen(true)
         setTimeout(() => chatPanelRef.current?.focusInput(), 100)
       } else if (modifier && e.key === 'e') {
@@ -343,7 +345,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTabId, tabs.length])
+  }, [activeTabId, tabs.length, isDecisionsOpen])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -391,7 +393,8 @@ function AppContent() {
         code={activeTab.code}
         setCode={setCode}
         error={error}
-        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        isChatOpen={isChatOpen}
+        onToggleChat={() => { setIsDecisionsOpen(false); setIsChatOpen(isDecisionsOpen ? true : !isChatOpen) }}
         isEditorVisible={isEditorVisible}
         onToggleEditor={() => setIsEditorVisible(!isEditorVisible)}
         diagramName={activeTab.name}
@@ -414,7 +417,7 @@ function AppContent() {
           <div className="diagram-workspace" style={{display:'flex',flex:1,minWidth:0}}>
           {showEditor && (
             <>
-              <div style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <div className="diagram-editor" style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <Editor 
                   code={activeTab.code} 
                   setCode={setCode} 
@@ -423,7 +426,7 @@ function AppContent() {
                   scrollToNode={scrollToNodeId}
                 />
               </div>
-              <ResizableSplitter onResize={handleResizeEditor} />
+              <div className="editor-splitter"><ResizableSplitter onResize={handleResizeEditor} /></div>
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -434,7 +437,7 @@ function AppContent() {
               targetNodeId={selectedNodeId} 
               onNodeClick={decisionNodeClick}
               decisionHighlights={decisionHighlights}
-              autoFit={!!activeTab.decision?.linked}
+              autoFit={!!activeTab.decision?.linked || viewportWidth <= 700}
               isVisualEditMode={isVisualEditMode}
               onToggleVisualEdit={setIsVisualEditMode}
             />
@@ -446,11 +449,11 @@ function AppContent() {
             onChange={updateDecision} onApplyPlan={applyDecisionPlan} onImportSession={openDecisionTab} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
 
           {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
-            <ResizableSplitter onResize={handleResizeChat} />
+            <div className="chat-dock-splitter"><ResizableSplitter onResize={handleResizeChat} /></div>
           )}
 
           {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
-            <div style={{ width: chatWidth, flexShrink:0 }}>
+            <div className="chat-dock" style={{ width: chatWidth, flexShrink:0 }}>
               <ChatPanel
                 code={activeTab.code}
                 setCode={setCode}

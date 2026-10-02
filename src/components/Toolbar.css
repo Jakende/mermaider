@@ -1,84 +1,41 @@
 .toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--border);
-  gap: var(--space-2);
-  background-color: var(--surface);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  flex-shrink:0;
+  padding:var(--space-2) var(--space-4);
+  border-bottom:1px solid var(--border);
+  gap:8px 12px;
+  background:var(--surface);
 }
-
-.toolbar-section {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
+.toolbar-section { display:flex; gap:6px; align-items:center; min-width:0; }
+.toolbar-section-right { margin-left:auto; }
+.toolbar-btn { min-width:36px; font-size:11px; white-space:nowrap; }
+.text-btn { min-width:auto; padding:0 12px; }
+.toolbar button[aria-pressed="true"],.ai-fix-btn { background:var(--control-bg); color:var(--control-ink); border-color:var(--control-border); }
+.action-menu { position:relative; }
+.action-menu-items {
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  width:240px;
+  max-width:calc(100vw - 24px);
+  padding:5px;
+  border:1px solid var(--ink);
+  background:var(--surface);
+  z-index:90;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
 }
-
-.toolbar-section-right {
-  margin-left: auto;
-}
-
-.toolbar-section:not(:last-child)::after {
-  content: '';
-  width: 1px;
-  height: 20px;
-  background-color: var(--border);
-  margin-left: var(--space-2);
-}
-
-.toolbar-btn {
-  /* Inherits from button in components.css */
-  min-width: 36px;
-}
-
-/* New class for text glyph buttons to ensure proper styling */
-.text-btn {
-  min-width: auto;
-  padding: 0 12px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.5px;
-}
-
-.toolbar-select {
-  height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
-  background-color: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.ai-fix-btn {
-  background-color: var(--control-bg);
-  color: var(--control-ink);
-  border: 1px solid var(--control-border);
-}
-
-.ai-fix-btn:hover {
-  text-decoration: underline;
-}
-
-.ai-fix-btn:disabled {
-  background-color: var(--muted);
-  border-color: var(--muted);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.github-btn {
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-}
-
-.github-btn:hover {
-  color: var(--accent);
-  border: none;
-  text-decoration: none;
+.action-menu.align-end .action-menu-items { left:auto; right:0; }
+.action-menu-items button { text-align:left; justify-content:flex-start; border-color:transparent; min-height:40px; padding:8px; white-space:normal; }
+.action-menu-items button:focus-visible { outline-offset:-2px; }
+@media(max-width:700px) {
+  .toolbar { padding:8px; gap:6px; }
+  .toolbar-section { justify-content:space-between; width:100%; }
+  .toolbar-section-right { margin-left:0; }
+  .toolbar-btn,.toolbar .text-btn { padding:0 9px; }
+  .toolbar-files .action-menu-items { width:230px; }
 }

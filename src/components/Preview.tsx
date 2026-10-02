@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import { parseMermaidFlowchart } from '../utils/mermaidParser'
 import VisualEditor from './VisualEditor'
-import { mermaidThemes } from '../utils/mermaidThemes'
+import { mermaidThemes, diagramThemeVariables } from '../utils/mermaidThemes'
 import { parseInitBlock } from '../utils/mermaidConfig'
 import { queueMermaidRender } from '../utils/renderQueue'
 import { applyDecisionOverlay } from '../decision/overlay'
@@ -34,7 +34,7 @@ export default function Preview({
   decisionHighlights,
   autoFit = false
 }: PreviewProps) {
-  const { mermaidTheme, textTransform } = useTheme()
+  const { theme, mermaidTheme, textTransform } = useTheme()
   const mermaidContainerRef = useRef<HTMLDivElement>(null)
   const renderIdRef = useRef(0)
   const [renderedVersion, setRenderedVersion] = useState(0)
@@ -170,7 +170,7 @@ export default function Preview({
           initConfig.theme = 'default'
         } else {
           initConfig.theme = selectedTheme.config.theme
-          initConfig.themeVariables = selectedTheme.config.themeVariables
+          initConfig.themeVariables = diagramThemeVariables(mermaidTheme, theme)
         }
 
         // Apply "look" (hand-drawn)
@@ -343,7 +343,7 @@ export default function Preview({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode, textTransform, autoFit])
+  }, [setError, theme, mermaidTheme, isVisualEditMode, canEdit, extractedCode, textTransform, autoFit])
 
   useEffect(() => {
     if (!mermaidContainerRef.current) return

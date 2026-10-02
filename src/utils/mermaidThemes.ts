@@ -175,3 +175,30 @@ export const mermaidThemes = {
         }
     }
 }
+
+/** Match diagram surfaces and labels to the workspace while preserving each palette's hue.
+ * Explicit Mermaid init directives and diagram styles still take precedence.
+ */
+export function diagramThemeVariables(palette: keyof typeof mermaidThemes, appearance: 'light' | 'dark') {
+    const base = mermaidThemes[palette].config.themeVariables
+    if (appearance === 'light' && palette !== 'cosmic') return base
+    const darkSurfaces = { slate: '#18212f', earth: '#292320', cosmic: '#1e293b', sage: '#132a22', royal: '#25182e' }
+    const dark = appearance === 'dark'
+    const ink = dark ? (palette === 'cosmic' ? base.primaryTextColor : base.primaryColor) : '#1e3a5f'
+    const surface = dark ? darkSurfaces[palette] : '#dbeafe'
+    const secondary = dark ? '#181818' : '#eff6ff'
+    const line = dark ? '#94a3b8' : '#64748b'
+    return {
+        ...base,
+        darkMode: dark,
+        primaryColor: surface, secondaryColor: secondary, tertiaryColor: dark ? '#222222' : '#ffffff',
+        primaryTextColor: ink, textColor: ink, titleColor: ink,
+        primaryBorderColor: line, nodeBorder: line, lineColor: line, defaultLinkColor: line,
+        clusterBkg: secondary, clusterBorder: line,
+        edgeLabelBackground: dark ? '#111111' : '#ffffff',
+        actorBkg: surface, actorBorder: line, actorTextColor: ink, actorLineColor: line,
+        signalColor: line, signalTextColor: ink, labelTextColor: ink, loopTextColor: ink,
+        labelBoxBkgColor: secondary, labelBoxBorderColor: line,
+        noteBkgColor: surface, noteBorderColor: line, noteTextColor: ink,
+    }
+}

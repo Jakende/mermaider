@@ -122,3 +122,18 @@ OpenAI-, Jev- und Embedding-Zugriff sind vom Nutzer bestätigt. Qualität der ne
 Planung und Laya-Web-CORS sind keine erledigten Release-Abnahmen. Tests und
 Live-Befunde werden im PR mit der geprüften Commit-ID dokumentiert.
 Betriebs-/Streaminggrenzen: [BROWSER_AI.md](BROWSER_AI.md).
+
+## Visuelle Überarbeitung vom 02.10.2026
+
+File-/View-Menüs, vier getrennte Einstellungsbereiche, bewegte persönliche
+Blobs, Tastatur-/Dialogfokus und ein angepasster mobiler Arbeitsbereich sind
+umgesetzt. Die bestehenden KI-, Export- und Entscheidungsfunktionen bleiben
+vorhanden. Diagrammbeschriftungen passen ihren Kontrast an das Farbschema an.
+Bedienung und Speicherverhalten: [WORKSPACE_UI.md](WORKSPACE_UI.md).
+
+Release-Konsistenz, ESLint, TypeScript/Vite, 43 Logiktests und 19 lokale
+Chromiumfälle sind geprüft; ein zusätzlicher echter Gateway-Healthtest läuft
+nur nach der Bereitstellung. Die vier neuen Browserfälle prüfen insbesondere
+320-Pixel-Layout, vollständige Menüs, unabhängige Embeddings, Fokusführung,
+Blob-Bewegung/Identität und Diagrammkontrast. Echte Modellqualität bleibt Teil
+der laufenden Nutzerabnahme.

@@ -142,7 +142,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
   }
   return <aside id="decision-workspace" className="decision-workspace" aria-label="Decision workspace" style={{width}}>
     <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>
-    <header><UserBlob/><strong>DECISIONS</strong><button onClick={onClose} aria-label="Close decision workspace">×</button></header>
+    <header><UserBlob busy={!!busy}/><strong>DECISIONS</strong><button onClick={onClose} aria-label="Close decision workspace">×</button></header>
     <div className="decision-scroll">
       <label htmlFor="flow-goal">Goal</label><textarea id="flow-goal" rows={2} maxLength={12000} value={session.goal} placeholder="Describe the decision or process…" onChange={event=>onChange(changeFlow(session,{goal:event.target.value},'Updated goal'))}/>
       <label htmlFor="flow-context">Live state / update</label><textarea id="flow-context" rows={3} maxLength={12000} value={context} placeholder="What has changed? Facts, text or JSON…" onChange={event=>{cancel();setDraft(null);onChange(changeFlow(latest.current,{context:event.target.value},'Updated state'))}}/>

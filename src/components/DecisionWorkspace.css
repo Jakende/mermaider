@@ -21,8 +21,6 @@
 .flow-draft ul { padding-left:16px; max-height:220px; overflow:auto; }
 .flow-draft small,.flow-suggestion small { display:block; color:var(--muted); margin:4px 0; }
 .decision-workspace [role=alert] { border-left:3px solid var(--ink); padding:8px; font-size:12px; }
-.user-blob { display:inline-flex; flex:none; align-items:center; }
-.user-blob img { display:block; }
 @media(max-width:800px) { .decision-workspace { position:absolute; right:0; top:0; bottom:0; z-index:15; } }
 
 .decision-resize-handle { position:absolute; left:-4px; top:0; bottom:0; width:8px; z-index:20; cursor:col-resize; touch-action:none; }
