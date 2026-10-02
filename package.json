@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node scripts/package-browser-bridge.mjs",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -14,8 +14,7 @@
     "test": "node scripts/test.mjs",
     "test:e2e": "playwright test",
     "check:release": "node scripts/check-release.mjs",
-    "lint": "eslint src tests playwright.config.ts scripts",
-    "ai:bridge": "node scripts/browser-ai-bridge.mjs"
+    "lint": "eslint src tests playwright.config.ts scripts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",

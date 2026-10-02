@@ -31,8 +31,6 @@ interface OllamaResponse {
 
 export interface OllamaConfig {
   endpoint: string
-  /** Optional loopback bridge for browser access to ChatGPT/Codex and Ollama. */
-  browserBridgeEndpoint?: string
   model: string
   embeddingModel?: string
   systemPrompt?: string
@@ -177,7 +175,7 @@ function getTemperature(preferred: number, config: OllamaConfig): number {
   return config.temperature !== undefined ? config.temperature : preferred;
 }
 
-async function performFetch(url: string, options: RequestInit, config?: Partial<OllamaConfig>) {
+async function performFetch(url: string, options: RequestInit, _config?: Partial<OllamaConfig>) {
   const isTauri = !!(window as any).__TAURI_INTERNALS__
   if (isTauri) {
     // Always use the native HTTP plugin in packaged apps. Falling back to the
@@ -190,7 +188,7 @@ async function performFetch(url: string, options: RequestInit, config?: Partial<
       throw new Error(`Native HTTP request to ${url} failed: ${detail}`)
     }
   } else {
-    return await browserProviderFetch(url, options, config?.browserBridgeEndpoint ?? getStoredConfig().browserBridgeEndpoint)
+    return await browserProviderFetch(url, options)
   }
 }
 
@@ -652,13 +650,13 @@ export async function generateEmbedding(text: string, config: OllamaConfig): Pro
 
 // ─── Ollama Model Discovery ───────────────────────────────────────────────────
 
-export async function getAvailableModels(endpoint: string, browserBridgeEndpoint?: string): Promise<string[]> {
+export async function getAvailableModels(endpoint: string): Promise<string[]> {
   const baseUrl = getBaseUrl(endpoint).replace('localhost', '127.0.0.1')
   const tagsUrl = `${baseUrl}/api/tags`
 
 
   try {
-    const response = await performFetch(tagsUrl, { method: 'GET', headers: { Accept: 'application/json' } }, { browserBridgeEndpoint })
+    const response = await performFetch(tagsUrl, { method: 'GET', headers: { Accept: 'application/json' } })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -692,11 +690,10 @@ export async function getAvailableModels(endpoint: string, browserBridgeEndpoint
 export async function testOllamaConnection(
   endpoint: string,
   model: string,
-  embeddingModel: string,
-  browserBridgeEndpoint?: string
+  embeddingModel: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const models = await getAvailableModels(endpoint, browserBridgeEndpoint)
+    const models = await getAvailableModels(endpoint)
     
     const cleanModel = model.trim().toLowerCase()
     const cleanEmbeddingModel = embeddingModel.trim().toLowerCase()
@@ -1185,7 +1182,6 @@ export function getStoredConfig(): OllamaConfig {
       return {
         // Ollama fields
         endpoint: parsed.endpoint || DEFAULT_ENDPOINT,
-        browserBridgeEndpoint: parsed.browserBridgeEndpoint || undefined,
         model: parsed.model || DEFAULT_MODEL,
         embeddingModel: parsed.embeddingModel || DEFAULT_EMBEDDING_MODEL,
         systemPrompt: parsed.systemPrompt, // might be undefined, which is fine, fallback to default

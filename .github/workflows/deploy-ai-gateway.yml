@@ -1,0 +1,33 @@
+name: Deploy hosted AI service
+on:
+  push:
+    branches: [release/1.8.7-stabilization]
+    paths: [functions/**, scripts/deploy-ai-gateway.mjs, .github/workflows/deploy-ai-gateway.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: appwrite-ai-gateway
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - name: Deploy and verify hosted provider function
+        env:
+          APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/deploy-ai-gateway.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-gateway-verification-${{ github.sha }}
+          path: ai-gateway-verification.json
+          if-no-files-found: error

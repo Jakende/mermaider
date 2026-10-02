@@ -5,7 +5,7 @@ import tseslint from 'typescript-eslint'
 export default tseslint.config(
   { ignores: ['dist/**', 'node_modules/**', '.test-compile/**'] },
   {
-    files: ['src/**/*.{ts,tsx}', 'tests/**/*.ts', 'playwright.config.ts', 'scripts/*.mjs'],
+    files: ['src/**/*.{ts,tsx}', 'tests/**/*.ts', 'playwright.config.ts', 'scripts/*.mjs', 'functions/**/*.js'],
     languageOptions: { parser: tseslint.parser, globals: { ...globals.browser, ...globals.node } },
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {

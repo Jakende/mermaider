@@ -31,7 +31,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
 
   // ── Provider selection ────────────────────────────────────────────────────
   const browserRuntime = !(window as any).__TAURI_INTERNALS__
-  const [browserBridgeEndpoint, setBrowserBridgeEndpoint] = useState('')
   const [ollamaDiscoveryError, setOllamaDiscoveryError] = useState('')
   const [openaiDiscoveryError, setOpenaiDiscoveryError] = useState('')
   const [provider, setProvider] = useState<Provider>('ollama')
@@ -91,7 +90,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setEmbeddingProvider(config.embeddingProvider ?? (config.provider === 'openai' ? 'openai' : 'ollama'))
 
       // Ollama
-      setBrowserBridgeEndpoint(config.browserBridgeEndpoint || '')
       setOllamaDiscoveryError('')
       setOpenaiDiscoveryError('')
       setEndpoint(config.endpoint)
@@ -106,7 +104,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setOpenaiApiKey(config.openaiApiKey || '')
       setOpenaiAccessToken(config.openaiAccessToken || '')
       setOpenaiIdToken(config.openaiIdToken || '')
-      setOpenaiAuthType((config.openaiAuthType as OpenAIAuthType) || 'apikey')
+      setOpenaiAuthType(browserRuntime ? 'apikey' : (config.openaiAuthType as OpenAIAuthType) || 'apikey')
 
       // Shared
       setSystemPrompt(config.systemPrompt || '')
@@ -120,7 +118,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
       setDeviceAuthInfo(null)
       setDeviceFlowError('')
 
-      fetchModels(config.endpoint, config.browserBridgeEndpoint || '')
+      fetchModels(config.endpoint)
       // Credentials are loaded from the OS keychain in Tauri, not from the
       // localStorage settings metadata.
       void getStoredConfigWithSecrets().then((secureConfig) => {
@@ -128,18 +126,18 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         setOpenaiAccessToken(secureConfig.openaiAccessToken || '')
         setOpenaiIdToken(secureConfig.openaiIdToken || '')
         if (secureConfig.openaiApiKey || secureConfig.openaiAccessToken) {
-          fetchOpenAIModels(secureConfig)
+          fetchOpenAIModels(browserRuntime ? { ...secureConfig, openaiAuthType: 'apikey' } : secureConfig)
         }
       }).catch((error) => console.error('Failed to load secure OpenAI credentials', error))
     }
   }, [isOpen])
 
   // ── Ollama model discovery ────────────────────────────────────────────────
-  const fetchModels = async (endpointUrl: string, bridgeEndpoint = browserBridgeEndpoint) => {
+  const fetchModels = async (endpointUrl: string) => {
     setOllamaDiscoveryError('')
     if (!endpointUrl.trim()) return
     try {
-      const models = await getAvailableModels(endpointUrl.trim(), bridgeEndpoint)
+      const models = await getAvailableModels(endpointUrl.trim())
       setAvailableModels(models)
     } catch (err) {
       setAvailableModels([])
@@ -155,7 +153,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const fetchOpenAIModels = async (partialConfig?: any) => {
     setOpenaiDiscoveryError('')
     const config = partialConfig || {
-      browserBridgeEndpoint,
       openaiEndpoint,
       openaiApiKey,
       openaiAccessToken,
@@ -194,7 +191,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
           fetchOpenAIModels()
         }
       } else {
-        const result = await testOllamaConnection(endpoint, model, embeddingModel, browserBridgeEndpoint)
+        const result = await testOllamaConnection(endpoint, model, embeddingModel)
         setTestResult(result)
         if (result.success || result.message.includes('not found')) {
           await fetchModels(endpoint)
@@ -283,7 +280,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   // ── Build config from current state ──────────────────────────────────────
   const buildCurrentConfig = () => ({
     endpoint,
-    browserBridgeEndpoint: browserBridgeEndpoint.trim(),
     model,
     embeddingModel,
     systemPrompt: systemPrompt.trim(),
@@ -326,7 +322,6 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   const handleReset = () => {
     clearConfig()
     const config = getStoredConfig()
-    setBrowserBridgeEndpoint('')
     setOllamaDiscoveryError('')
     setOpenaiDiscoveryError('')
     setProvider('ollama')
@@ -352,7 +347,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     setDeviceAuthInfo(null)
     setDeviceFlowError('')
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-    fetchModels(config.endpoint, '')
+    fetchModels(config.endpoint)
   }
 
   if (!isOpen) return null
@@ -397,19 +392,17 @@ Ollama (Local)
 
           {browserRuntime && (
             <div className="settings-section">
-              <label htmlFor="browser-ai-bridge">Browser Connection Bridge</label>
-              <input id="browser-ai-bridge" type="text" value={browserBridgeEndpoint}
-                onChange={event => setBrowserBridgeEndpoint(event.target.value)}
-                placeholder="http://127.0.0.1:11435" />
-              <p className="settings-hint">
-                For ChatGPT/Codex account login, <a href="/website/mermaider-browser-bridge.mjs" download>download the local bridge</a>
-                and run <code>node mermaider-browser-bridge.mjs</code> on your computer (Node.js 20 or newer),
-                enter <code>http://127.0.0.1:11435</code> here and keep the terminal open.
-                The bridge also connects to local Ollama. Allow local-network access for this site in your browser.
-                Leave blank for direct OpenAI API-key access or Ollama with browser access configured.
-              </p>
-              <p className="settings-hint">Browser credentials are kept for this tab session, including reloads.
-                They are not saved in persistent browser settings.</p>
+              <p className="settings-hint">OpenAI requests use the hosted Mermaider service. Your API key and input
+                are forwarded to OpenAI for each request. Credentials stay in this tab session, including reloads.</p>
+              <details>
+                <summary>Set up local Ollama in your browser</summary>
+                <p className="settings-hint">Allow local-network access for this website in your browser.
+                  On macOS with the Ollama app, run this command once, then fully quit and reopen Ollama:</p>
+                <code>{`launchctl setenv OLLAMA_ORIGINS "${window.location.origin}"`}</code>
+                <p className="settings-hint">For an Ollama terminal server, set OLLAMA_ORIGINS to
+                  {' '}{window.location.origin} before starting it. Keep your existing allowed origins if needed.
+                  Then select Ollama and test the connection below.</p>
+              </details>
             </div>
           )}
 
@@ -523,7 +516,7 @@ Ollama (Local)
           {provider === 'openai' && (
             <div className="settings-section" role="tabpanel" aria-labelledby="provider-tab-openai">
               <p className="settings-description">
-                Connect with an OpenAI API key or a ChatGPT/Codex account. In the web app, account login requires the local Browser Connection Bridge.
+                {browserRuntime ? 'Connect with an OpenAI API key. ChatGPT subscriptions and Codex account logins are separate; account login remains available in the desktop app.' : 'Connect with an OpenAI API key or a ChatGPT/Codex account.'}
               </p>
 
               {openaiDiscoveryError && <p className="settings-hint" role="alert">{openaiDiscoveryError}</p>}
@@ -539,6 +532,8 @@ Ollama (Local)
                     API Key
                   </button>
                   <button
+                    disabled={browserRuntime}
+                    title={browserRuntime ? "Account access is available in the desktop app" : undefined}
                     id="openai-auth-token"
                     className={`auth-tab ${openaiAuthType === 'token' ? 'active' : ''}`}
                     onClick={() => setOpenaiAuthType('token')}
@@ -546,6 +541,8 @@ Ollama (Local)
                     Access Token
                   </button>
                   <button
+                    disabled={browserRuntime}
+                    title={browserRuntime ? "Account login is available in the desktop app" : undefined}
                     id="openai-auth-device"
                     className={`auth-tab ${openaiAuthType === 'device' ? 'active' : ''}`}
                     onClick={() => { setOpenaiAuthType('device'); setDeviceFlowState('idle') }}
