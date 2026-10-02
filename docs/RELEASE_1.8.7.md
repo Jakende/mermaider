@@ -1,7 +1,8 @@
 # Mermaider 1.8.7 – Releasekandidat
 
 Status: Native MIT-Kandidaten und Appwrite-Liveprüfung sind erfolgreich;
-Zielsystem-Abnahme, Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
+Ein erfolgreicher macOS-Praxistest ist vom Nutzer bestätigt; Windows-Abnahme,
+Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
 1.8.7 abgestimmt. Keine Jev-/Laya-Integration in diesem Release.
 
 ## Vorgesehene Release Notes
@@ -43,6 +44,14 @@ Zielsystem-Abnahme, Signierung und Releaseveröffentlichung stehen aus. Der Kand
 
 ## Native Abnahme – je Zielsystem ausfüllen
 
+Am 02.10.2026 meldete der Nutzer zum zuvor angefragten Installations-,
+Schlüssel-Neustart- und SVG-/PNG-/PDF-Exporttest: „Es scheint alles funktioniert
+zu haben. Betriebssystem: MacOs“. Dies ist eine positive macOS-Praxisrückmeldung.
+Einzelresultate, genaue OS-Version, Architektur und verwendeter Installer wurden
+nicht separat angegeben. Die detaillierten Prüfungen unten bleiben daher bis
+zur jeweiligen Einzelbestätigung offen; insbesondere Providerverbindungen,
+Schlüssellöschung und Signierung sind durch diese Rückmeldung nicht geprüft.
+
 | Prüfung | macOS Apple Silicon | Windows x64 |
 | --- | --- | --- |
 | Installation und erster Start | offen | offen |
@@ -73,7 +82,9 @@ festhalten und den Kandidaten korrigieren; keine fehlgeschlagene Abnahme abhaken
 ## Noch benötigte externe Angaben
 
 Appwrite-Endpoint, IDs und API-Key sind konfiguriert und im echten Deployment
-bestätigt. Noch benötigt werden Zielsystem-Testresultate; Entscheidung über Signierung und öffentliche Downloadquelle.
+bestätigt. Die macOS-Praxisrückmeldung liegt vor. Noch benötigt werden Windows-Testresultate
+und die verbleibenden Einzelprüfungen sowie eine Entscheidung über Signierung
+und öffentliche Downloadquelle.
 
 ## Bestätigte Bereitstellung
 

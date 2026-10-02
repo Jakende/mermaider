@@ -292,7 +292,7 @@ mermaider/
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the same license as the project (CC BY-NC-SA 4.0).
+By contributing, you agree that your contributions will be licensed under the same license as the project (MIT).
 
 Thank you for contributing to Mermaider! 🎨
 
