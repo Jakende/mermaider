@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: appwrite-ai-gateway
+  group: appwrite-production
   cancel-in-progress: false
 jobs:
   deploy:

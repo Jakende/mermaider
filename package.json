@@ -14,7 +14,7 @@
     "test": "node scripts/test.mjs",
     "test:e2e": "playwright test",
     "check:release": "node scripts/check-release.mjs",
-    "lint": "eslint src tests playwright.config.ts scripts"
+    "lint": "eslint src tests playwright.config.ts scripts functions"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
