@@ -148,3 +148,15 @@ die Grundlage für die nächsten Arbeitsläufe.
 Die oben beschriebenen Ausgangsbefunde wurden im lokalen Stabilisierungslauf
 teilweise behoben. Aktuelle Änderungen, Prüfergebnisse und verbleibende native
 Freigabeschritte: [RELEASE_STABILIZATION.md](RELEASE_STABILIZATION.md).
+
+## Bereinigung und Herkunft: Ergänzung vom 02.10.2026
+
+Die obenstehenden Tabellen beschreiben den historischen Ausgangsstand vom
+30.09.2026. Die ungenutzte `.test-compile/`-Kopie (150 Dateien) und
+`src/utils/env.ts` wurden inzwischen entfernt. `.env.example` enthält keine
+alten Appwrite-Clientplatzhalter mehr. Aktuelle Domains sind die geprüfte
+Appwrite-App und `/website/`. Cargo nennt Jakob Endemann und den ursprünglichen
+Autor Dario Novoa Vergara; Herkunft und Fremdbeiträge bleiben nachvollziehbar.
+Die MIT-Freigabe der übernommenen Dario-Beiträge hat der Projektverantwortliche
+bestätigt. Siehe [Attribution](../ATTRIBUTION.md), [Herkunftsprüfung](SOURCE_PROVENANCE.md)
+und [Dateiherkunft](SOURCE_FILE_ORIGINS.md).

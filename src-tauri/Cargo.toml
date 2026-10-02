@@ -1,8 +1,8 @@
 [package]
 name = "mermaider"
 version = "1.8.7"
-description = "Mermaider - A native macOS Mermaid diagram editor"
-authors = ["Dario Novoa Vergara"]
+description = "Mermaider - A native macOS and Windows Mermaid diagram editor"
+authors = ["Jakob Endemann", "Dario Novoa Vergara"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.77.2"

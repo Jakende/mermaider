@@ -1,6 +1,8 @@
 # Mermaider
 
-Mermaider is a privacy-first, open-source live AI Mermaid editor that puts power and control back in your hands. By integrating local LLMs via Ollama, it provides a seamless, secure, and completely free environment for creating, editing, and fixing Mermaid diagrams using natural language.
+Mermaider is a live Mermaid editor with local Ollama and hosted OpenAI assistance. Create and edit diagrams from code or natural-language descriptions, preview changes, and export the result.
+
+The repository currently remains private while release preparation is completed. Project development is maintained by Jakob Endemann; original application contributions by Dario Novoa are retained and documented in [Attribution](ATTRIBUTION.md).
 
 ## Key Characteristics
 
@@ -46,16 +48,18 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - Drag and Drop: Drop files directly into the editor to load them.
 
 ### Cross-Platform Support
-- Web Version: Use instantly in any modern browser at [mermaider.com](https://mermaider.com).
+- Web Version: Use instantly in any modern browser at [the web app](https://mermaider.appwrite.network/).
 - Desktop Application: Native builds for macOS and Windows.
 
 ## Getting Started
 
 ### Web Version
-Visit [mermaider.com](https://mermaider.com) to start creating diagrams immediately. No installation or sign-up is required.
+Visit [the web app](https://mermaider.appwrite.network/) to start creating diagrams immediately. No installation or sign-up is required.
 
 ### Desktop Application
-1. Download the latest version from the [GitHub Releases](https://github.com/Jakende/mermaider/releases) page.
+Version 1.8.7 is a release candidate. Public installer downloads are not yet enabled; current acceptance and distribution status is tracked in the [release checklist](docs/RELEASE_1.8.7.md). Once a release is published:
+
+1. Download the installer from the [product website](https://mermaider.appwrite.network/website/).
 2. For Windows: Run the NSIS installer.
 3. For macOS: Open the DMG file and move Mermaider to your Applications folder.
 
@@ -72,7 +76,7 @@ Mermaider is built using modern, efficient technologies:
 ## Keyboard Shortcuts
 
 ### General
-- **New Diagram**: `Cmd+N` (Mac) / `Ctrl+N` (Windws)
+- **New Diagram**: `Cmd+N` (Mac) / `Ctrl+N` (Windows)
 - **Open / Import**: `Cmd+O` / `Ctrl+O`
 - **Export / Save**: `Cmd+S` / `Ctrl+S`
 - **Close Tab**: `Cmd+W` / `Ctrl+W`
@@ -135,11 +139,11 @@ Replace `patch` with `minor`, `major`, or an explicit version such as `1.9.0`. T
 
 ## License
 
-Mermaider is licensed under the [MIT License](LICENSE). Existing third-party copyright notices are retained.
+Mermaider uses the [MIT License](LICENSE). The project owner confirmed MIT permission for the inherited Dario Novoa contributions on 2026-10-02. Existing third-party notices are retained. See [Attribution](ATTRIBUTION.md) and the [source provenance review](docs/SOURCE_PROVENANCE.md).
 
 ---
 
-Mermaider is an open-source project dedicated to making technical documentation easier and more private.
+Mermaider is being prepared for public distribution after the remaining release checks.
 
 ### Release checks
 

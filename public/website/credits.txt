@@ -1,0 +1,15 @@
+Mermaider — Lizenz und Herkunft
+
+Mermaider wird von Jakob Endemann weiterentwickelt. Die Anwendung baut auf
+früheren Beiträgen von Dario Novoa Vergara zum Projekt Mermalaid auf. Die
+Historie enthält außerdem eine Appwrite-Integration.
+
+Projektlizenz: MIT. Die Freigabe der übernommenen Dario-Beiträge unter MIT
+wurde vom Projektverantwortlichen am 02.10.2026 bestätigt.
+
+Vorhandener Hinweis: Copyright (c) 2024 Appwrite.
+Mermaid, Monaco, React, Tauri und weitere Bibliotheken behalten ihre eigenen
+Lizenzbedingungen und Urheberhinweise.
+
+Der Quellcode ist derzeit privat. Öffentliche Desktop-Downloads folgen nach
+Release-Abnahme und Freigabe der Distribution.

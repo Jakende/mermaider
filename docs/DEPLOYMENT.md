@@ -100,8 +100,9 @@ werden in der Anwendung eingestellt. Alle `VITE_*`-Werte sind öffentlich im
 Browserbuild sichtbar; keine API-Schlüssel als `VITE_OPENAI_API_KEY` einbauen.
 
 Die alte Anleitung nannte Appname, Version, Analytics und Featureflags.
-Die Hilfsfunktionen in `src/utils/env.ts` haben derzeit keine aktiven Aufrufer.
-Auch die Appwrite-Platzhalter in `.env.example` werden nicht verwendet.
+Die ungenutzten Hilfsfunktionen in `src/utils/env.ts` und die alten Appwrite-
+Platzhalter wurden bei der Bereinigung am 02.10.2026 entfernt. `.env.example`
+beschreibt jetzt ausschließlich die Trennung von Browser- und Deploymentdaten.
 
 Im Browser läuft Ollama auf dem Rechner des Besuchers, nicht auf dem Hostingserver.
 CORS, HTTPS/HTTP-Regeln und Browserberechtigungen für lokale Verbindungen für

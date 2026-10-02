@@ -32,22 +32,21 @@ Eine MIT-Lizenz ist keine automatische Zustimmung zur Veröffentlichung.
 
 Die erste Herkunftssichtung und konkrete historische Lizenzwechsel sind in
 [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert. Eine alleinige
-Urheberschaft und eine vollständige MIT-Freigabe aller übernommenen Teile sind
-noch nicht belegt.
+Urheberschaft wird nicht behauptet. Die MIT-Freigabe der übernommenen Dario-
+Beiträge wurde vom Projektverantwortlichen am 02.10.2026 bestätigt.
 
-Vor einer Freigabe separat prüfen:
+Stand nach der Bereinigung vom 02.10.2026:
 
-- Aktive Quellen, historische Kopien wie `.test-compile/`, Hilfsskripte und
-  Dokumentation unterscheiden; entbehrliche Altdateien gezielt entfernen.
-- Git-Historie und aktuellen Stand auf sensible Inhalte prüfen, ohne Werte in
-  Berichte zu kopieren. Gefundene Geheimnisse vor Veröffentlichung rotieren.
-- Herkunft und Rechte von Code, Icons, Vorlagen und Dokumentation nachvollziehen.
-  Git-Autorangaben allein beweisen keine alleinige Urheberschaft.
-- Eigene Beiträge Jakob Endemann korrekt zuordnen; zutreffende Fremd-Copyright-
-  und Lizenzhinweise erhalten. Insbesondere den bestehenden Appwrite-Hinweis
-  anhand der Herkunft prüfen, nicht pauschal löschen.
-- Nach der Prüfung die öffentliche Quelle und Releaseartefakte freigeben,
-  dann Downloadkonfiguration und Privathinweis aktualisieren.
+- `.test-compile/` und ungenutzte Konfiguration entfernt; Dateiherkunft erfasst.
+- Erreichbare Git-Historie auf definierte Credential-Muster geprüft, ohne Treffer.
+  Umfang und Grenzen sind im Herkunftsbericht dokumentiert.
+- Jakob Endemann und Dario Novoa Vergara in den Autorenangaben genannt;
+  Fremdhinweise erhalten. Die MIT-Freigabe der Dario-Beiträge ist bestätigt.
+- [Attribution](../ATTRIBUTION.md), [Dateiherkunft](SOURCE_FILE_ORIGINS.md) und
+  [Abhängigkeitslizenzen](DEPENDENCY_LICENSES.md) dokumentieren die Zuordnung.
+- Repository bleibt privat. Öffentliche Downloads benötigen weiterhin Release-
+  Abnahme und eine öffentliche Quelle. Erst dann Downloadmanifest aktivieren
+  und Privathinweis anpassen.
 
 Jev und Laya werden als Planung beschrieben; die Website behauptet keine
 bereits verfügbare Entscheidungsintegration. Domainwechsel und ein späterer

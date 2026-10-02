@@ -30,7 +30,7 @@ Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht verö
 3. Appwrite-Projekt/Site prüfen und das Actions-Secret `APPWRITE_API_KEY`
    hinterlegen. Endpoint sowie Projekt-/Site-ID sind im Deploymentjob konfiguriert.
    API-Schlüssel direkt in GitHub eintragen; nicht im Chat oder Repository.
-   Die veralteten `VITE_APPWRITE_*`-Platzhalter konfigurieren kein Deployment.
+   Die früheren ungenutzten `VITE_APPWRITE_*`-Platzhalter wurden entfernt.
 4. Nach bestandenen Prüfungen PR mergen. Deploymentworkflow auf main läuft
    nach erfolgreicher Webprüfung. Aktive Appwrite-Deployment-ID und Live-URL
    prüfen; Browser-Abnahme auf dieser HTTPS-URL wiederholen.
@@ -94,3 +94,12 @@ Deployment `6abe36b399fd937b46ec` ist fertig und aktiv. Alle drei Live-
 Browsertests bestanden am 01.10.2026. Native MIT-Kandidaten für Apple Silicon
 und Windows x64 wurden erfolgreich gebaut und ihre Prüfsummen kontrolliert.
 Das ersetzt keine Installations-, Credential- und Providerprüfung auf Zielsystemen.
+
+## Quellcode-Bereinigung und Attribution vom 02.10.2026
+
+Die ungenutzte historische Kopie und Konfigurationshelfer wurden entfernt.
+Jakob Endemann und Dario Novoa Vergara sind als Autoren genannt; vorhandene
+Fremdhinweise bleiben erhalten. Der Projektverantwortliche bestätigte eine
+MIT-Freigabe für die übernommenen Dario-Beiträge. Lizenzgrundlage und Prüf-
+umfang sind in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert.
+Das Repository bleibt privat; Release und Downloads sind nicht veröffentlicht.
