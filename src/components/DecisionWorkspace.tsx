@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow, redoFlow } from '../decision/flow'
+import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow, redoFlow, recordFlowEvent } from '../decision/flow'
 import type { FlowPlan, FlowQuestion, FlowSession } from '../decision/flow'
 import { decisionDefaults, evaluateDecision, loadDecisionKey, saveDecisionKey } from '../decision/service'
 import type { DecisionConfig, DecisionProvider } from '../decision/types'
 import { planFlow } from '../decision/planner'
 import UserBlob from './UserBlob'
+import DecisionRuleEditor from './DecisionRuleEditor'
+import {mapDecisionAnswer,ruleDescription} from '../decision/rules'
 import DecisionResizeHandle from './DecisionResizeHandle'
 import { exportFlow, importFlow, MAX_FLOW_FILE_BYTES } from '../decision/sessionFile'
 import './DecisionWorkspace.css'
@@ -68,10 +70,11 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
       if(controller.signal.aborted)return
       const run=await evaluateDecision({...config,apiKey},request,controller.signal)
       if(token!==operation.current||latest.current.revision!==snapshot.revision||settings.current!==expected)return
-      const answer=run.answers[target]
-      const optionId=String(answer.value);const probability=answer.probabilities?.[optionId]??0
-      if(mode==='follow'&&probability>=0.8){onChange(chooseFlow(snapshot,target,optionId,'model',probability))}
-      else onChange({...snapshot,suggestions:{...snapshot.suggestions,[target]:{optionId,probability,revision:snapshot.revision,provider:run.provider,model:run.model}}})
+      const question=snapshot.plan!.questions.find(question=>question.id===target)!
+      const mapped=mapDecisionAnswer(question,run.answers[target],run)
+      const recorded=recordFlowEvent(snapshot,'Model evaluated',{question:question.text,answer:question.options.find(option=>option.id===mapped.optionId)!.label,source:'model',evidence:mapped.evidence})
+      if(mode==='follow'&&mapped.autoEligible&&(mapped.probability??0)>=0.8){onChange(chooseFlow(recorded,target,mapped.optionId,'model',mapped.probability,mapped.evidence))}
+      else onChange({...recorded,suggestions:{...recorded.suggestions,[target]:{...mapped,revision:snapshot.revision,provider:run.provider,model:run.model}}})
     }catch(failure){if(token===operation.current&&!controller.signal.aborted)setError(failure instanceof Error?failure.message:'Evaluation failed.')}
     finally{if(token===operation.current)setBusy(null)}
   }
@@ -99,11 +102,11 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
     const timer=setTimeout(()=>{lastAdapt.current=signature;void generate()},1400)
     return()=>clearTimeout(timer)
   },[session.goal,session.context,context,autoAdapt,busy])
-  const editPlan=(plan:FlowPlan,note:string)=>{
-    try{onChange(changeFlow(latest.current,{plan},note));setError('')}catch(failure){setError(failure instanceof Error?failure.message:'Invalid follow-up')}
+  const editPlan=(plan:FlowPlan,note:string,question?:FlowQuestion)=>{
+    try{onChange(changeFlow(latest.current,{plan},note,question?{question:question.text,rule:ruleDescription(question)}:{}));setError('')}catch(failure){setError(failure instanceof Error?failure.message:'Invalid follow-up')}
   }
   const editQuestion=(question:FlowQuestion)=>{
-    if(session.plan)editPlan({...session.plan,questions:session.plan.questions.map(item=>item.id===question.id?question:item)},'Edited question')
+    if(session.plan)editPlan({...session.plan,questions:session.plan.questions.map(item=>item.id===question.id?question:item)},'Edited question',question)
   }
   const addQuestion=(fromId?:string,optionId?:string)=>{
     const id=flowId();const question:FlowQuestion={id,text:'New question',options:[{id:flowId('a'),label:'Yes',nextId:undefined},{id:flowId('a'),label:'No',nextId:undefined}]}
@@ -117,7 +120,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
     editPlan({...session.plan,startId:session.plan.startId===id?questions[0].id:session.plan.startId,questions},'Removed question')
   }
   const select=(questionId:string,optionId:string,model=false)=>{
-    try{const suggestion=session.suggestions[questionId];onChange(chooseFlow(session,questionId,optionId,model?'model':'manual',model?suggestion?.probability:undefined))}catch(failure){setError(failure instanceof Error?failure.message:'Could not select answer')}
+    try{const suggestion=session.suggestions[questionId];onChange(chooseFlow(session,questionId,optionId,model?'model':'manual',model?suggestion?.probability:undefined,model?suggestion?.evidence:undefined))}catch(failure){setError(failure instanceof Error?failure.message:'Could not select answer')}
   }
   const exportSession=()=>{
     try {
@@ -160,9 +163,9 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
           {config.provider==='laya'?' Browser Laya needs server CORS and local-network permission.':' Browser Jev sends the state and personal key through Mermaider to TypeSafe.'}</p>
       </details>
       <label htmlFor="flow-mode">Response mode</label><select id="flow-mode" value={mode} onChange={event=>{lastAuto.current='';setMode(event.target.value as Mode)}}><option value="manual">Manual · evaluate on demand</option><option value="suggest">Live suggestions · review each answer</option><option value="follow">Auto follow · apply at ≥80% option probability</option></select>
-      {mode!=='manual'&&<p className="flow-hint">Updates call the selected decision provider. Auto follow can advance up to 20 questions per update; ambiguous answers stay for review.</p>}
+      {mode!=='manual'&&<p className="flow-hint">Updates call the selected decision provider. Auto follow can advance up to 20 questions per update; score and unclear results stay for review.</p>}
       {error&&<p role="alert">{error}</p>}{busy&&<div role="status">{busy==='plan'?'Drafting questions…':'Evaluating current state…'} <button onClick={cancel}>Cancel</button></div>}
-      {draft&&<section className="flow-draft" aria-label="Proposed flow"><strong>{draft.title}</strong><p>{draft.questions.length} questions · review before applying</p><ul>{draft.questions.map(question=><li key={question.id}>{question.text}<small>{question.options.map(option=>option.label).join(' / ')}</small></li>)}</ul><button onClick={()=>{onApplyPlan(changeFlow(session,{plan:draft},'Applied AI draft'));setDraft(null)}}>Apply draft</button><button onClick={()=>setDraft(null)}>Discard</button></section>}
+      {draft&&<section className="flow-draft" aria-label="Proposed flow"><strong>{draft.title}</strong><p>{draft.questions.length} questions · review before applying</p><ul>{draft.questions.map(question=><li key={question.id}>{question.text}<small>{question.options.map(option=>option.label).join(' / ')} · {ruleDescription(question)}</small></li>)}</ul><button onClick={()=>{onApplyPlan(changeFlow(session,{plan:draft},'Applied AI draft'));setDraft(null)}}>Apply draft</button><button onClick={()=>setDraft(null)}>Discard</button></section>}
       {nodeProposal&&<section className="flow-draft" aria-label="Diagram question"><strong>{nodeProposal.text}</strong><p>{nodeProposal.options.map(option=>option.label).join(' / ')}</p><button onClick={()=>onApplyPlan(changeFlow(session,{plan:{title:nodeProposal.text,startId:nodeProposal.id,questions:[nodeProposal]}},'Imported branching node'))}>Use this node as a question</button></section>}
       {!session.plan&&<p className="flow-hint">Start from a goal or add your first question. A new flow opens in its own tab and preserves the current diagram.</p>}
       {session.plan&&!session.linked&&<p className="flow-hint">This diagram was edited separately. <button onClick={()=>onApplyPlan(session)}>Open managed flow in new tab</button></p>}
@@ -171,13 +174,15 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
         return <section key={question.id} id={`question-card-${question.id}`} className={`flow-question ${current?'current':''} ${focused?.id===question.id?'focused':''}`} aria-label={`Question: ${question.text}`}>
           <div className="flow-question-heading"><span>{current?'CURRENT':selected?'DECIDED':reachable?'AVAILABLE':'FOLLOW-UP'}</span><button onClick={()=>onFocus(question.id)} aria-label="Locate question in diagram">↗</button>{session.plan!.questions.length>1&&<button onClick={()=>removeQuestion(question.id)} aria-label="Delete question">×</button>}</div>
           <input className="flow-question-text" aria-label="Question text" maxLength={1000} value={question.text} onChange={event=>editQuestion({...question,text:event.target.value})}/>
-          {question.options.map(option=><div className={`flow-option ${selected?.optionId===option.id?'chosen':''}`} key={option.id}><button aria-label={`Choose ${option.label}`} aria-pressed={selected?.optionId===option.id} disabled={!reachable} onClick={()=>select(question.id,option.id)}>{selected?.optionId===option.id?'●':'○'}</button><input aria-label="Answer text" maxLength={300} value={option.label} onChange={event=>editQuestion({...question,options:question.options.map(item=>item.id===option.id?{...item,label:event.target.value}:item)})}/><button aria-label="Remove answer" disabled={question.options.length<=2} onClick={()=>editQuestion({...question,options:question.options.filter(item=>item.id!==option.id)})}>×</button></div>)}
+          <DecisionRuleEditor question={question} onChange={editQuestion}/>
+          {question.options.map(option=><div className={`flow-option ${selected?.optionId===option.id?'chosen':''}`} key={option.id}><button aria-label={`Choose ${option.label}`} aria-pressed={selected?.optionId===option.id} disabled={!reachable} onClick={()=>select(question.id,option.id)}>{selected?.optionId===option.id?'●':'○'}</button><input aria-label="Answer text" maxLength={300} value={option.label} onChange={event=>editQuestion({...question,options:question.options.map(item=>item.id===option.id?{...item,label:event.target.value}:item)})}/><button aria-label="Remove answer" disabled={question.options.length<=2||!!(question.evaluation&&question.evaluation.type!=='choice'&&[question.evaluation.lowId,question.evaluation.highId,question.evaluation.uncertainId].includes(option.id))} onClick={()=>editQuestion({...question,options:question.options.filter(item=>item.id!==option.id)})}>×</button></div>)}
           <button onClick={()=>editQuestion({...question,options:[...question.options,{id:flowId('a'),label:'New answer',nextId:undefined}]})} disabled={question.options.length>=12}>+ Answer</button>
           <details><summary>Follow-ups</summary>{question.options.map(option=><label key={option.id}>{option.label}<select aria-label={`Follow-up for ${option.label}`} value={option.nextId||''} onChange={event=>editQuestion({...question,options:question.options.map(item=>item.id===option.id?{...item,nextId:event.target.value||undefined}:item)})}><option value="">End this branch</option>{session.plan!.questions.filter(item=>item.id!==question.id).map(item=><option value={item.id} key={item.id}>{item.text}</option>)}</select><button disabled={session.plan!.questions.length>=20} onClick={()=>addQuestion(question.id,option.id)}>+ Follow-up</button></label>)}</details>
-          {suggestion&&suggestion.revision===session.revision&&<div className="flow-suggestion"><p>Suggested: {question.options.find(option=>option.id===suggestion.optionId)?.label} · {Math.round(suggestion.probability*100)}% option probability</p><small>{suggestion.provider} · {suggestion.model}</small><button onClick={()=>select(question.id,suggestion.optionId,true)}>Adopt suggestion</button></div>}
+          {suggestion&&suggestion.revision===session.revision&&<div className="flow-suggestion"><p>Suggested: {question.options.find(option=>option.id===suggestion.optionId)?.label}{suggestion.probability!==undefined?` · ${Math.round(suggestion.probability*100)}% option probability`:''}</p><small>{suggestion.provider} · {suggestion.model}</small>{suggestion.evidence&&<p>{suggestion.evidence.explanation}</p>}<button onClick={()=>select(question.id,suggestion.optionId,true)}>Adopt suggestion</button></div>}
           <div className="flow-actions"><button onClick={()=>void evaluate(question.id)} disabled={!reachable||!!busy||context!==session.context}>Evaluate</button><button onClick={()=>void generate(question.id)} disabled={!!busy||!session.goal.trim()||context!==session.context}>Suggest next steps</button></div>
         </section>
       })}</div>}
+      {!!session.events.length&&<details className="flow-history"><summary>Decision history ({session.events.length})</summary><p className="flow-hint">Latest 50 events · local · context excerpts up to 1,000 characters</p><ol>{[...session.events].reverse().map(event=><li key={event.id}><details><summary>{new Date(event.timestamp).toLocaleTimeString()} · {event.note}{event.answer?` · ${event.answer}`:''}</summary><small>Revision {event.revision}{event.source?` · ${event.source}`:''}</small>{event.question&&<p>{event.question}</p>}{event.rule&&<p>{event.rule}</p>}{event.goal&&<p>Goal: {event.goal}</p>}{event.evidence&&<><p>{event.evidence.explanation}</p><small>{event.evidence.provider} · {event.evidence.model} · {event.evidence.elapsedMs} ms</small>{event.evidence.probabilities&&<p>Distribution: {Object.entries(event.evidence.probabilities).map(([label,value])=>`${label}: ${Math.round(value*100)}%`).join(' · ')}</p>}{event.evidence.confidence!==undefined&&<p>Provider confidence: {event.evidence.confidence}</p>}{event.evidence.answerConfidence!==undefined&&<p>Provider answer_confidence: {event.evidence.answerConfidence}</p>}</>}{event.context&&<p className="flow-event-context">{event.context}</p>}</details></li>)}</ol></details>}
       {session.plan&&!path.pending&&<p role="status">This branch is complete. Update the state, change an answer or adapt the flow to continue.</p>}
     </div>
   </aside>

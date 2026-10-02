@@ -165,3 +165,55 @@ test('redo survives reload and exported decisions import into a separate tab; in
   await page.locator('.tab-item').nth(1).click()
   await expect(page.locator('#flow-goal')).toHaveValue('Changed after export')
 })
+
+test('score rules stay reviewable in auto follow and their applied evidence survives reload in the history',async({page})=>{
+  await prepare(page)
+  const card=page.getByRole('region',{name:'Question: Is the release ready?'})
+  await card.getByLabel('Evaluation type',{exact:true}).selectOption('score')
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    const request=JSON.parse(route.request().postDataJSON().body);const input=JSON.parse(request.body);const id=Object.keys(input.questions)[0];const definition=input.questions[id]
+    const labels=Object.keys(definition.criteria)
+    const answer=definition.type==='score'?{type:'score',score:1.75,confidence:0.99,probabilities:{0:0.05,1:0.15,2:0.8}}:{type:'choice',choice:labels[0],probabilities:Object.fromEntries(labels.map((label,index)=>[label,index===0?0.95:0.05/(labels.length-1)]))}
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({model:'rules-test',answers:{[id]:answer}})}})
+  })
+  await page.locator('#flow-mode').selectOption('follow')
+  await expect(card.locator('.flow-suggestion')).toContainText('Observed score: 1.75')
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','false')
+  await card.getByRole('button',{name:'Adopt suggestion'}).click()
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','true')
+  await page.locator('.flow-history > summary').click()
+  await expect(page.locator('.flow-history')).toContainText('Observed score: 1.75')
+  await expect(page.locator('.flow-history')).toContainText('rules-test')
+  await page.reload();await page.getByTitle('Decisions (Preview)').click()
+  await expect(card.getByLabel('Evaluation type',{exact:true})).toHaveValue('score')
+  await page.locator('.flow-history > summary').click()
+  await expect(page.locator('.flow-history')).toContainText('Observed score: 1.75')
+  await card.getByText('Rule settings',{exact:true}).click()
+  await card.getByLabel('High threshold').fill('0.4')
+  await expect(page.getByRole('complementary',{name:'Decision workspace'}).getByRole('alert')).toContainText('low < high')
+  await expect(card.getByLabel('High threshold')).toHaveValue('1.5')
+})
+
+test('noul uncertainty requires review; clear positive and negative results follow explicit rules',async({page})=>{
+  await prepare(page)
+  await page.getByRole('region',{name:'Question: Is the release ready?'}).getByLabel('Evaluation type',{exact:true}).selectOption('noul')
+  await page.getByLabel('Question text').first().fill('The release is ready.')
+  const card=page.getByRole('region',{name:'Question: The release is ready.'})
+  let value=0.5
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    const request=JSON.parse(route.request().postDataJSON().body);const input=JSON.parse(request.body);const id=Object.keys(input.questions)[0];const definition=input.questions[id]
+    const labels=Object.keys(definition.criteria||{})
+    const answer=definition.type==='noul'?{type:'noul',noul:value,confidence:0.05}:{type:'choice',choice:labels[0],probabilities:Object.fromEntries(labels.map((label,index)=>[label,index===0?0.95:0.05/(labels.length-1)]))}
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({model:'noul-test',answers:{[id]:answer}})}})
+  })
+  await page.locator('#flow-mode').selectOption('follow')
+  await expect(card.locator('.flow-suggestion')).toContainText('Suggested: Unclear')
+  await expect(card.getByRole('button',{name:'Choose Unclear',exact:true})).toHaveAttribute('aria-pressed','false')
+  value=0.95;await page.locator('#flow-context').fill('All release checks passed.')
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','true')
+  value=0.05;await page.locator('#flow-context').fill('The release is blocked by failed checks.')
+  await expect(card.getByRole('button',{name:'Choose Needs work',exact:true})).toHaveAttribute('aria-pressed','true')
+  await page.locator('.flow-history > summary').click()
+  await expect(page.locator('.flow-history')).toContainText('Observed P(true): 0.05')
+  await expect(page.locator('.flow-history')).toContainText('Provider confidence: 0.05')
+})

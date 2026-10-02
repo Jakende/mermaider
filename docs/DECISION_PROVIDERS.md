@@ -198,7 +198,9 @@ den aktiven Pfad hervor, ohne für jede Auswahl Mermaid neu zu layouten.
 Manuelle Auswahl, Live-Vorschläge und optionales Auto-Follow sind vorhanden.
 Details und Grenzen: [Dynamische Entscheidungen](DYNAMIC_DECISIONS.md).
 
-Score/Noul bleiben im Transport geprüft, benötigen aber eigene explizite
-Ablaufregeln für die neue Oberfläche. Der Nutzer hat OpenAI/Jev/Embeddings am
+Score/Noul sind mit bearbeitbaren Low-/High-/Unclear-Regeln eingebaut. Score
+bleibt ein Vorschlag; eindeutiges Noul kann im Auto-Follow-Modus übernommen werden.
+Ein lokaler Verlauf bewahrt Werte, Regeln und Übernahme. Numerische Modellqualität
+ist noch separat abzunehmen. Der Nutzer hat OpenAI/Jev/Embeddings am
 02.10.2026 bestätigt. Neue Planungsqualität und lokales Laya sind noch abzunehmen.
 Die SDK-Quelle bestätigt den Namen **Jev**; „Chef“ ist kein weiterer Provider.

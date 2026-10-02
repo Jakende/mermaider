@@ -95,11 +95,12 @@ mehrdeutige Aussagen erzeugen bearbeitbare Vorschläge.
 Umgesetzt: bearbeitbare Fragen mit mehreren Optionen und Folgefragen,
 KI-Strukturentwürfe, Live-Vorschläge und optionales Auto-Follow, aktiver Pfad ohne
 neues Mermaid-Layout, persistente Sitzungen mit Undo/Redo, strukturierter
-JSON-Import/-Export und größenverstellbares Panel. Architektur und Grenzen:
+JSON-Import/-Export, größenverstellbares Panel, explizite Score-/Noul-Regeln
+und lokales Ereignisprotokoll mit Modellwerten und angewandten Regeln. Architektur und Grenzen:
 [DYNAMIC_DECISIONS.md](DYNAMIC_DECISIONS.md).
 
-Nächste Ausbaustufen: explizite Regeln für Score/Noul und Bedingungen,
-Entscheidungsprotokoll mit Verlaufwiedergabe, gemessene Modellqualität und lokale
+Nächste Ausbaustufen: kombinierte Bedingungen, vollständige Verlaufwiedergabe,
+gemessene Modellqualität und lokale
 Laya-Abnahme, externe Ereignisse über MCP/API. Diese Funktionen sind noch nicht
 als fertig ausgewiesen.
 

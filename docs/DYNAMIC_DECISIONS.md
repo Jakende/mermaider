@@ -57,8 +57,11 @@ verwirft den Redo-Zweig. Beide Stapel bleiben nach Reload erhalten (je zehn Schr
 
 „Save / load flow“ exportiert eine `.decision.json` mit Ziel, aktuellem Zustand,
 Fragen, Antwortmöglichkeiten, Verknüpfungen und ausgewählten Antworten. Keys,
-Provider-Einstellungen, Avatar und Undo/Redo-Inhalte sind nicht enthalten.
-Das Format trägt `format: mermaider-decision` und `version: 1`.
+Provider-Einstellungen, Avatar, Ereignisprotokoll und Undo/Redo-Inhalte sind nicht enthalten.
+Übernommene Modellantworten enthalten ihre Auswertungsmetadaten.
+Das Format trägt `format: mermaider-decision`: Choice-Dateien bleiben Version 1;
+Dateien mit Score-/Noul-Regeln verwenden Version 2. Ältere Apps lehnen sie ab,
+anstatt numerische Regeln als Choice zu interpretieren. Beide Versionen sind importierbar.
 
 Import öffnet einen neuen Tab mit neuer Sitzungs-ID und deaktivierter Automatik.
 Ungültige JSON-Dateien, fremde Versionen, Dateien über 1 MB, beschädigte Graphen
@@ -117,5 +120,44 @@ kontrollierte Fixtures. Der Nutzer hat OpenAI-, Jev- und Embedding-Zugriff am
 02.10.2026 bestätigt; die Qualität der neuen dynamischen Planung mit realen
 Eingaben benötigt eine eigene Abnahme. Lokales Laya und dessen Browser-CORS
 bleiben unbestätigt. Die interaktive Oberfläche verwendet Choice-Fragen;
-Score/Noul bleiben im Transport verfügbar und benötigen für die Oberfläche
-noch explizite Ablaufregeln.
+Score/Noul sind mit expliziten Ablaufregeln in der Oberfläche verfügbar.
+Die Qualität dieser numerischen Auswertungen mit echten Providern ist gesondert abzunehmen.
+
+## Score-/Noul-Regeln und Verlauf
+
+Jede Frage bietet „Evaluation type“. Choice verwendet die vorhandenen Optionen.
+Score ergänzt eine geordnete Rubrik (erste Stufe = Index 0); Noul bewertet die
+Frage als Aussage und liefert P(true). Beide numerischen Varianten brauchen drei
+verschiedene Zielantworten: Low, High und Unclear. Die Zuordnungen und Grenzwerte
+stehen direkt an der Frage; Rubrik, Grenzwerte und Zuordnungen lassen sich
+unter „Rule settings“ bearbeiten. Ein Austausch der Zielantwort
+vertauscht nötigenfalls die bisherige Zuordnung, damit die drei Ziele eindeutig bleiben.
+
+Die Regel ist deterministisch: Wert ≤ Low aktiviert Low, Wert ≥ High aktiviert
+High, Werte dazwischen aktivieren Unclear. Low muss kleiner als High sein;
+Score-Grenzen liegen innerhalb der Rubrik, Noul-Grenzen zwischen 0 und 1.
+Entfernte Rubrikstufen passen die Grenzen an die verkürzte Skala an. Änderungen
+an Typ, Rubrik oder Regel verwerfen bisherige Auswahlen der betroffenen Frage.
+
+Beispiel: Rubrik 0 = Blocked, 1 = Needs review, 2 = Ready. Mit Low 0,5 und High
+1,5 führt Score 1,25 zu Unclear; 1,75 schlägt Ready vor. Der Score ist ein
+Erwartungswert, keine Wahrscheinlichkeit. Score-Vorschläge benötigen immer
+Übernahme durch den Nutzer, auch im Auto-Follow-Modus.
+
+Für Noul führen die Standardgrenzen 0,2/0,8 zu drei Bereichen. Im Auto-Follow-
+Modus benötigen positive Antworten zusätzlich P(true) ≥ 0,8 und negative
+Antworten 1 − P(true) ≥ 0,8. Der Zwischenbereich wird niemals automatisch
+übernommen. Provider-Konfidenzfelder werden dafür nicht als Ersatz verwendet.
+Konfigurierte Grenzen und die Mindestwahrscheinlichkeit wirken gemeinsam.
+
+„Decision history“ zeigt bis zu 50 lokale Ereignisse, neueste zuerst: Zeitpunkt,
+Revision, Änderungen, manuelle Auswahl, Modellbewertung, Übernahme und Undo/Redo.
+Bei Modellbewertungen bleiben Rohwert, angewandte Regel, Provider/Modell,
+Verteilung, originale Konfidenzfelder und Dauer sichtbar. Ziel und Zustand
+stehen als Auszüge bis 1.000 Zeichen dabei. Fortlaufendes Tippen wird zusammengefasst;
+veraltete oder abgebrochene Modellantworten erscheinen nicht als erfolgreiche Bewertung.
+
+Der Verlauf bleibt nach Reload erhalten und wird durch Undo/Redo nicht gelöscht.
+Er ist eine lokale Erläuterung, kein manipulationssicheres Audit und keine vollständige
+Wiedergabe früherer Diagrammstrukturen. Ein importierter Ablauf startet mit leerem Verlauf.
+Die Dateien teilen den aktuellen Ablauf; das Ereignisprotokoll wird nicht mitexportiert.
