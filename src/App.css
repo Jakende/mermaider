@@ -29,3 +29,16 @@
   .editor-splitter { display:none; }
 }
 .diagram-workspace,.diagram-workspace>div { min-height:0; }
+
+.app { height:var(--app-height,100dvh); }
+.modal-overlay { top:var(--app-top,0px); bottom:auto; height:var(--app-height,100dvh); padding:12px 0; }
+.settings-modal { height:min(860px,calc(var(--app-height,100dvh) - 24px)); max-height:min(860px,calc(var(--app-height,100dvh) - 24px)); }
+.help-modal,.new-diagram-modal,.export-modal,.kb-modal { max-height:calc(var(--app-height,100dvh) - 24px); overflow-y:auto; }
+.settings-content,.decision-scroll,.chat-messages,.chat-history-list,.config-content,.help-content,.modal-content { -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y pinch-zoom; }
+@media (max-width:800px), (pointer:coarse) {
+  .app input:not([type="checkbox"]):not([type="radio"]),.app select,.app textarea,.app [contenteditable="true"] { font-size:16px!important; }
+  .app input[type="text"],.app input[type="password"],.app input[type="number"],.app select { min-height:44px; }
+  .app textarea { min-height:44px; }
+  .app .toolbar button,.settings-modal button,.decision-workspace button { min-height:40px; }
+  .chat-panel.popped-out { top:calc(var(--app-top,0px) + 100px)!important; height:min(550px,calc(var(--app-height,100dvh) - 112px)); max-height:calc(var(--app-height,100dvh) - 112px); }
+}

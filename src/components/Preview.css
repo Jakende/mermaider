@@ -153,3 +153,6 @@
 .preview-controls { flex-wrap:wrap; gap:6px; }
 .preview-header { flex-shrink:0; }
 .preview-container,.preview-viewport { min-height:0; }
+
+/* Canvas-only gestures; forms and page surfaces retain native scrolling/zoom. */
+.preview-viewport { touch-action:none; overscroll-behavior:contain; user-select:none; }

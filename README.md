@@ -149,7 +149,7 @@ Mermaider is being prepared for public distribution after the remaining release 
 ### Release checks
 
 With Node 20: `npm ci`, `npm run check:release`, `npm run lint`, `npm test`,
-`npm run build`, `npx playwright install chromium`, and `npm run test:e2e`.
+`npm run build`, `npx playwright install chromium webkit`, and `npm run test:e2e`.
 Native release checks and remaining gates: [Release stabilization](docs/RELEASE_STABILIZATION.md).
 
 Current release candidate: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).

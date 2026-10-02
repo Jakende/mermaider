@@ -15,6 +15,7 @@ import { extractMermaidCode } from './utils/mermaidCodeBlock'
 import { getStoredConfig } from './utils/aiService'
 import { restoreWorkspace } from './utils/workspaceStorage'
 import type { Tab, ChatSession } from './types'
+import { useMobileViewport } from './hooks/useMobileViewport'
 import './App.css'
 
 const DEFAULT_CODE = 'graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E'
@@ -26,6 +27,7 @@ const createInitialSession = (): ChatSession => ({
 })
 
 function AppContent() {
+  useMobileViewport()
   const { theme } = useTheme()
 
   // Tabs State

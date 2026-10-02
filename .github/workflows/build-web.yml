@@ -26,7 +26,7 @@ jobs:
       - run: npm test
       - name: Build web application
         run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
       - name: Upload static web build
         uses: actions/upload-artifact@v4

@@ -26,7 +26,7 @@ jobs:
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: node scripts/verify-appwrite.mjs
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - name: Test deployed application in Chromium
         env:
           E2E_BASE_URL: https://mermaider.appwrite.network

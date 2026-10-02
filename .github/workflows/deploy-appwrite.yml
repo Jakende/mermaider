@@ -82,7 +82,7 @@ jobs:
           APPWRITE_DEPLOYMENT_FILE: ${{ runner.temp }}/appwrite-deployment.json
         run: node scripts/verify-appwrite.mjs
 
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - name: Test the live application
         env:
           E2E_BASE_URL: https://mermaider.appwrite.network

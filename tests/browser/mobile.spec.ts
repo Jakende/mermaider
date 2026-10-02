@@ -1,0 +1,111 @@
+import { test, expect } from '@playwright/test'
+
+test.use({ viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true })
+
+test('iPhone-sized forms use safe text sizing and scroll independently of diagram zoom', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
+  const zoom = await page.locator('.zoom-level').textContent()
+  await page.getByTitle('Settings').tap()
+  const input = page.locator('#ollama-model')
+  await input.tap()
+  await expect(input).toBeFocused()
+  expect(await input.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16)
+  await page.getByRole('tab', { name: 'Generation', exact: true }).tap()
+  const fields = page.locator('.settings-modal input:not([type=checkbox]):visible, .settings-modal textarea:visible, .settings-modal select:visible')
+  for (const field of await fields.all()) {
+    expect(await field.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16)
+  }
+  await page.getByRole('tab', { name: 'Connection', exact: true }).tap()
+  const content = page.locator('.settings-content')
+  await content.hover()
+  await page.mouse.wheel(0, 400)
+  await expect.poll(() => content.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+  expect(await page.locator('.zoom-level').textContent()).toBe(zoom)
+  expect(await page.evaluate(() => window.visualViewport!.scale)).toBe(1)
+  await page.getByRole('button', { name: 'Close settings' }).tap()
+  await page.getByTitle('Decisions (Preview)').tap()
+  expect(await page.locator('#flow-goal').evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16)
+  await page.getByRole('button', { name: 'Close decision workspace' }).tap()
+  await page.getByTitle('Toggle AI Chat').tap()
+  const chatInput = page.locator('.chat-input-form textarea')
+  expect(await chatInput.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(16)
+})
+
+test('keyboard viewport changes keep settings controls visible and restore the layout without resetting browser zoom', async ({ page }) => {
+  await page.addInitScript(() => {
+    const viewport = Object.assign(new EventTarget(), { height: 874, width: 402, offsetTop: 0, offsetLeft: 0, pageTop: 0, pageLeft: 0, scale: 1 })
+    Object.defineProperty(window, 'visualViewport', { value: viewport, configurable: true })
+  })
+  await page.goto('/')
+  await page.getByTitle('Settings').tap()
+  await page.locator('#ollama-model').tap()
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 390, offsetTop: 40 })
+    window.visualViewport!.dispatchEvent(new Event('resize'))
+  })
+  await expect.poll(() => page.locator('.app').evaluate(element => element.getBoundingClientRect().height)).toBe(390)
+  const bounds = (await page.getByRole('dialog', { name: 'Settings' }).boundingBox())!
+  expect(bounds.y).toBeGreaterThanOrEqual(40)
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(430)
+  const save = (await page.locator('#settings-save').boundingBox())!
+  expect(save.y + save.height).toBeLessThanOrEqual(430)
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 874, offsetTop: 0 })
+    window.visualViewport!.dispatchEvent(new Event('resize'))
+  })
+  await expect.poll(() => page.locator('.app').evaluate(element => element.getBoundingClientRect().height)).toBe(874)
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 437, scale: 2 })
+    window.visualViewport!.dispatchEvent(new Event('resize'))
+  })
+  expect(await page.locator('.app').evaluate(element => element.getBoundingClientRect().height)).toBe(874)
+  expect(await page.evaluate(() => window.visualViewport!.scale)).toBe(2)
+})
+
+test('two-finger touch pans and pinches the diagram without rerendering; tapping a node still works', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'Multi-touch injection requires the Chromium protocol; WebKit runs the form and viewport cases.')
+  await page.goto('/')
+  await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
+  const id = await page.locator('.preview-content svg').getAttribute('id')
+  const zoom = await page.locator('.zoom-level').textContent()
+  const viewport = (await page.locator('.preview-viewport').boundingBox())!
+  const x = Math.round(viewport.x + viewport.width / 2), y = Math.round(viewport.y + viewport.height / 2)
+  const client = await page.context().newCDPSession(page)
+  const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', points: { x: number; y: number; id: number }[]) => {
+    await client.send('Input.dispatchTouchEvent', { type, touchPoints: points })
+  }
+  await touch('touchStart', [{ x: x - 40, y, id: 1 }, { x: x + 40, y, id: 2 }])
+  await touch('touchMove', [{ x: x - 40, y: y - 45, id: 1 }, { x: x + 40, y: y - 45, id: 2 }])
+  await touch('touchEnd', [])
+  expect(await page.locator('.zoom-level').textContent()).toBe(zoom)
+  const shifted = await page.locator('.preview-content').evaluate(element => getComputedStyle(element).transform)
+  expect(shifted).not.toBe('matrix(1, 0, 0, 1, 0, 0)')
+  await touch('touchStart', [{ x: x - 40, y, id: 1 }, { x: x + 40, y, id: 2 }])
+  await touch('touchMove', [{ x: x - 65, y, id: 1 }, { x: x + 65, y, id: 2 }])
+  await touch('touchEnd', [])
+  await expect(page.locator('.zoom-level')).not.toHaveText(zoom!)
+  expect(await page.locator('.preview-content svg').getAttribute('id')).toBe(id)
+  await page.getByTitle('Reset Zoom').tap()
+  await page.waitForTimeout(450)
+  await page.locator('.preview-content svg .node').first().tap()
+  await expect.poll(() => page.evaluate(() => (window as any).monaco.editor.getEditors()[0].getSelection().startLineNumber)).toBe(2)
+  await client.detach()
+})
+
+test('ordinary two-finger trackpad scrolling pans; Ctrl-wheel zooms only the diagram', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
+  const id = await page.locator('.preview-content svg').getAttribute('id')
+  const zoom = await page.locator('.zoom-level').textContent()
+  await page.locator('.preview-viewport').hover()
+  await page.mouse.wheel(30, 80)
+  await expect.poll(() => page.locator('.preview-content').evaluate(element => getComputedStyle(element).transform)).not.toBe('matrix(1, 0, 0, 1, 0, 0)')
+  expect(await page.locator('.zoom-level').textContent()).toBe(zoom)
+  await page.keyboard.down('Control')
+  await page.mouse.wheel(0, -60)
+  await page.keyboard.up('Control')
+  await expect(page.locator('.zoom-level')).not.toHaveText(zoom!)
+  expect(await page.evaluate(() => window.visualViewport!.scale)).toBe(1)
+  expect(await page.locator('.preview-content svg').getAttribute('id')).toBe(id)
+})

@@ -44,3 +44,36 @@ Browserprüfungen decken 320-Pixel-Bedienung, Menü-/Dialogfokus, unabhängige
 Embedding-Konfiguration, gespeicherte Entwürfe, Farbschema-Kontrast,
 Blob-Identität, Bewegungseinstellungen und die bestehenden Entscheidungs-,
 Import-/Export- und Providerabläufe ab.
+
+## iPhone, Touch und Bildschirmtastatur
+
+Eingabefelder, Auswahlfelder und der mobile Codeeditor verwenden mindestens
+16 Pixel Schrift. Das verhindert den üblichen automatischen iOS-Fokuszoom,
+ohne manuelles Vergrößern der Seite zu sperren. Es gibt keine Einschränkung
+wie `user-scalable=no` oder eine maximale Browser-Zoomstufe.
+
+Formulare behalten ihre native Scrollbedienung. Der sichtbare App-Bereich und
+Dialoge folgen `visualViewport`, wenn die Tastatur eingeblendet wird. Ein
+betroffenes Eingabefeld wird innerhalb seines Formulars sichtbar gehalten;
+die Seite wird dabei weder zurückgescrollt noch zwangsweise zurückgezoomt.
+Einstellungen behalten eine feste, an den verfügbaren Platz angepasste Höhe,
+damit sich Verbindungsschaltflächen beim Modellladen nicht verschieben.
+
+In der Vorschau verschieben ein oder zwei Finger das Diagramm. Pinch zoomt am
+Gestenmittelpunkt. Gleiches gilt für Mausziehen und Trackpad-Scrollen;
+Ctrl/Cmd+Scroll bzw. eine Trackpad-Pinch-Geste zoomt. Plus/Minus und Reset bleiben
+verfügbar. Verschieben und Zoomen ändern die bestehende SVG-Darstellung ohne
+neues Mermaid-Layout. Ein Drag löst keine versehentliche Diagrammentscheidung
+aus; normales Antippen bleibt möglich. Im visuellen Editor bleiben die
+vorhandenen React-Flow-Gesten erhalten.
+
+Die automatische mobile Diagrammanpassung folgt Änderungen des verfügbaren
+Platzes, auch beim Öffnen und Schließen der Tastatur. Nach manuellem Pan/Zoom
+bleibt die vom Nutzer eingestellte Ansicht erhalten. Ein neues Diagramm-Layout
+aktiviert die automatische Anpassung wie bisher erneut.
+
+Die Browserprüfung umfasst zusätzlich ein mobiles WebKit-Projekt. Installieren:
+`npx playwright install chromium webkit`. Chromium simuliert außerdem echte
+Multi-Touch-Ereignisse; dessen Protokollfall wird in WebKit ausdrücklich
+übersprungen. Bildschirmtastatur-Resizes werden kontrolliert simuliert. Das
+ersetzt keine Bedienungsabnahme mit einer echten iPhone-Bildschirmtastatur.

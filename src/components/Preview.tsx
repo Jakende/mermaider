@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import mermaid from 'mermaid'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
@@ -9,6 +9,7 @@ import { parseInitBlock } from '../utils/mermaidConfig'
 import { queueMermaidRender } from '../utils/renderQueue'
 import { applyDecisionOverlay } from '../decision/overlay'
 import type { flowPath } from '../decision/flow'
+import { useDiagramGestures } from '../hooks/useDiagramGestures'
 import './Preview.css'
 
 interface PreviewProps {
@@ -40,13 +41,13 @@ export default function Preview({
   const [renderedVersion, setRenderedVersion] = useState(0)
   const onNodeClickRef = useRef(onNodeClick)
   const zoomRef = useRef(1)
+  const followsFit = useRef(autoFit)
   useEffect(() => { onNodeClickRef.current = onNodeClick }, [onNodeClick])
 
   // Zoom & Pan State
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [isPanning, setIsPanning] = useState(false)
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
+  const { viewportRef, isPanning, handlers: gestureHandlers } = useDiagramGestures(zoom, pan, setZoom, setPan, !isVisualEditMode, () => { followsFit.current = false })
 
   const [layoutPositions, setLayoutPositions] = useState<Record<string, { x: number, y: number }>>({})
 
@@ -68,55 +69,13 @@ export default function Preview({
   }, [decisionHighlights, renderedVersion])
 
   // Zoom Logic
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 20))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.05))
+  const handleZoomIn = () => { followsFit.current = false; setZoom(prev => Math.min(prev + 0.1, 20)) }
+  const handleZoomOut = () => { followsFit.current = false; setZoom(prev => Math.max(prev - 0.1, 0.05)) }
   const handleZoomReset = () => {
+    followsFit.current = false
     setZoom(1)
     setPan({ x: 0, y: 0 })
   }
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    setZoom(prev => Math.min(Math.max(prev + delta, 0.05), 20))
-  }
-
-  // Pan Logic
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isVisualEditMode) return
-    setIsPanning(true)
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-    document.body.style.cursor = 'grabbing'
-  }
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isPanning) return
-    e.preventDefault()
-    const dx = e.clientX - lastMousePos.x
-    const dy = e.clientY - lastMousePos.y
-    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-  }, [isPanning, lastMousePos])
-
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false)
-    document.body.style.cursor = ''
-  }, [])
-
-  useEffect(() => {
-    if (isPanning) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isPanning, handleMouseMove, handleMouseUp])
 
   // Initial mermaid setup
   useEffect(() => {
@@ -281,10 +240,11 @@ export default function Preview({
               const originalHeight = viewBox ? parseFloat(viewBox[3]) : 0
 
               if (originalWidth && originalHeight) {
+                followsFit.current = autoFit
                 if (autoFit) {
                   const viewport = container.closest('.preview-container')?.querySelector('.preview-viewport')
-                  const width = Math.max(100, (viewport?.clientWidth || container.clientWidth) - 32)
-                  const height = Math.max(100, (viewport?.clientHeight || container.clientHeight) - 32)
+                  const width = Math.max(1, (viewport?.clientWidth || container.clientWidth) - 32)
+                  const height = Math.max(1, (viewport?.clientHeight || container.clientHeight) - 32)
                   const fitted = Math.max(0.05, Math.min(1, width / originalWidth, height / originalHeight))
                   zoomRef.current = fitted; setZoom(fitted); setPan({x:0,y:0})
                 }
@@ -344,6 +304,23 @@ export default function Preview({
       clearTimeout(timer)
     }
   }, [setError, theme, mermaidTheme, isVisualEditMode, canEdit, extractedCode, textTransform, autoFit])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!autoFit || !viewport || isVisualEditMode) return
+    const observer = new ResizeObserver(() => {
+      if (!followsFit.current) return
+      const svg = mermaidContainerRef.current?.querySelector('svg')
+      const width = Number(svg?.getAttribute('data-original-width'))
+      const height = Number(svg?.getAttribute('data-original-height'))
+      if (!width || !height) return
+      const fitted = Math.max(0.05, Math.min(1, Math.max(1, viewport.clientWidth - 32) / width, Math.max(1, viewport.clientHeight - 32) / height))
+      zoomRef.current = fitted
+      setZoom(fitted)
+    })
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [autoFit, renderedVersion, isVisualEditMode, viewportRef])
 
   useEffect(() => {
     if (!mermaidContainerRef.current) return
@@ -432,8 +409,8 @@ export default function Preview({
       </div>
       <div
         className="preview-viewport"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
+        ref={viewportRef}
+        {...gestureHandlers}
         style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       >
         <div
@@ -441,7 +418,7 @@ export default function Preview({
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px)`,
             transformOrigin: 'center center',
-            transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+            transition: 'none'
           }}
         >
           <div
