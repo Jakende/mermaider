@@ -83,8 +83,17 @@ existieren. KI-Entwürfe dürfen keine unerreichbaren Fragen enthalten. Manuell
 angelegte Fragen können bis zur Verknüpfung als Folgefragen bereitliegen.
 
 Änderungen einer Antwort verwerfen nicht mehr erreichbare Folgeentscheidungen.
+Auch bei zusammenlaufenden Zweigen werden abhängige Modellentscheidungen
+verworfen, wenn sich der vorherige Antwortpfad geändert hat. Menschliche
+Auswahlen bleiben erhalten, solange die Fragen erreichbar und unverändert sind.
 Geänderte Fragen/Antworttexte verwerfen ihre bisherige Auswahl. Neuer Zustand
 oder neues Ziel verwirft Modellentscheidungen, erhält menschliche Entscheidungen.
+Eine erneute Auswertung erhält nur vorherige Antworten: Die alte Antwort der
+Zielfrage und nachfolgende Antworten werden nicht als Selbstbeleg mitgesendet.
+Provideränderungen verwerfen offene Vorschläge; ein neuer Auswertungsversuch
+entfernt den alten Vorschlag sofort, auch wenn der neue Versuch fehlschlägt.
+Score und Wahrscheinlichkeitsverteilung müssen bis auf Rundung übereinstimmen.
+
 Laufende Ergebnisse sind an die Revision gebunden: Eingabe-, Provider- und
 Tabwechsel sowie Schließen verwerfen veraltete Ergebnisse. Browser-Abbruch
 beendet das lokale Warten; eine bereits gestartete gehostete Ausführung kann
@@ -161,3 +170,6 @@ Der Verlauf bleibt nach Reload erhalten und wird durch Undo/Redo nicht gelöscht
 Er ist eine lokale Erläuterung, kein manipulationssicheres Audit und keine vollständige
 Wiedergabe früherer Diagrammstrukturen. Ein importierter Ablauf startet mit leerem Verlauf.
 Die Dateien teilen den aktuellen Ablauf; das Ereignisprotokoll wird nicht mitexportiert.
+
+Ein importierbarer deutscher Prüfsatz und das Protokoll für die echte
+Modellabnahme stehen in [Entscheidungsabnahme](DECISION_ACCEPTANCE.md).

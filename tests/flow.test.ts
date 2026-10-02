@@ -79,3 +79,27 @@ test('older sessions migrate without redo and corrupted history cannot recurse',
   session=changeFlow(session,{context:'c'},'Updated state')
   assert.equal(undoFlow(session).context,'')
 })
+
+test('German converging branches invalidate dependent model answers but preserve human choices',()=>{
+  const converging=validateFlow({title:'Freigabe',startId:'budget',questions:[
+    {id:'budget',text:'Wie wird finanziert?',options:[{id:'intern',label:'Internes Budget',nextId:'freigabe'},{id:'extern',label:'Externe Förderung',nextId:'freigabe'}]},
+    {id:'freigabe',text:'Ist die Finanzierung freigegeben?',options:[{id:'ja',label:'Freigegeben'},{id:'offen',label:'Noch offen'}]}
+  ]})
+  let session=changeFlow(newFlowSession(),{plan:converging,context:'Das interne Budget ist freigegeben; externe Förderung ist offen.'},'Plan')
+  session=chooseFlow(session,'budget','intern')
+  const model=chooseFlow(session,'freigabe','ja','model',0.95)
+  const changed=chooseFlow(model,'budget','extern')
+  assert.equal(changed.selections.freigabe,undefined)
+  assert.equal(flowPath(changed).pending,'freigabe')
+  assert.equal(undoFlow(changed).selections.freigabe.optionId,'ja')
+  assert.equal(chooseFlow(chooseFlow(session,'freigabe','offen'),'budget','extern').selections.freigabe.optionId,'offen')
+})
+
+test('re-evaluating an earlier question excludes its previous answer and downstream answers',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),context:'The checks have changed.'},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public')
+  assert.deepEqual((flowRequest(session,'ready').state as any).path,[])
+  assert.deepEqual((flowRequest(session,'ship').state as any).path,[{question:'Ready?',answer:'Ready',source:'manual'}])
+  const switched=chooseFlow(session,'ready','no')
+  assert.throws(()=>flowRequest(switched,'ship'),/reachable/)
+})

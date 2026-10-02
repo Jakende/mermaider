@@ -23,3 +23,13 @@ test('unsupported files, oversized files, bad graph links and undefined selectio
   file.session.plan.questions[0].options[0].nextId=null;file.session.selections.ready.optionId='missing'
   assert.throws(()=>importFlow(JSON.stringify(file)),/invalid or unreachable/)
 })
+
+test('the German acceptance fixture imports all three question types with reviewable numeric rules',async()=>{
+  const {readFile}=await import('node:fs/promises')
+  const session=importFlow(await readFile(new URL('../docs/fixtures/decision-acceptance.de.decision.json',import.meta.url),'utf8'))
+  assert.deepEqual(session.plan!.questions.map(question=>question.evaluation?.type),['choice','score','noul'])
+  assert.deepEqual(session.selections,{})
+  assert.equal(session.plan!.questions[1].evaluation?.type,'score')
+  assert.equal(session.goal.includes('Fakten'),true)
+  assert.equal(JSON.parse(exportFlow(session)).version,2)
+})

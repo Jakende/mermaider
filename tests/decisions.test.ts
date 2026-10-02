@@ -51,3 +51,17 @@ test('decision keys remain separate and can be removed; choice diagrams highligh
   const code=choiceDiagram(input,'budget','approved');assert.match(code,/class option0 selected/);assert.match(code,/linkStyle 0/)
   assert.throws(()=>choiceDiagram(input,'budget','foreign'),/defined choice/)
 })
+
+test('malformed metadata and contradictory score distributions never enter decision history',()=>{
+  const request:DecisionRequest={state:'Alle Tests bestanden, Freigabe ausstehend.',questions:{release:{type:'score',criteria:['Blockiert','Prüfung offen','Freigegeben']}}}
+  const response={model:'multilingual',answers:{release:{type:'score',score:1.25,probabilities:{0:0.1,1:0.55,2:0.35}}}}
+  assert.equal(normalizeDecisionResult(response,request).release.value,1.25)
+  assert.throws(()=>normalizeDecisionResult({...response,answers:{release:{...response.answers.release,score:1.9}}},request),/disagree/)
+  assert.throws(()=>normalizeDecisionResult({...response,answers:{release:{...response.answers.release,probabilities:[0.1,0.55,0.35]}}},request),/probabilities/)
+  for(const model of ['', ' '.repeat(3),'x'.repeat(301)])assert.throws(()=>normalizeDecisionResult({...response,model},request),/invalid response/)
+  const rounded={...response,answers:{release:{type:'score',score:1.3333,probabilities:{0:0.1111,1:0.4444,2:0.4445}}}}
+  assert.equal(normalizeDecisionResult(rounded,request).release.value,1.3333)
+  const noulRequest:DecisionRequest={state:request.state,questions:{release:{type:'noul'}}}
+  const noul=normalizeDecisionResult({model:'jev',answers:{release:{type:'noul',noul:0.5,probabilities:{unexpected:'provider extension'}}}},noulRequest)
+  assert.equal(noul.release.probabilities,undefined)
+})

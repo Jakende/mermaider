@@ -76,6 +76,15 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
     const after = plan?.questions.find(question => question.id === questionId)
     if (!after?.options.some(option => option.id === selection.optionId) || (patch.plan !== undefined && JSON.stringify(before && {text:before.text,evaluation:before.evaluation,options:before.options.map(({id,label})=>({id,label}))}) !== JSON.stringify(after && {text:after.text,evaluation:after.evaluation,options:after.options.map(({id,label})=>({id,label}))})) || ((context !== session.context || patch.goal !== undefined && patch.goal !== session.goal) && selection.source === 'model')) delete selections[questionId]
   }
+  // A converging branch can still reach the same question with different facts.
+  // Model decisions depend on the preceding answers, not just reachability.
+  const priorPath = (currentPlan: FlowPlan | null, currentSelections: Record<string, FlowSelection>, target: string) => {
+    const path = flowPath({plan:currentPlan,selections:currentSelections}).questions
+    return path.slice(0,path.indexOf(target)).map(id=>[id,currentSelections[id]?.optionId])
+  }
+  for (const [questionId, selection] of Object.entries(selections)) {
+    if (selection.source==='model' && JSON.stringify(priorPath(session.plan,session.selections,questionId))!==JSON.stringify(priorPath(plan,selections,questionId))) delete selections[questionId]
+  }
   const visible = flowPath({ plan, selections }).questions
   for (const questionId of Object.keys(selections)) if (!visible.includes(questionId)) delete selections[questionId]
   const changed={ ...session, ...patch, plan, context, selections, suggestions:{}, revision:session.revision + 1,
@@ -133,7 +142,11 @@ export function flowRequest(session: FlowSession, questionId: string): DecisionR
   const rule=question.evaluation
   if(rule?.type==='score'&&rule.rubric.some(level=>!level.trim()))throw new Error('Finish the rubric texts before evaluating.')
   const definition = !rule||rule.type==='choice'?{type:'choice' as const,instructions:question.text,criteria:Object.fromEntries(question.options.map(option=>[option.id,option.label]))}:rule.type==='score'?{type:'score' as const,instructions:question.text,criteria:rule.rubric}:{type:'noul' as const,instructions:question.text}
-  return { state:{ goal:session.goal, update:session.context, path:flowPath(session).questions.flatMap(id => {
+  const path=flowPath(session).questions
+  if(!path.includes(questionId))throw new Error('Only a reachable question can be evaluated.')
+  // Re-evaluation must not feed the target's previous answer (or later answers)
+  // back to the model as supporting facts.
+  return { state:{ goal:session.goal, update:session.context, path:path.slice(0,path.indexOf(questionId)).flatMap(id => {
     const selected = session.selections[id]; const item = session.plan?.questions.find(question=>question.id===id)
     return selected ? [{question:item?.text,answer:item?.options.find(option=>option.id===selected.optionId)?.label,source:selected.source}] : []
   }) }, questions:{ [questionId]:definition } }

@@ -32,7 +32,7 @@ export function validateDecisionRequest(input: DecisionRequest): void {
 }
 const probability = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1
 export function normalizeDecisionResult(data: any, input: DecisionRequest): Record<string, DecisionAnswer> {
-  if (!data || typeof data.model !== 'string' || !data.answers) throw new Error('Decision provider returned an invalid response.')
+  if (!data || typeof data.model !== 'string' || !data.model.trim() || data.model.length > 300 || !data.answers || typeof data.answers !== 'object' || Array.isArray(data.answers)) throw new Error('Decision provider returned an invalid response.')
   const answers: Record<string, DecisionAnswer> = {}
   for (const [id, question] of Object.entries(input.questions)) {
     const raw = data.answers[id]
@@ -50,10 +50,13 @@ export function normalizeDecisionResult(data: any, input: DecisionRequest): Reco
     }
     if (question.type !== 'noul') {
       const labels = question.type === 'choice' ? Object.keys(question.criteria) : question.criteria.map((_, index) => String(index))
-      if (!raw.probabilities || Object.keys(raw.probabilities).length !== labels.length || labels.some(label => !probability(raw.probabilities[label])) || Math.abs(labels.reduce((sum, label) => sum + raw.probabilities[label], 0) - 1) > 0.02) throw new Error(`Invalid option probabilities in ${id}.`)
+      if (!raw.probabilities || typeof raw.probabilities !== 'object' || Array.isArray(raw.probabilities) || Object.keys(raw.probabilities).length !== labels.length || labels.some(label => !probability(raw.probabilities[label])) || Math.abs(labels.reduce((sum, label) => sum + raw.probabilities[label], 0) - 1) > 0.02) throw new Error(`Invalid option probabilities in ${id}.`)
+      // Score is the expected rubric index. Allow rounding, but reject a
+      // conflicting scalar that would route to a different decision branch.
+      if (question.type === 'score' && Math.abs(labels.reduce((sum, label) => sum + Number(label) * raw.probabilities[label], 0) - Number(value)) > 0.01) throw new Error(`Score and probabilities disagree in ${id}.`)
     }
     if (raw.confidence !== undefined && !probability(raw.confidence) || raw.answer_confidence !== undefined && !probability(raw.answer_confidence)) throw new Error(`Invalid confidence metadata in ${id}.`)
-    answers[id] = { type: question.type, value, probabilities: raw.probabilities, confidence: raw.confidence, answerConfidence: raw.answer_confidence }
+    answers[id] = { type: question.type, value, probabilities: question.type==='noul'?undefined:raw.probabilities, confidence: raw.confidence, answerConfidence: raw.answer_confidence }
   }
   return answers
 }

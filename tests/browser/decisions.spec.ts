@@ -220,3 +220,90 @@ test('noul uncertainty requires review; clear positive and negative results foll
   await expect(page.locator('.flow-history')).toContainText('Observed P(true): 0.05')
   await expect(page.locator('.flow-history')).toContainText('Provider confidence: 0.05')
 })
+
+test('provider edits discard published suggestions; failed re-evaluation leaves the path unchanged and can be retried',async({page})=>{
+  await prepare(page)
+  const card=page.getByRole('region',{name:'Question: Is the release ready?'})
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await expect(card.locator('.flow-suggestion')).toContainText('jev-test')
+  await page.getByText('Provider connection',{exact:true}).click()
+  await page.locator('#decision-model').fill('jev-recheck')
+  await expect(card.locator('.flow-suggestion')).toHaveCount(0)
+  let calls=0
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    calls++
+    await route.fulfill({json:{status:'completed',responseStatusCode:calls===1?503:200,responseBody:calls===1?'Unavailable':JSON.stringify({model:'jev-recheck',answers:{ready:{type:'choice',choice:'yes',probabilities:{yes:0.9,no:0.1}}}})}})
+  })
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await expect(page.getByRole('complementary',{name:'Decision workspace'}).getByRole('alert')).toContainText('HTTP 503')
+  await expect(card.locator('.flow-suggestion')).toHaveCount(0)
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','false')
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click({clickCount:2})
+  await expect(card.locator('.flow-suggestion')).toContainText('jev-recheck')
+  expect(calls).toBe(2)
+  await card.getByRole('button',{name:'Adopt suggestion',exact:true}).click()
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','true')
+})
+
+test('German conflicting facts stay reviewable below the auto-follow threshold even with high provider confidence',async({page})=>{
+  await prepare(page)
+  await page.getByLabel('Question text').first().fill('Ist die Freigabe eindeutig bestätigt?')
+  const card=page.getByRole('region',{name:'Question: Ist die Freigabe eindeutig bestätigt?'})
+  let probability=0.79
+  let calls=0
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    calls++
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({model:'threshold-fixture',answers:{ready:{type:'choice',choice:'yes',confidence:1,answer_confidence:1,probabilities:{yes:probability,no:1-probability}}}})}})
+  })
+  await page.locator('#flow-context').fill('Die Checkliste sagt freigegeben; die Verantwortliche sagt noch nicht freigegeben.')
+  await page.locator('#flow-mode').selectOption('follow')
+  await expect(card.locator('.flow-suggestion')).toContainText('79% option probability')
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','false')
+  expect(calls).toBe(1)
+  // End this branch to isolate the exact inclusive 80% boundary from follow-up calls.
+  await card.getByText('Follow-ups',{exact:true}).click()
+  await card.getByLabel('Follow-up for Ready').selectOption('')
+  probability=0.8
+  await page.locator('#flow-context').fill('Die Verantwortliche bestätigt die Freigabe ausdrücklich.')
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(page.getByText('This branch is complete.',{exact:false})).toBeVisible()
+})
+
+test('malformed provider answers cannot replace a manual decision or remain adoptable',async({page})=>{
+  await prepare(page)
+  const card=page.getByRole('region',{name:'Question: Is the release ready?'})
+  await card.getByRole('button',{name:'Choose Needs work',exact:true}).click()
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await expect(card.locator('.flow-suggestion')).toBeVisible()
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({model:'invalid',answers:{ready:{type:'choice',choice:'invented',probabilities:{yes:1,no:0}}}})}})
+  })
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await expect(page.getByRole('complementary',{name:'Decision workspace'}).getByRole('alert')).toContainText('Unknown option')
+  await expect(card.locator('.flow-suggestion')).toHaveCount(0)
+  await expect(card.getByRole('button',{name:'Choose Needs work',exact:true})).toHaveAttribute('aria-pressed','true')
+})
+
+test('cancelling a slow evaluation ignores its late answer and permits a fresh evaluation',async({page})=>{
+  await prepare(page)
+  const card=page.getByRole('region',{name:'Question: Is the release ready?'})
+  let received:()=>void=()=>{};const started=new Promise<void>(resolve=>{received=resolve})
+  let release:()=>void=()=>{};const hold=new Promise<void>(resolve=>{release=resolve})
+  let calls=0
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    calls++
+    const first=calls===1
+    if(first){received();await hold}
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({model:first?'cancelled-run':'fresh-run',answers:{ready:{type:'choice',choice:'yes',probabilities:{yes:0.9,no:0.1}}}})}}).catch(()=>{})
+  })
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await started
+  await expect(card.getByRole('button',{name:'Evaluate',exact:true})).toBeDisabled()
+  await page.getByRole('button',{name:'Cancel',exact:true}).click()
+  release()
+  await expect(card.locator('.flow-suggestion')).toHaveCount(0)
+  await expect(card.getByRole('button',{name:'Choose Ready',exact:true})).toHaveAttribute('aria-pressed','false')
+  await card.getByRole('button',{name:'Evaluate',exact:true}).click()
+  await expect(card.locator('.flow-suggestion')).toContainText('fresh-run')
+  expect(calls).toBe(2)
+})

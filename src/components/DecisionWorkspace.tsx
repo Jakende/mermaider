@@ -43,6 +43,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
   },[config.provider])
   useEffect(()=>{
     cancel();setDraft(null);setError('')
+    if(Object.keys(latest.current.suggestions).length)onChange({...latest.current,suggestions:{}})
     return()=>{operation.current++;abort.current?.abort()}
   },[session.revision,config.provider,config.endpoint,config.model,apiKey,mode])
   useEffect(()=>{
@@ -64,6 +65,10 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
     if(!target)return
     cancel();const token=operation.current;const expected=settings.current
     const controller=new AbortController();abort.current=controller;setBusy('evaluate');setError('')
+    if(snapshot.suggestions[target]){
+      const suggestions={...snapshot.suggestions};delete suggestions[target]
+      onChange({...snapshot,suggestions})
+    }
     try{
       const request=flowRequest(snapshot,target)
       await persistConfig()
@@ -120,7 +125,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
     editPlan({...session.plan,startId:session.plan.startId===id?questions[0].id:session.plan.startId,questions},'Removed question')
   }
   const select=(questionId:string,optionId:string,model=false)=>{
-    try{const suggestion=session.suggestions[questionId];onChange(chooseFlow(session,questionId,optionId,model?'model':'manual',model?suggestion?.probability:undefined,model?suggestion?.evidence:undefined))}catch(failure){setError(failure instanceof Error?failure.message:'Could not select answer')}
+    try{const suggestion=session.suggestions[questionId];if(model&&(!suggestion||suggestion.revision!==session.revision||suggestion.optionId!==optionId))throw new Error('This suggestion is no longer current. Evaluate the question again.');onChange(chooseFlow(session,questionId,optionId,model?'model':'manual',model?suggestion?.probability:undefined,model?suggestion?.evidence:undefined))}catch(failure){setError(failure instanceof Error?failure.message:'Could not select answer')}
   }
   const exportSession=()=>{
     try {
