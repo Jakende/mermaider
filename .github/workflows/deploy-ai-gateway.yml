@@ -26,6 +26,13 @@ jobs:
           APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: node scripts/deploy-ai-gateway.mjs
+      - name: Diagnose isolated Appwrite runtimes after deployment failure
+        if: failure()
+        env:
+          APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/probe-appwrite-runtime.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: ai-gateway-verification-${{ github.sha }}
