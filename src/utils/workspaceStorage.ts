@@ -1,4 +1,5 @@
 import type { Tab, ChatSession } from '../types'
+import { restoreFlow } from '../decision/flow'
 
 /** Restore before the first persistence effect, including StrictMode mounts. */
 export function restoreWorkspace(storage: Pick<Storage, 'getItem'>, fallback: Tab[]) {
@@ -12,7 +13,7 @@ export function restoreWorkspace(storage: Pick<Storage, 'getItem'>, fallback: Ta
       tabs = saved.map(tab => {
         const sessions: ChatSession[] = Array.isArray(tab.chatSessions) && tab.chatSessions.length
           ? tab.chatSessions : [{ id: `initial-session-${tab.id}`, messages: Array.isArray(tab.chatHistory) ? tab.chatHistory : [], timestamp: Date.now() }]
-        return { ...tab, chatSessions: sessions,
+        return { ...tab, decision:restoreFlow(tab.decision), chatSessions: sessions,
           activeChatSessionId: sessions.some(s => s.id === tab.activeChatSessionId) ? tab.activeChatSessionId : sessions[0].id }
       })
     }

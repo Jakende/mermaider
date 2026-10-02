@@ -3,7 +3,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import { fixMermaidErrorWithAI, getStoredConfig, convertTextToMermaidWithAI, generateMarkdownReport } from '../utils/aiService'
 import Settings from './Settings'
-import DecisionPanel from './DecisionPanel'
+import UserBlob from './UserBlob'
 import HelpModal from './HelpModal'
 import ExportModal from './ExportModal'
 import KnowledgeBaseModal from './KnowledgeBaseModal'
@@ -20,7 +20,8 @@ interface ToolbarProps {
   diagramName: string
   onUpdateDiagramName: (name: string) => void
   onNewTab: () => void
-  onCreateDiagram: (code: string, name: string) => void
+  onToggleDecisions: () => void
+  isDecisionsOpen: boolean
 }
 
 export interface ToolbarRef {
@@ -32,10 +33,9 @@ export interface ToolbarRef {
   handleAIFix: () => Promise<void>
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onCreateDiagram }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen }, ref) => {
   const { theme, toggleTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [showDecisions, setShowDecisions] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showExport, setShowExport] = useState(false)
@@ -643,13 +643,14 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
             {theme === 'light' ? 'DARK' : 'LIGHT'}
           </button>
-          <button onClick={() => setShowDecisions(true)} className="toolbar-btn text-btn" title="Decisions (Preview)">DECISIONS</button>
+          <button onClick={onToggleDecisions} aria-pressed={isDecisionsOpen} className="toolbar-btn text-btn" title="Decisions (Preview)">DECISIONS</button>
           <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings (⌘,)">
             SETTINGS
           </button>
         </div>
 
         <div className="toolbar-section toolbar-section-right">
+          <UserBlob />
           <button
             onClick={() => setShowHelp(true)}
             className="toolbar-btn text-btn"
@@ -659,7 +660,6 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           </button>
         </div>
       </div>
-      <DecisionPanel isOpen={showDecisions} onClose={() => setShowDecisions(false)} onCreateDiagram={onCreateDiagram} />
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
       <KnowledgeBaseModal

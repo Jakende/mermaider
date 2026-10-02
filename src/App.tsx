@@ -2,6 +2,10 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
+import DecisionWorkspace from './components/DecisionWorkspace'
+import { newFlowSession, flowDiagram, flowId, flowPath, chooseFlow } from './decision/flow'
+import type { FlowSession } from './decision/flow'
+import { questionFromDiagram } from './decision/fromDiagram'
 import Toolbar, { ToolbarRef } from './components/Toolbar'
 import ChatPanel, { ChatPanelRef } from './components/ChatPanel'
 import TabBar from './components/TabBar'
@@ -42,6 +46,11 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null)
   const [isNewDiagramModalOpen, setIsNewDiagramModalOpen] = useState(false)
 
+  const [isDecisionsOpen, setIsDecisionsOpen] = useState(false)
+  const emptyDecision = useMemo(() => newFlowSession(), [activeTab.id])
+  const decisionSession = activeTab.decision || emptyDecision
+  const decisionHighlights = useMemo(() => activeTab.decision?.linked ? flowPath(activeTab.decision) : undefined, [activeTab.decision])
+
   // Chat Panel State
   const [isChatOpen, setIsChatOpen] = useState(true)
   const [isChatPoppedOut, setIsChatPoppedOut] = useState(false)
@@ -51,6 +60,7 @@ function AppContent() {
   const [isEditorVisible, setIsEditorVisible] = useState(true)
   const [isVisualEditMode, setIsVisualEditMode] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const nodeProposal = useMemo(() => !activeTab.decision?.linked && selectedNodeId ? questionFromDiagram(activeTab.code,selectedNodeId) : undefined, [activeTab.code,activeTab.decision?.linked,selectedNodeId])
   const [scrollToNodeId, setScrollToNodeId] = useState<string | null>(null)
 
   const toolbarRef = useRef<ToolbarRef>(null)
@@ -76,7 +86,36 @@ function AppContent() {
   }, [error])
 
   const setCode = (newCode: string) => {
-    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode } : t))
+    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode, decision:t.decision && newCode !== t.code ? {...t.decision, linked:false} : t.decision } : t))
+  }
+
+  const updateDecision = (next: FlowSession) => {
+    setTabs(previous => previous.map(tab => tab.id === activeTabId ? {
+      ...tab, decision:next,
+      code:next.linked ? next.plan ? flowDiagram(next.plan) : '' : tab.code
+    } : tab))
+  }
+  const applyDecisionPlan = (next: FlowSession) => {
+    if (!next.plan) return
+    if (activeTab.decision?.linked) { updateDecision({...next, linked:true}); return }
+    const session = createInitialSession()
+    const tab:Tab = {id:flowId('tab'),name:next.plan.title||'Decision flow',code:flowDiagram(next.plan),
+      chatSessions:[session],activeChatSessionId:session.id,decision:{...next,id:flowId('session'),linked:true}}
+    setTabs(previous=>[...previous,tab]);setActiveTabId(tab.id);setIsDecisionsOpen(true)
+  }
+  const decisionNodeClick = (nodeId:string) => {
+    const session = activeTab.decision
+    if (session?.linked && session.plan) {
+      const question=session.plan.questions.find(item=>item.id===nodeId||item.options.some(option=>`${item.id}__${option.id}`===nodeId))
+      if(question){
+        setIsDecisionsOpen(true);setSelectedNodeId(question.id)
+        const option=question.options.find(item=>`${question.id}__${item.id}`===nodeId)
+        if(option&&flowPath(session).questions.includes(question.id))updateDecision(chooseFlow(session,question.id,option.id))
+      }
+    }
+    if(!session?.linked&&questionFromDiagram(activeTab.code,nodeId)){setSelectedNodeId(nodeId);setIsDecisionsOpen(true)}
+    setScrollToNodeId(null)
+    setTimeout(()=>setScrollToNodeId(nodeId),0)
   }
 
   const setDiagramName = (newName: string) => {
@@ -208,7 +247,7 @@ function AppContent() {
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      const availableWidth = width - (isChatOpen && !isChatPoppedOut ? chatWidth : 0)
+      const availableWidth = width - (isDecisionsOpen ? 380 : isChatOpen && !isChatPoppedOut ? chatWidth : 0)
       if (availableWidth <= 0) return
 
       const newWidth = ((clientX - left) / availableWidth) * 100
@@ -339,7 +378,8 @@ function AppContent() {
         diagramName={activeTab.name}
         onUpdateDiagramName={setDiagramName}
         onNewTab={handleNewTab}
-        onCreateDiagram={handleCreateDiagramTab}
+        onToggleDecisions={() => setIsDecisionsOpen(!isDecisionsOpen)}
+        isDecisionsOpen={isDecisionsOpen}
       />
 
       <TabBar
@@ -372,20 +412,22 @@ function AppContent() {
               setError={setError} 
               onCodeChange={setCode} 
               targetNodeId={selectedNodeId} 
-              onNodeClick={(nodeId) => {
-                setScrollToNodeId(null) // Reset first to ensure effect triggers
-                setTimeout(() => setScrollToNodeId(nodeId), 0)
-              }}
+              onNodeClick={decisionNodeClick}
+              decisionHighlights={decisionHighlights}
+              autoFit={!!activeTab.decision?.linked}
               isVisualEditMode={isVisualEditMode}
               onToggleVisualEdit={setIsVisualEditMode}
             />
           </div>
 
-          {isChatOpen && !isChatPoppedOut && (
+          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
+            onChange={updateDecision} onApplyPlan={applyDecisionPlan} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
+
+          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
             <ResizableSplitter onResize={handleResizeChat} />
           )}
 
-          {isChatOpen && !isChatPoppedOut && (
+          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
             <div style={{ width: chatWidth }}>
               <ChatPanel
                 code={activeTab.code}
@@ -407,7 +449,7 @@ function AppContent() {
           )}
         </div>
 
-        {isChatOpen && isChatPoppedOut && (
+        {isChatOpen && !isDecisionsOpen && isChatPoppedOut && (
           <ChatPanel
             code={activeTab.code}
             setCode={setCode}

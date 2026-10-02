@@ -17,12 +17,14 @@
     "lint": "eslint src tests playwright.config.ts scripts functions"
   },
   "dependencies": {
+    "@blobatar/react": "2.7.0",
     "@modelcontextprotocol/sdk": "^1.28.0",
     "@monaco-editor/react": "^4.6.0",
     "@tauri-apps/api": "~2.11.0",
     "@tauri-apps/plugin-http": "~2.5.0",
     "@types/html2canvas": "^0.5.35",
     "@xyflow/react": "^12.9.2",
+    "blobatar": "2.7.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.0",
     "localforage": "^1.10.0",
@@ -51,5 +53,8 @@
     "monaco-editor": {
       "dompurify": "^3.4.16"
     }
+  },
+  "registries": {
+    "@blobatar": "https://blobatar.dev/r/{name}.json"
   }
 }

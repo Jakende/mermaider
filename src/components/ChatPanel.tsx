@@ -1,3 +1,4 @@
+import UserBlob from './UserBlob'
 import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, getStoredConfigWithSecrets, storeConfig, cleanCode, generateEmbedding } from '../utils/aiService'
 import { searchSimilar } from '../utils/vectorStore'
@@ -357,6 +358,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                             <div key={index} className={`chat-message ${msg.role}`}>
                                 <div className="message-wrapper">
                                     <div className="message-header-actions">
+                                        {msg.role === 'user' && <UserBlob size={24} />}
                                         {msg.role === 'user' && editingIndex !== index && (
                                             <button
                                                 className="edit-btn"

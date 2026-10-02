@@ -7,6 +7,8 @@ Paketlizenz gilt zusätzlich zur Projektlizenz.
 
 | Paket | Installierte Version | Lizenzangabe |
 | --- | --- | --- |
+| @blobatar/react | 2.7.0 | MIT |
+| blobatar | 2.7.0 | MIT |
 | @modelcontextprotocol/sdk | 1.31.0 | MIT |
 | @monaco-editor/react | 4.7.0 | MIT |
 | @tauri-apps/api | 2.11.1 | Apache-2.0 OR MIT |

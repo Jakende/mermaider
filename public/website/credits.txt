@@ -13,3 +13,6 @@ Lizenzbedingungen und Urheberhinweise.
 
 Der Quellcode ist derzeit privat. Öffentliche Desktop-Downloads folgen nach
 Release-Abnahme und Freigabe der Distribution.
+
+Blobatar und @blobatar/react 2.7.0: MIT, Copyright (c) 2026 Alain.
+Originaler Lizenztext: /website/blobatar-license.txt

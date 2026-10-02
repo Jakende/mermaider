@@ -1,3 +1,4 @@
+import type { FlowSession } from './decision/flow'
 export interface ChatMessage {
     role: 'user' | 'assistant'
     content: string
@@ -16,4 +17,5 @@ export interface Tab {
     code: string
     chatSessions: ChatSession[]
     activeChatSessionId: string
+    decision?: FlowSession
 }

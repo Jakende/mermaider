@@ -100,7 +100,7 @@ Mermaider is built using modern, efficient technologies:
 See [the project overview and verified status](docs/PROJECT_OVERVIEW.md),
 [deployment instructions](docs/DEPLOYMENT.md), and
 [the release, website, and live-decision roadmap](docs/ROADMAP.md).
-A first Jev/TypeSafe and local Laya decision preview is available through **DECISIONS**. Provider quality and local Laya browser CORS still require acceptance. The protocol and remaining work are described in
+Interactive decision flows support editable questions, branching answers, AI drafts, live suggestions and optional auto follow beside the diagram. See [dynamic decisions](docs/DYNAMIC_DECISIONS.md). OpenAI/Jev access is user-confirmed; new planning quality and local Laya browser CORS still require acceptance. The protocol and remaining work are described in
 [decision providers](docs/DECISION_PROVIDERS.md).
 
 ### Prerequisites

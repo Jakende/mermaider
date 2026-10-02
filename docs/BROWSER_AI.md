@@ -61,18 +61,17 @@ untersuchte Laya-Server aktiviert keine CORS-Middleware: Die unveränderte
 Eine zusätzliche lokale Transportbrücke wird nicht eingeführt. Die App wechselt
 bei einem Fehler niemals still zu einem gehosteten Anbieter.
 
-State kann Text oder JSON sein, Fragen können `choice`, `score` oder `noul`
-verwenden. Eine Choice-Antwort wird vorgeschlagen, vom Nutzer übernommen und als
-Pfad in einem **neuen Tab** dargestellt. Manuelle Auswahl funktioniert ohne
-Modellaufruf. Score bleibt ein erwarteter Rubrikindex, Noul eine Wahrscheinlichkeit;
-beides wird nicht automatisch als Ja/Nein-Entscheidung ausgelegt.
+Die Seitenleiste unterstützt bearbeitbare Choice-Fragen mit Folgefragen,
+KI-Entwürfe über den Chatprovider und Auswertung über Jev/Laya. Manuelle Auswahl,
+Live-Vorschläge und optionales Auto-Follow sind unabhängig von automatischen
+Strukturentwürfen wählbar. Knotenklicks öffnen die Interaktion direkt im Diagramm.
+Sitzungen und bis zu zehn Undo-Schritte bleiben lokal pro Tab erhalten;
+veraltete Antworten werden verworfen. Details: [Dynamische Entscheidungen](DYNAMIC_DECISIONS.md).
 
-Provider- und Eingabeänderungen sowie Schließen brechen laufende Auswertungen ab;
-veraltete Antworten verändern die Auswahl nicht. Bis zu zehn Laufmetadaten bleiben
-während der geöffneten App im Speicher. Entscheidungskeys sind von OpenAI getrennt:
-Web im Tab-Speicher, Desktop im eigenen Keychain-Service. Ein leeres Key-Feld beim
-Auswerten entfernt den gespeicherten Key des ausgewählten Entscheidungsproviders.
-Reale Modellqualität, deutsche Beispiele und Latenz sind noch abzunehmen.
+Entscheidungskeys sind von OpenAI getrennt: Web im Tab-Speicher, Desktop im
+eigenen Keychain-Service. OpenAI-, Jev- und Embedding-Zugriff hat der Nutzer am
+02.10.2026 bestätigt. Qualität der neuen Planung, deutsche Beispiele und Laya
+benötigen weitere Abnahme.
 
 ## Gehosteter Dienst und Grenzen
 
@@ -96,5 +95,5 @@ sind spätere asynchrone/Streaming-Ausbaustufen getrennt zu prüfen.
 
 Automatisierte Tests verwenden kontrollierte Anbieterantworten. Liveprüfungen
 prüfen Appwrite-Zugriff, CORS, Gesundheitsroute und Zielbeschränkung ohne echte
-Providerkeys. Echte OpenAI-/Jev-Anfragen und das lokale Ollama/Laya auf dem
-Nutzerrechner bleiben eigene Abnahmepunkte.
+Providerkeys. OpenAI/Jev wurden vom Nutzer bestätigt. Das lokale Ollama/Laya und die neue
+dynamische Planung bleiben eigene Abnahmepunkte.

@@ -23,3 +23,11 @@ the underlying permission document was not independently inspected. See the deta
 The repository remains private and public installer downloads remain disabled
 until the remaining release checks and public distribution are completed. Existing
 foreign notices and Git history are retained. No history rewrite was performed.
+
+Blob avatars use the official `blobatar` and `@blobatar/react` packages, version
+2.7.0, MIT, Copyright (c) 2026 Alain. The requested `@blobatar` shadcn registry is
+registered in package.json; the React adapter preserves the existing CSS design
+without importing a separate UI framework. Original license text is distributed
+at [public/website/blobatar-license.txt](public/website/blobatar-license.txt).
+Source reference: https://github.com/Alain00/blobatar, inspected commit
+`a7fd546ebede49d0a9fa638945b9e534489782a2`.

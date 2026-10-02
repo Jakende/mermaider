@@ -112,13 +112,13 @@ OpenAI-API-Zugriff und Jev laufen im Web über die auf Appwrite bereitgestellte
 Funktion. Web-Kontoanmeldung über den Codex-Client ist deaktiviert; native
 Anmeldung und Systemschlüsselspeicher bleiben erhalten.
 
-DECISIONS enthält eine Preview: Choice/Score/Noul-Auswertung mit Jev oder lokalem
-Laya, Ergebnisprüfung, Abbruch und Verwerfen veralteter Antworten, getrennte
-Credentials und manuelle Übernahme einer Choice in einen neuen Diagramm-Tab.
-Keine automatische Übernahme von Modellentscheidungen. Der bestehende Editor
-und freie Mermaid-Code bleiben nutzbar. Modellqualität und Laya-Web-CORS sind
-keine erledigten Release-Abnahmen.
+Die dynamische Entscheidungs-Preview unterstützt bearbeitbare Fragen und
+Antworten, Folgefragen, KI-Strukturentwürfe, Live-Vorschläge und optionales
+Auto-Follow. Sitzungen und Undo sind lokal pro Tab persistent. Auswahl wird per
+SVG-Overlay ohne neues Mermaid-Layout dargestellt. Ein lokaler Blobatar-Avatar
+bleibt pro Browserprofil stabil. Details: [DYNAMIC_DECISIONS.md](DYNAMIC_DECISIONS.md).
 
-Tests und Live-Befunde werden im PR mit der geprüften Commit-ID dokumentiert.
-Für den echten Nutzerzugang bleiben OpenAI, Jev und lokale Ollama-/Laya-Anfragen
-zu prüfen. Betriebs-/Streaminggrenzen: [BROWSER_AI.md](BROWSER_AI.md).
+OpenAI-, Jev- und Embedding-Zugriff sind vom Nutzer bestätigt. Qualität der neuen
+Planung und Laya-Web-CORS sind keine erledigten Release-Abnahmen. Tests und
+Live-Befunde werden im PR mit der geprüften Commit-ID dokumentiert.
+Betriebs-/Streaminggrenzen: [BROWSER_AI.md](BROWSER_AI.md).

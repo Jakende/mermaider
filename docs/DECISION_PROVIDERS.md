@@ -3,7 +3,7 @@
 Stand: 02.10.2026. Gewünschtes Produktverhalten: lokale und gehostete
 Entscheidungsmodelle auswählbar machen, analog zur bestehenden Auswahl zwischen
 Ollama und OpenAI. Diese Datei beschreibt die recherchierte Integrationsarchitektur;
-Eine erste Auswertungsansicht ist jetzt als Preview eingebaut. Reale Modellabnahme und Laya-Browser-CORS sind offen.
+Eine dynamische Auswertungsansicht ist als Preview eingebaut. OpenAI/Jev-Zugriff ist vom Nutzer bestätigt; neue Planungsqualität und Laya-Browser-CORS sind offen.
 
 ## Verifizierte Quellen
 
@@ -165,8 +165,8 @@ flowchart LR
   Session --> Highlight[Aktiver Mermaid-Pfad]
 ```
 
-Für Desktop den vorhandenen nativen HTTP-Transport verwenden. Für Web Jev über
-einen authentifizierten Proxy mit serverseitigem Schlüssel einplanen. Lokales Laya
+Für Desktop den vorhandenen nativen HTTP-Transport verwenden. Für Web nutzt Jev die gehostete Appwrite-Funktion mit dem persönlichen
+Schlüssel im jeweiligen Request. Lokales Laya
 braucht im Browser zusätzlich eine geprüfte CORS-/HTTPS-Lösung: Der untersuchte
 Server aktiviert keine allgemeine CORS-Middleware. Das ist bei der ersten
 Webintegration zu lösen, nicht durch das bloße Eintragen eines Endpoints.
@@ -188,21 +188,17 @@ Fallbackfunktion muss ausdrücklich konfiguriert werden, weil sie den Datenweg �
 6. Rendering separat optimieren; Modell-Inferenzzeiten sind keine End-to-End-
    Garantie für das sichtbare Diagramm.
 
-## Umgesetzter erster Schritt
+## Aktueller Stand
 
-`src/decision/{types,service,diagram}.ts` und `DecisionPanel.tsx` implementieren
-HTTP-Auswertung, Choice/Score/Noul-Prüfung, getrennte Credentials, Abbruch,
-Versionsschutz und ausdrücklich übernommene Choice-Pfade in neuen Tabs. Jev nutzt
-im Web die gehostete Appwrite-Funktion; Laya bleibt lokal. Native Keys verwenden
-einen eigenen Keychain-Service, Browserkeys den Tab-Speicher. Laufmetadaten
-bleiben bis zu zehn Einträge im App-Speicher; dauerhaft gespeicherte versionierte
-Entscheidungssitzungen und Undo der gesamten Sitzung sind noch nicht implementiert.
+`DecisionWorkspace.tsx` ersetzt die erste JSON-Ansicht. `flow.ts` speichert
+versionierte Fragen, Antworten, Verzweigungen und bis zu zehn Undo-Schritte je Tab.
+`planner.ts` erzeugt prüfbare Strukturentwürfe über den Chatprovider;
+`service.ts` wertet Choice-Fragen über Jev oder Laya aus. Das SVG-Overlay hebt
+den aktiven Pfad hervor, ohne für jede Auswahl Mermaid neu zu layouten.
+Manuelle Auswahl, Live-Vorschläge und optionales Auto-Follow sind vorhanden.
+Details und Grenzen: [Dynamische Entscheidungen](DYNAMIC_DECISIONS.md).
 
-Der erste Diagrammexport unterstützt die **erste Choice-Frage**. Score/Noul
-werden angezeigt, ohne implizite Schwellen oder automatische Pfadentscheidung.
-Freie Mermaid-Diagramme werden nicht reparst oder automatisch umgeschrieben.
-Overlay-Hervorhebung ohne erneutes Mermaid-Layout und automatische Folgeauswertung
-sind spätere Schritte. Reale Jev-/Laya-Inferenz wurde noch nicht geprüft.
-
-Die SDK-Quelle bestätigt den Namen **Jev** für das TypeSafe-Entscheidungsmodell.
-„Chef“ wurde nicht als zusätzlicher verifizierter Provider eingebaut.
+Score/Noul bleiben im Transport geprüft, benötigen aber eigene explizite
+Ablaufregeln für die neue Oberfläche. Der Nutzer hat OpenAI/Jev/Embeddings am
+02.10.2026 bestätigt. Neue Planungsqualität und lokales Laya sind noch abzunehmen.
+Die SDK-Quelle bestätigt den Namen **Jev**; „Chef“ ist kein weiterer Provider.
