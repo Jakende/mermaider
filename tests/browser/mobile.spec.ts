@@ -5,6 +5,9 @@ test.use({ viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true
 test('iPhone-sized forms use safe text sizing and scroll independently of diagram zoom', async ({ page, browserName }) => {
   await page.goto('/')
   await expect(page.locator('.preview-content svg .node').first()).toBeVisible()
+  // Fix the camera before comparing scroll behavior; initial auto-fit is asynchronous.
+  await page.getByTitle('Reset Zoom').tap()
+  await expect(page.locator('.zoom-level')).toHaveText('100%')
   const zoom = await page.locator('.zoom-level').textContent()
   await page.getByTitle('Settings').tap()
   const input = page.locator('#ollama-model')
