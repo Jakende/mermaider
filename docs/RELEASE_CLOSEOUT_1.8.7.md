@@ -55,3 +55,12 @@ privates Paket mit beiden Installern sind vorbereitet. Der Tag-Workflow hält
 seinen Release als Draft, prüft beide Installer, berechnet gemeinsame Prüfsummen
 und fügt sie mit den Release Notes hinzu. Es wurden keine alten Tags oder
 historischen Releases verändert. Öffentliche Downloadlinks bleiben deaktiviert.
+
+## Freigabeumfang nach Nutzerentscheidung
+
+Die Web-App ist die erste öffentlich verfügbare Version. Der Nutzer stimmte
+diesem Umfang zu. Desktop-Installer bleiben private Testkandidaten. Der Nutzer
+bestätigte, dass kein Windows-Praxistest und kein Apple-Developer-Zugang
+vorliegen. „Alles versucht“ bestätigt keine konkreten fachlichen Jev-Ergebnisse;
+die Entscheidungs-Engine bleibt deshalb ausdrücklich Preview. Diese Webfreigabe
+ändert die frühere Vorgabe zur Repository-Sichtbarkeit nicht.
