@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { verifyGatewayReadiness } from './gateway-readiness.mjs'
 const endpoint = process.env.APPWRITE_ENDPOINT
 const project = process.env.APPWRITE_PROJECT_ID
 const key = process.env.APPWRITE_API_KEY
@@ -51,12 +52,10 @@ const allowedOrigin = preflight.headers.get('access-control-allow-origin')
 if (!preflight.ok || allowedOrigin !== origin) throw new Error(`Appwrite browser origin is not allowed: HTTP ${preflight.status}. Add mermaider.appwrite.network as a Web platform hostname in the project.`)
 async function publicExecution(path, method, payload) {
   const response = await fetch(`${endpoint}/functions/${id}/executions`, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', 'X-Appwrite-Project': project }, body: JSON.stringify({ async: false, path, method, body: payload ? JSON.stringify(payload) : '' }), signal: AbortSignal.timeout(65000) })
-  if (!response.ok) throw new Error(`Public AI execution failed: HTTP ${response.status}`)
+  if (!response.ok) { const failure=new Error(`Public AI execution failed: HTTP ${response.status}`);failure.status=response.status;throw failure }
   return response.json()
 }
-const health = await publicExecution('/health', 'GET')
-const rejection = await publicExecution('/request', 'POST', { url: 'http://127.0.0.1:11434/api/tags', method: 'GET', authorization: 'Bearer test-not-a-real-key' })
-if (health.responseStatusCode !== 200 || JSON.parse(health.responseBody).name !== 'mermaider-ai-gateway' || rejection.responseStatusCode !== 403) throw new Error('Live hosted AI health or endpoint restriction failed')
+const { health, rejection } = await verifyGatewayReadiness(publicExecution)
 const upstreamProbes = []
 for (const host of ['api.openai.com', 'api.typesafe.ai']) {
   // Deliberately invalid key: verify network/auth forwarding without account access or inference charges.

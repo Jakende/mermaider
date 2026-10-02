@@ -2,7 +2,7 @@ name: Deploy hosted AI service
 on:
   push:
     branches: [release/1.8.7-stabilization]
-    paths: [functions/**, scripts/deploy-ai-gateway.mjs, .github/workflows/deploy-ai-gateway.yml]
+    paths: [functions/**, scripts/deploy-ai-gateway.mjs, scripts/gateway-readiness.mjs, .github/workflows/deploy-ai-gateway.yml]
   workflow_dispatch:
 permissions:
   contents: read
