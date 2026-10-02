@@ -1,9 +1,11 @@
 # Mermaider 1.8.7 – Releasekandidat
 
-Status: Native MIT-Kandidaten und Appwrite-Liveprüfung sind erfolgreich;
-Ein erfolgreicher macOS-Praxistest ist vom Nutzer bestätigt; Windows-Abnahme,
-Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
-1.8.7 abgestimmt. Eine erste Jev-/Laya-Entscheidungsansicht ist als Preview enthalten; Qualitätsabnahme und Laya-Web-CORS bleiben offen.
+Aktueller konsolidierter Stand: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
+App/Website, 47 Logiktests, 30 Live-Browserfälle und beide nativen Kandidaten sind
+geprüft. Der Nutzer bestätigt zusätzlich iPhone-Bedienung und Entscheidungsdatei-Import.
+Windows-Praxisabnahme, echte Modellqualität, Signierung und öffentliche Distribution
+bleiben offen. Die folgenden Abschnitte enthalten historische Prüfschritte;
+der Abschlussbericht ist die aktuelle Statusquelle.
 
 ## Vorgesehene Release Notes
 

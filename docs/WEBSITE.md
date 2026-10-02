@@ -48,8 +48,8 @@ Stand nach der Bereinigung vom 02.10.2026:
   Abnahme und eine öffentliche Quelle. Erst dann Downloadmanifest aktivieren
   und Privathinweis anpassen.
 
-Jev und Laya werden als Planung beschrieben; die Website behauptet keine
-bereits verfügbare Entscheidungsintegration. Domainwechsel und ein späterer
+Jev und Laya werden als interaktive Preview beschrieben; die Website weist
+auf die noch offene Modellabnahme hin. Domainwechsel und ein späterer
 Umzug der Website auf `/` sind separate Schritte.
 
 ## Prüfung am 02.10.2026
@@ -64,3 +64,5 @@ Favicon und Releasekonfiguration, keine Editor- oder Modellbibliotheken.
 Veraltete CC-Metadaten, alte Repository-URLs, unbestätigte Domain-/Bildlinks und
 unbelegte Bewertungen aus dem App-HTML entfernt; Contribution-Lizenz auf MIT
 abgestimmt. Dies ersetzt keine Herkunfts- oder Historienprüfung des Repositorys.
+
+Aktueller Release- und Downloadstatus: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).

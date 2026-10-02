@@ -28,11 +28,16 @@ jobs:
         with:
           node-version-file: '.nvmrc'
       - run: npm run check:release
+      - name: Load reviewed release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: test -s "docs/RELEASE_NOTES_${RELEASE_TAG#v}.md"
       - name: Create or reuse draft once
         id: release
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('node:fs');
             const tag = context.ref.replace('refs/tags/', '');
             const releases = await github.paginate(github.rest.repos.listReleases, context.repo);
             let release = releases.find(item => item.tag_name === tag);
@@ -40,7 +45,7 @@ jobs:
             if (!release) {
               release = (await github.rest.repos.createRelease({
                 ...context.repo, tag_name: tag, name: `Release ${tag}`, draft: true,
-                body: 'Release candidate. Native smoke tests and signing checks are required before publication.'
+                body: fs.readFileSync(`docs/RELEASE_NOTES_${tag.slice(1)}.md`, 'utf8')
               })).data;
             }
             core.setOutput('id', release.id);
@@ -93,3 +98,32 @@ jobs:
           else
             find src-tauri/target/${{ matrix.target }}/release/bundle -name '*.exe' -print -quit | grep .
           fi
+
+  finalize-draft:
+    needs: [prepare-release, build-tauri]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Verify draft and download both installers
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module -e 'if (process.env.RELEASE_TAG !== `v${JSON.parse((await import("node:fs")).readFileSync("package.json", "utf8")).version}`) process.exit(1)'
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release download "$RELEASE_TAG" --dir release-assets --pattern '*.dmg' --pattern '*.exe'
+          node --input-type=module -e 'const fs=await import("node:fs");const files=fs.readdirSync("release-assets");const version=JSON.parse(fs.readFileSync("package.json","utf8")).version;if(files.length!==2||!files.includes(`Mermaider_${version}_aarch64.dmg`)||!files.includes(`Mermaider_${version}_x64-setup.exe`))throw new Error("Expected macOS ARM64 and Windows x64 installers")'
+          node scripts/installer-checksums.mjs release-assets
+      - name: Attach checksums and refresh notes without publishing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$RELEASE_TAG" release-assets/SHA256SUMS.txt --clobber
+          gh release edit "$RELEASE_TAG" --notes-file "docs/RELEASE_NOTES_${RELEASE_TAG#v}.md"
