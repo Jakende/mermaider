@@ -16,6 +16,8 @@ test('decision contract preserves choice, score and noul semantics without inven
   assert.throws(()=>normalizeDecisionResult({...fixture,answers:{budget:{...fixture.answers.budget,choice:'foreign'}}},input),/Unknown option/)
   assert.throws(()=>normalizeDecisionResult({...fixture,answers:{}},input),/Missing/)
   assert.throws(()=>normalizeDecisionResult({...fixture,answers:{budget:{...fixture.answers.budget,probabilities:{approved:1.1,rejected:-0.1}}}},input),/Invalid option probabilities/)
+  // Excess mass must not inflate a selected answer past the auto-follow gate.
+  assert.throws(()=>normalizeDecisionResult({...fixture,answers:{budget:{...fixture.answers.budget,probabilities:{approved:0.81,rejected:0.205}}}},input),/Invalid option probabilities/)
   assert.throws(()=>validateDecisionRequest({state:null as any,questions:input.questions}),/Enter/)
 })
 

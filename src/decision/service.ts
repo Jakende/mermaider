@@ -50,7 +50,7 @@ export function normalizeDecisionResult(data: any, input: DecisionRequest): Reco
     }
     if (question.type !== 'noul') {
       const labels = question.type === 'choice' ? Object.keys(question.criteria) : question.criteria.map((_, index) => String(index))
-      if (!raw.probabilities || typeof raw.probabilities !== 'object' || Array.isArray(raw.probabilities) || Object.keys(raw.probabilities).length !== labels.length || labels.some(label => !probability(raw.probabilities[label])) || Math.abs(labels.reduce((sum, label) => sum + raw.probabilities[label], 0) - 1) > 0.02) throw new Error(`Invalid option probabilities in ${id}.`)
+      if (!raw.probabilities || typeof raw.probabilities !== 'object' || Array.isArray(raw.probabilities) || Object.keys(raw.probabilities).length !== labels.length || labels.some(label => !probability(raw.probabilities[label])) || Math.abs(labels.reduce((sum, label) => sum + raw.probabilities[label], 0) - 1) > 0.002) throw new Error(`Invalid option probabilities in ${id}.`)
       // Score is the expected rubric index. Allow rounding, but reject a
       // conflicting scalar that would route to a different decision branch.
       if (question.type === 'score' && Math.abs(labels.reduce((sum, label) => sum + Number(label) * raw.probabilities[label], 0) - Number(value)) > 0.01) throw new Error(`Score and probabilities disagree in ${id}.`)
