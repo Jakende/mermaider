@@ -59,7 +59,8 @@ TypeScript/Vite-Build, ESLint, Release-Versionsprüfung und alle 19 bestehenden
 Regressionstests bestanden. Alle fünf Chromium-Browsertests bestanden: drei
 Editorprüfungen sowie Website-Demo/Responsive-Verhalten und die Freigabe gültiger
 HTTPS-Downloads. Desktop- und Mobilansicht visuell geprüft; keine horizontalen
-Überläufe bei 1440, 390 und 320 Pixeln. Produktseite lädt nur eigenen JS-/CSS-Code,
+Überläufe bei 1440, 390 und 320 Pixeln, auch bei vergrößerter Schrift
+auf Mobilgeräten. Hell/Dunkel-Umschaltung und Wiederherstellung geprüft. Produktseite lädt nur eigenen JS-/CSS-Code,
 Favicon und Releasekonfiguration, keine Editor- oder Modellbibliotheken.
 Veraltete CC-Metadaten, alte Repository-URLs, unbestätigte Domain-/Bildlinks und
 unbelegte Bewertungen aus dem App-HTML entfernt; Contribution-Lizenz auf MIT

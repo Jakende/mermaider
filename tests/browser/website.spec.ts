@@ -19,6 +19,9 @@ test('product page has a working demo and truthful unreleased downloads on deskt
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await expect(page.getByRole('link', { name: 'Im Browser öffnen', exact: true })).toBeVisible()
   }
+  const enlarged = await page.addStyleTag({ content: 'html { font-size: 200% }' })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await enlarged.evaluate(element => element.remove())
   await expect(page.locator('body')).not.toHaveClass(/theme-invert/)
   await page.getByRole('button', { name: 'Helles Design aktivieren' }).click()
   await expect(page.locator('body')).toHaveClass(/theme-invert/)

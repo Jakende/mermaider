@@ -98,3 +98,9 @@ footer > div { display: flex; gap: 20px; font-size: .875rem; }
   .demo-bottom { padding: 14px; }
   .platform-heading { flex-wrap: wrap; }
 }
+/* Let content shrink and reflow when visitors enlarge text. */
+.hero > *, .download-layout > *, .outlook > *, .features > * { min-width: 0; }
+h1, h2, h3, p, a { overflow-wrap: anywhere; }
+.demo-bar { flex-wrap: wrap; }
+.example-picker { flex-wrap: wrap; }
+.button { max-width: 100%; }
