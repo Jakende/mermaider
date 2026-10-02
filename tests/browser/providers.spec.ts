@@ -28,6 +28,7 @@ test('browser connects directly to Ollama and uses hosted API transport, retaini
     const result = await gatewayRequest(JSON.parse(execution.body), async (url:string,options:RequestInit) => {
       authReceived = new Headers(options.headers).get('authorization') || ''
       if (url.endsWith('/models')) return Response.json({data:[{id:'gpt-test-model'}]})
+      if (!JSON.parse(options.body as string).stream) return Response.json({choices:[{message:{content:'OK'}}]})
       return new Response('data: {"choices":[{"delta":{"content":"OK"}}]}\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}})
     })
     await route.fulfill({json:{status:'completed',responseStatusCode:result.status,responseBody:result.body,responseHeaders:[{name:'content-type',value:result.headers['content-type']}]}})

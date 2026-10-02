@@ -13,6 +13,7 @@
         { "url": "http://localhost:*" },
         { "url": "http://localhost:*/*" },
         { "url": "https://api.openai.com/*" },
+        { "url": "https://api.typesafe.ai/*" },
         { "url": "https://auth.openai.com/*" },
         { "url": "https://chatgpt.com/*" }
       ]

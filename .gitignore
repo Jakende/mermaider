@@ -60,3 +60,6 @@ debug-*.ts
 
 # Historical build copies are not project sources
 /.test-compile/
+
+# Live verification reports are CI artifacts.
+ai-gateway-verification.json

@@ -44,6 +44,11 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Deploy and verify hosted AI service before activating the web build
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/deploy-ai-gateway.mjs
+
       # The upstream action documents @v2 but does not publish that tag.
       - name: Install Appwrite CLI
         run: npm install --global appwrite-cli@28.1.0
@@ -86,5 +91,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: appwrite-verification-${{ github.sha }}
-          path: appwrite-verification.json
+          path: |
+            appwrite-verification.json
+            ai-gateway-verification.json
           if-no-files-found: error

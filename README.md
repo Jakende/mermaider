@@ -10,7 +10,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 
 - **Provider Choice**: Use Ollama locally by default, or connect the desktop app to OpenAI/Codex with an API key, access token, or Device Code browser login.
 - **Local AI Intelligence**: Ollama runs large language models locally on your machine. All diagram generation, fixing, and analysis can remain on your hardware.
-- **Privacy-First Architecture**: Ollama requires no cloud account, subscription, or tracking. Diagrams, chat history, and knowledge-base data stay local. OpenAI is optional and sends prompts to OpenAI only when selected.
+- **Privacy-First Architecture**: Ollama requires no cloud account, subscription, or tracking. Diagrams, chat history, and knowledge-base data stay local. Hosted providers are optional; in the web app, selected OpenAI/TypeSafe requests pass through the Mermaider Appwrite service to the provider.
 - **Secure Desktop Credentials**: In native builds, OpenAI API keys and OAuth tokens are stored in the operating system credential store (macOS Keychain, Windows Credential Manager, or the Linux keyring), rather than browser local storage.
 - **Conversational Diagramming**: An integrated AI chat panel allows you to describe changes in natural language, ask questions about your architecture, or generate complex diagrams from simple prompts.
 - **Automated Syntax Fixing**: Real-time syntax validation combined with AI-powered fixing ensures that your diagrams always render correctly. If you have a broken diagram, the AI can analyze and repair it instantly.
@@ -100,7 +100,7 @@ Mermaider is built using modern, efficient technologies:
 See [the project overview and verified status](docs/PROJECT_OVERVIEW.md),
 [deployment instructions](docs/DEPLOYMENT.md), and
 [the release, website, and live-decision roadmap](docs/ROADMAP.md).
-The planned hosted Jev and local Laya integration is described in
+A first Jev/TypeSafe and local Laya decision preview is available through **DECISIONS**. Provider quality and local Laya browser CORS still require acceptance. The protocol and remaining work are described in
 [decision providers](docs/DECISION_PROVIDERS.md).
 
 ### Prerequisites
@@ -155,4 +155,4 @@ Current release candidate: [1.8.7 deployment and acceptance checklist](docs/RELE
 
 Product website and reviewed download configuration: [Website guide](docs/WEBSITE.md).
 
-Browser Ollama/ChatGPT connections and the optional standalone local bridge: [Browser AI setup](docs/BROWSER_AI.md).
+Direct browser Ollama, hosted OpenAI and Jev/Laya decision setup: [Browser AI setup](docs/BROWSER_AI.md).

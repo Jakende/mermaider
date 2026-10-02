@@ -129,10 +129,23 @@ Voraussetzungen aus [ROADMAP.md](ROADMAP.md) abarbeiten.
 Auf der echten Live-URL Editor, Änderungen, Persistenz, Import/Export,
 Providerverbindung und öffentliche Downloadlinks prüfen.
 
-## Web-Verbindungen zu Ollama und ChatGPT/Codex
+## Gehostete AI-Funktion und direkte lokale Provider
 
-Für Browser-Kontozugriff auf ChatGPT/Codex und optional Ollama stellt der Build
-`/website/mermaider-browser-bridge.mjs` bereit. Diese lokale Node-HTTP-Brücke
-läuft auf dem Rechner des Besuchers; Appwrite hostet nur die Download-Datei.
-Kein zusätzliches Appwrite-Secret oder Serverproxy wird benötigt. Setup,
-Origins und Tab-Zugangsdaten: [BROWSER_AI.md](BROWSER_AI.md).
+Der Webbuild verteilt keine Hilfsdatei. Die Deploymentpipeline prüft den Webbuild,
+bereitstellt und verifiziert anschließend `mermaider-ai-gateway`, bevor die neue
+Website aktiviert wird. `scripts/deploy-ai-gateway.mjs` erstellt/aktualisiert nur
+diese Funktion (Node 22, 60 Sekunden, keine dynamischen Projektscopes, Logging aus),
+lädt den Code hoch und prüft die aktivierte Deployment-ID, Browser-Origin,
+öffentliche Gesundheitsroute und Ablehnung lokaler Ziele.
+
+Der bestehende `APPWRITE_API_KEY` in GitHub Actions konnte die Funktion erfolgreich
+bereitstellen. Kein zusätzliches Providersecret wird benötigt: Nutzer geben ihre
+persönlichen API-Keys in der App ein. Öffentliche IDs in browserTransport.ts sind
+keine Secrets. API-Schlüssel niemals als VITE-Variablen oder in den Webbuild schreiben.
+Eine geänderte Website-Domain braucht eine passende Appwrite-Web-Plattform-Origin
+und neue lokale Ollama-CORS-Freigabe.
+
+Der eigenständige Workflow `deploy-ai-gateway.yml` ermöglicht Änderungen am
+Funktionscode vor dem Webdeployment. Produktionsdeployments sollten seriell
+laufen; keine parallelen unabhängigen Funktions-/Site-Rollouts starten. Details,
+Datentransport, Timeout-/Streaminggrenzen und reale Abnahme: [BROWSER_AI.md](BROWSER_AI.md).

@@ -339,6 +339,7 @@ function AppContent() {
         diagramName={activeTab.name}
         onUpdateDiagramName={setDiagramName}
         onNewTab={handleNewTab}
+        onCreateDiagram={handleCreateDiagramTab}
       />
 
       <TabBar

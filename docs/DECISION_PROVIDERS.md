@@ -1,9 +1,9 @@
 # Jev und Laya: gemeinsame Entscheidungsprovider
 
-Stand: 01.10.2026. Gewünschtes Produktverhalten: lokale und gehostete
+Stand: 02.10.2026. Gewünschtes Produktverhalten: lokale und gehostete
 Entscheidungsmodelle auswählbar machen, analog zur bestehenden Auswahl zwischen
 Ollama und OpenAI. Diese Datei beschreibt die recherchierte Integrationsarchitektur;
-die Provider sind noch nicht in die Anwendung eingebaut.
+Eine erste Auswertungsansicht ist jetzt als Preview eingebaut. Reale Modellabnahme und Laya-Browser-CORS sind offen.
 
 ## Verifizierte Quellen
 
@@ -134,7 +134,7 @@ die HTTP-Variante kann bereits den bestehenden Web-/Tauri-Transport nutzen.
 
 ## Integration in Mermaider
 
-Vorgeschlagene Dateien und Verantwortlichkeiten, noch nicht implementiert:
+Zielarchitektur und Ausbau; der folgende Abschnitt enthält auch noch offene Aufgaben:
 
 | Bereich | Änderung |
 | --- | --- |
@@ -187,3 +187,22 @@ Fallbackfunktion muss ausdrücklich konfiguriert werden, weil sie den Datenweg �
 5. Browserproxy/CORS und öffentliche Bereitstellung integrieren.
 6. Rendering separat optimieren; Modell-Inferenzzeiten sind keine End-to-End-
    Garantie für das sichtbare Diagramm.
+
+## Umgesetzter erster Schritt
+
+`src/decision/{types,service,diagram}.ts` und `DecisionPanel.tsx` implementieren
+HTTP-Auswertung, Choice/Score/Noul-Prüfung, getrennte Credentials, Abbruch,
+Versionsschutz und ausdrücklich übernommene Choice-Pfade in neuen Tabs. Jev nutzt
+im Web die gehostete Appwrite-Funktion; Laya bleibt lokal. Native Keys verwenden
+einen eigenen Keychain-Service, Browserkeys den Tab-Speicher. Laufmetadaten
+bleiben bis zu zehn Einträge im App-Speicher; dauerhaft gespeicherte versionierte
+Entscheidungssitzungen und Undo der gesamten Sitzung sind noch nicht implementiert.
+
+Der erste Diagrammexport unterstützt die **erste Choice-Frage**. Score/Noul
+werden angezeigt, ohne implizite Schwellen oder automatische Pfadentscheidung.
+Freie Mermaid-Diagramme werden nicht reparst oder automatisch umgeschrieben.
+Overlay-Hervorhebung ohne erneutes Mermaid-Layout und automatische Folgeauswertung
+sind spätere Schritte. Reale Jev-/Laya-Inferenz wurde noch nicht geprüft.
+
+Die SDK-Quelle bestätigt den Namen **Jev** für das TypeSafe-Entscheidungsmodell.
+„Chef“ wurde nicht als zusätzlicher verifizierter Provider eingebaut.

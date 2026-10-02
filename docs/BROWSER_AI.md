@@ -1,60 +1,100 @@
-# AI-Verbindungen in der Web-App
+# AI-Verbindungen ohne zusätzliche Downloads
 
-Die Desktop-App verwendet natives HTTP und den Systemschlüsselspeicher. Die
-Web-App verwendet Browser-HTTP: Lokale Netzberechtigungen und CORS gelten auch,
-wenn Ollama läuft oder eine ChatGPT-Anmeldung erfolgreich war. Eine Anmeldung
-auf chatgpt.com ist zudem keine API-Authentifizierung für die Mermaider-Website.
+Die Web-App benötigt keine lokale Hilfsdatei und kein Node.js. Ollama bleibt auf
+dem Rechner des Nutzers. OpenAI und Jev werden über die auf Appwrite gehostete
+Funktion `mermaider-ai-gateway` angesprochen. Die Desktop-App verwendet weiterhin
+natives HTTP und den Betriebssystem-Schlüsselspeicher.
 
-## Empfohlen für ChatGPT/Codex und Ollama: lokale Brücke
+## OpenAI
 
-1. Node.js 20 oder neuer muss auf dem eigenen Rechner installiert sein.
-2. Die [Brückendatei](https://mermaider.appwrite.network/website/mermaider-browser-bridge.mjs)
-   herunterladen. Sie hat keine zusätzlichen Paketabhängigkeiten.
-3. Im Downloadordner `node mermaider-browser-bridge.mjs` ausführen und das
-   Terminal offen lassen. Alternativ im Projektcheckout: `npm run ai:bridge`.
-4. In der Web-App Settings → **Browser Connection Bridge** die Adresse
-   `http://127.0.0.1:11435` eintragen.
-5. In Dia/Chromium den lokalen Netzwerkzugriff für diese Website erlauben.
-6. Ollama testen oder ChatGPT-/Codex-Zugriffstoken eintragen bzw. den Device-Code-
-   Login starten. Modelle laden, Verbindung testen und Einstellungen speichern.
+1. Settings → OpenAI → API Key wählen und einen persönlichen OpenAI-API-Schlüssel
+   eintragen. Ein ChatGPT-Abo enthält keinen OpenAI-API-Zugang.
+2. Modelle laden, ein verfügbares Modell auswählen und die Verbindung testen.
+3. Einstellungen speichern.
 
-Die Brücke bindet ausschließlich an IPv4-Loopback, nicht an öffentliche Netzwerk-
-Interfaces. Sie erlaubt nur die Produktionswebsite und lokale Vite-Entwicklungs-
-Ursprünge. Zusätzliche erlaubte Ursprünge können bewusst über
-`MERMAIDER_BRIDGE_ORIGINS` als kommaseparierte vollständige Origins gesetzt werden;
-Port über `MERMAIDER_BRIDGE_PORT`. Keine Platzhalterfreigabe für sämtliche Websites.
+Browser-Anfragen senden Schlüssel und Eingabe über den Mermaider-Dienst an
+OpenAI. Der Dienst verwendet ausschließlich den persönlichen Schlüssel der
+Anfrage; es gibt keinen gemeinsamen OpenAI-Schlüssel und keine automatische
+Kostenübernahme. Browser-Schlüssel bleiben in sessionStorage des Tabs und
+überleben Reloads. Sie werden nicht in localStorage-Einstellungen gespeichert.
+Reset entfernt die OpenAI-Zugangsdaten. sessionStorage ist kein verschlüsselter
+OS-Schlüsselspeicher.
 
-Erlaubte Ziele sind Ollama auf Loopback-Port 11434 und definierte Modelle-/Chat-/
-Embedding-/Device-Auth-Endpunkte auf api.openai.com, chatgpt.com und auth.openai.com.
-Keine beliebigen Proxyziele, keine Weiterleitungen, keine Token- oder Promptlogs.
-Anfragen und Antworten werden im Speicher übertragen; OAuth-/API-Zugangsdaten
-werden von der Brücke nicht gespeichert. Benutzerdefinierte Anbieterendpunkte
-funktionieren über direkten Browserzugriff mit deren passenden CORS-Regeln;
-die lokale Brücke ist kein universeller Proxy.
+ChatGPT-/Codex-Kontoanmeldung ist im Browser deaktiviert. Der vorhandene
+Device-Code-Weg nutzt den Codex-Client und ist keine verifizierte Mermaider-Web-
+OAuth-Integration. Native Kontoanmeldung bleibt erhalten. Bereits gespeicherte
+Kontotokens werden nicht durch einen API-Schlüssel ersetzt; im Web muss ein
+API-Schlüssel eingegeben und die neue Konfiguration gespeichert werden.
 
-## Ohne Brücke
+## Ollama auf macOS und Dia/Chromium
 
-- OpenAI-API-Schlüssel: direkter Zugriff auf `https://api.openai.com/v1`.
-  Ein ChatGPT-Abo/Zugriffstoken ersetzt keinen OpenAI-API-Schlüssel.
-- Ollama: die konkrete Website-Origin über `OLLAMA_ORIGINS` erlauben und Ollama
-  vollständig neu starten. Auf macOS bei Nutzung der Ollama-App beispielsweise
-  `launchctl setenv OLLAMA_ORIGINS "https://mermaider.appwrite.network"`, danach
-  die Ollama-App beenden und erneut starten. Lokalen Netzwerkzugriff im Browser
-  erlauben. Nicht gleichzeitig eine zweite `ollama serve`-Instanz starten.
-- ChatGPT-/Codex-Kontozugang: lokale Brücke oder Desktop-App verwenden. Die
-  statische Website kann fehlende Cross-Origin-Freigaben nicht selbst ändern.
+1. Lokalen Netzwerkzugriff für `https://mermaider.appwrite.network` im Browser
+   erlauben, wenn die Berechtigungsabfrage erscheint.
+2. Bei der Ollama-App einmal im Terminal ausführen:
 
-## Zugangsdaten und Fehleranzeige
+   ```bash
+   launchctl setenv OLLAMA_ORIGINS "https://mermaider.appwrite.network"
+   ```
 
-Browser-Zugangsdaten bleiben im Speicher und in sessionStorage desselben Tabs,
-überleben dessen Neuladen und werden bei Reset entfernt. Sie werden nicht in
-localStorage-Einstellungsmetadaten gespeichert. sessionStorage ist Browser-
-Speicher, kein verschlüsselter OS-Schlüsselspeicher; für native Persistenz die
-Desktop-App verwenden. Desktop-Zugangsdaten bleiben im Systemschlüsselspeicher.
+3. Ollama vollständig beenden und erneut öffnen. Bestehende benötigte Origins
+   beim Konfigurieren beibehalten; keine pauschale Sternfreigabe verwenden.
+4. Settings → Ollama: `http://127.0.0.1:11434/v1`, vorhandene Modelle auswählen,
+   Verbindung testen und speichern.
 
-Modellabruf meldet HTTP-/Authentifizierungs-/Transportfehler sichtbar. Ein leeres
-Modellverzeichnis wird nicht mehr als Ersatz für einen verschluckten Fehler
-verwendet. Gewählte API-Key-Authentifizierung verwendet den API-Schlüssel auch,
-wenn noch ein älteres OAuth-Token vorhanden ist. Proxy-Pfadpräfixe beim Ollama-
-Modellabruf bleiben erhalten. Reale Anbieterantworten/Benutzerzugänge müssen auf
-dem Zielrechner geprüft werden; automatisierte Tests verwenden Testanbieter.
+Bei einem Terminalserver `OLLAMA_ORIGINS` vor dem Start von Ollama setzen. Nicht
+parallel eine zweite `ollama serve`-Instanz starten. Die Einstellungen zeigen die
+konkrete aktuelle Website-Origin und die macOS-Anweisung. Der Hostingserver
+kann das lokale Ollama des Besuchers nicht erreichen.
+
+## Jev und Laya
+
+**DECISIONS → Preview** ist eine erste Integration, unabhängig vom Chatprovider.
+Jev verwendet `https://api.typesafe.ai`, einen TypeSafe-API-Schlüssel und
+standardmäßig `jev-latest`. Im Browser laufen diese Anfragen über Appwrite.
+Laya verwendet den bereits gestarteten lokalen HTTP-Dienst, standardmäßig
+`http://127.0.0.1:8000`, und `multilingual` (API-Key optional).
+
+Für Laya funktioniert natives HTTP ohne Browser-CORS. Browserzugriff braucht
+zusätzlich eine CORS-Freigabe im Laya-Server und lokalen Netzwerkzugriff. Der
+untersuchte Laya-Server aktiviert keine CORS-Middleware: Die unveränderte
+`laya-serve`-Installation ist deshalb noch keine bestätigte Web-Konfiguration.
+Eine zusätzliche lokale Transportbrücke wird nicht eingeführt. Die App wechselt
+bei einem Fehler niemals still zu einem gehosteten Anbieter.
+
+State kann Text oder JSON sein, Fragen können `choice`, `score` oder `noul`
+verwenden. Eine Choice-Antwort wird vorgeschlagen, vom Nutzer übernommen und als
+Pfad in einem **neuen Tab** dargestellt. Manuelle Auswahl funktioniert ohne
+Modellaufruf. Score bleibt ein erwarteter Rubrikindex, Noul eine Wahrscheinlichkeit;
+beides wird nicht automatisch als Ja/Nein-Entscheidung ausgelegt.
+
+Provider- und Eingabeänderungen sowie Schließen brechen laufende Auswertungen ab;
+veraltete Antworten verändern die Auswahl nicht. Bis zu zehn Laufmetadaten bleiben
+während der geöffneten App im Speicher. Entscheidungskeys sind von OpenAI getrennt:
+Web im Tab-Speicher, Desktop im eigenen Keychain-Service. Ein leeres Key-Feld beim
+Auswerten entfernt den gespeicherten Key des ausgewählten Entscheidungsproviders.
+Reale Modellqualität, deutsche Beispiele und Latenz sind noch abzunehmen.
+
+## Gehosteter Dienst und Grenzen
+
+Die Funktion leitet ausschließlich definierte HTTPS-Routen auf api.openai.com
+und api.typesafe.ai weiter. Keine frei wählbaren Proxyziele, lokalen Adressen,
+Codex-/OAuth-Routen oder Redirects. Ein Provider-Schlüssel ist erforderlich.
+Anfragen/Antworten sind auf 512 KB begrenzt, Upstream-Anfragen auf 50 Sekunden.
+Appwrite-Execution-API wird genutzt, kein öffentliches unbeschränktes Proxy-Domain-
+Routing. Betriebskosten/Quoten müssen vor breiter öffentlicher Distribution in
+Appwrite beobachtet und passend begrenzt werden.
+
+Appwrite-Funktionslogging ist deaktiviert; der Funktionscode protokolliert keine
+Schlüssel, Prompts oder Antworten und speichert sie nicht. Credentials werden
+im Execution-Body übertragen, nicht in protokollierten Requestheadern. Es wird
+keine Garantie über sämtliche internen Logs der Hosting-/Modellanbieter gegeben.
+
+SSE-Antworten werden vom synchronen Appwrite-Aufruf gesammelt und anschließend
+an den vorhandenen Parser übergeben. Das ist **kein Live-Token-Streaming vom
+Server zum Browser**. Lange Modellanfragen können das Timeout erreichen; dafür
+sind spätere asynchrone/Streaming-Ausbaustufen getrennt zu prüfen.
+
+Automatisierte Tests verwenden kontrollierte Anbieterantworten. Liveprüfungen
+prüfen Appwrite-Zugriff, CORS, Gesundheitsroute und Zielbeschränkung ohne echte
+Providerkeys. Echte OpenAI-/Jev-Anfragen und das lokale Ollama/Laya auf dem
+Nutzerrechner bleiben eigene Abnahmepunkte.

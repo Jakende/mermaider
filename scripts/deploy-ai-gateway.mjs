@@ -57,5 +57,16 @@ async function publicExecution(path, method, payload) {
 const health = await publicExecution('/health', 'GET')
 const rejection = await publicExecution('/request', 'POST', { url: 'http://127.0.0.1:11434/api/tags', method: 'GET', authorization: 'Bearer test-not-a-real-key' })
 if (health.responseStatusCode !== 200 || JSON.parse(health.responseBody).name !== 'mermaider-ai-gateway' || rejection.responseStatusCode !== 403) throw new Error('Live hosted AI health or endpoint restriction failed')
-writeFileSync('ai-gateway-verification.json', JSON.stringify({ functionId: id, deploymentId: upload.$id, ready, logging: current.logging, origin: allowedOrigin, publicHealth: health.responseStatusCode, localTargetRejection: rejection.responseStatusCode }, null, 2) + '\n')
+const upstreamProbes = []
+for (const host of ['api.openai.com', 'api.typesafe.ai']) {
+  // Deliberately invalid key: verify network/auth forwarding without account access or inference charges.
+  const execution = await publicExecution('/request', 'POST', { url: `https://${host}/v1/models`, method: 'GET', authorization: 'Bearer mermaider-invalid-probe-key' })
+  let json = false
+  try { JSON.parse(execution.responseBody); json = true } catch { /* Not a provider JSON response. */ }
+  const reachable = json && [200, 401, 403].includes(execution.responseStatusCode)
+  upstreamProbes.push({ host, status: execution.responseStatusCode, reachable, validCredentialsUsed: false })
+  console.log(`Hosted provider probe ${host}: HTTP ${execution.responseStatusCode}; providerJSON=${json}`)
+  if (!reachable) throw new Error(`Hosted provider ${host} could not be verified; inspect provider reachability without logging credentials.`)
+}
+writeFileSync('ai-gateway-verification.json', JSON.stringify({ functionId: id, deploymentId: upload.$id, ready, logging: current.logging, origin: allowedOrigin, publicHealth: health.responseStatusCode, localTargetRejection: rejection.responseStatusCode, upstreamProbes }, null, 2) + '\n')
 console.log('Hosted AI service verified. Real provider credentials have not been exercised.')

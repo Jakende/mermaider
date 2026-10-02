@@ -3,7 +3,7 @@
 Status: Native MIT-Kandidaten und Appwrite-Liveprüfung sind erfolgreich;
 Ein erfolgreicher macOS-Praxistest ist vom Nutzer bestätigt; Windows-Abnahme,
 Signierung und Releaseveröffentlichung stehen aus. Der Kandidat ist nicht veröffentlicht. Manifestversionen sind auf
-1.8.7 abgestimmt. Keine Jev-/Laya-Integration in diesem Release.
+1.8.7 abgestimmt. Eine erste Jev-/Laya-Entscheidungsansicht ist als Preview enthalten; Qualitätsabnahme und Laya-Web-CORS bleiben offen.
 
 ## Vorgesehene Release Notes
 
@@ -104,17 +104,21 @@ MIT-Freigabe für die übernommenen Dario-Beiträge. Lizenzgrundlage und Prüf-
 umfang sind in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert.
 Das Repository bleibt privat; Release und Downloads sind nicht veröffentlicht.
 
-## Browser-Provider-Verbindungen vom 02.10.2026
+## Web- und Entscheidungsprovider vom 02.10.2026
 
-Eine optionale lokale Browser-Brücke ermöglicht Web-Zugriff auf ChatGPT/Codex-
-Konten und Ollama. Der Build stellt die eigenständig ausführbare Node-Datei zum
-Download bereit. Fehler beim Modellabruf werden sichtbar, API-Key-Auswahl wird
-von alten OAuth-Tokens getrennt, Proxy-Pfadpräfixe bleiben erhalten und Browser-
-Zugangsdaten überleben Reloads desselben Tabs in sessionStorage. Desktop-HTTP und
-Systemschlüsselspeicher bleiben erhalten. Anleitung: [BROWSER_AI.md](BROWSER_AI.md).
+Lokale Hilfsdateien wurden entfernt. Ollama wird direkt angesprochen; die
+Einstellungen erklären macOS-Originfreigabe und Browser-Netzberechtigung.
+OpenAI-API-Zugriff und Jev laufen im Web über die auf Appwrite bereitgestellte
+Funktion. Web-Kontoanmeldung über den Codex-Client ist deaktiviert; native
+Anmeldung und Systemschlüsselspeicher bleiben erhalten.
 
-23 Node-/Regressionstests und sechs Chromium-Tests bestanden lokal, einschließlich
-realer HTTP-Verbindung zu einer lokalen Brücke mit kontrollierten Anbieterantworten.
-Das prüft Transport und UI, ersetzt aber keinen Test mit Benutzerkonto und Ollama
-auf dem tatsächlichen Rechner. Node.js 20+ und lokaler Netzwerkzugriff im Browser
-sind für die Brücke erforderlich; sie wird nicht vom Appwrite-Server ausgeführt.
+DECISIONS enthält eine Preview: Choice/Score/Noul-Auswertung mit Jev oder lokalem
+Laya, Ergebnisprüfung, Abbruch und Verwerfen veralteter Antworten, getrennte
+Credentials und manuelle Übernahme einer Choice in einen neuen Diagramm-Tab.
+Keine automatische Übernahme von Modellentscheidungen. Der bestehende Editor
+und freie Mermaid-Code bleiben nutzbar. Modellqualität und Laya-Web-CORS sind
+keine erledigten Release-Abnahmen.
+
+Tests und Live-Befunde werden im PR mit der geprüften Commit-ID dokumentiert.
+Für den echten Nutzerzugang bleiben OpenAI, Jev und lokale Ollama-/Laya-Anfragen
+zu prüfen. Betriebs-/Streaminggrenzen: [BROWSER_AI.md](BROWSER_AI.md).
