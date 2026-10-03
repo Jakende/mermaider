@@ -173,3 +173,21 @@ Die Dateien teilen den aktuellen Ablauf; das Ereignisprotokoll wird nicht mitexp
 
 Ein importierbarer deutscher Prüfsatz und das Protokoll für die echte
 Modellabnahme stehen in [Entscheidungsabnahme](DECISION_ACCEPTANCE.md).
+
+## Geführte Bedienung
+
+„Decide“ zeigt Fragen und große Antwortflächen ohne die Strukturfelder. „Edit flow“
+enthält weiterhin alle Einstellungen für Fragen, Antworten, Regeln und Verzweigungen.
+Die bevorzugte Ansicht bleibt lokal gespeichert. Ein Ablauf kann auch ohne KI-Verbindung
+über „Start manually“ beginnen.
+
+Der Antwortpfad bleibt oben erreichbar. Nach einer Auswahl führt das Panel zur nächsten
+Frage, ohne die gesamte Seite zu verschieben oder eine Bildschirmtastatur zu öffnen.
+Antworten lassen sich zurücksetzen; dabei werden abhängige Auswahlen entfernt und die
+Automatik pausiert. Undo/Redo bleiben verfügbar. Am Ende eines Zweigs kann unmittelbar
+eine Folgefrage ergänzt werden.
+
+Modellvorschläge können übernommen oder verworfen werden. „Pause automation“ stoppt
+laufende Anfragen und automatische Anpassungen. KI-Entwürfe lassen sich vor der Übernahme
+sprachlich bearbeiten; leere Fragen oder Antworten verhindern die Übernahme.
+Diese Bedienhilfen ersetzen nicht die fachliche Prüfung der Modellantworten.
