@@ -449,3 +449,49 @@ test('adaptation previews added changed and removed questions before changing th
   await expect(page.locator('.preview-container svg')).toContainText('Who should test?')
   await expect(page.locator('.preview-container svg')).not.toContainText('Which channel?')
 })
+
+test('simplifying a draft shortens wording while preserving the active flow and review before adoption',async({page})=>{
+  await prepare(page)
+  let calls=0
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    calls++
+    const draft=structuredClone(plan)
+    if(calls===1)draft.questions[0].text='Are all tests complete and does the current release meet the agreed readiness conditions?'
+    else{draft.questions[0].text='Is the release ready?';draft.questions[1].text='Where should it be released?';draft.questions[0].options[0].label='Ready'}
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({choices:[{message:{content:JSON.stringify(draft)}}]})}})
+  })
+  await page.getByRole('button',{name:'Adapt flow with AI',exact:true}).click()
+  const draft=page.getByRole('region',{name:'Proposed flow'})
+  await expect(draft).toContainText('Are all tests complete')
+  await draft.getByRole('button',{name:'Simplify wording',exact:true}).click()
+  await expect(draft).toContainText('Where should it be released?')
+  await expect(page.locator('.preview-container svg')).toContainText('Which channel?')
+  await expect(page.locator('.preview-container svg')).not.toContainText('Where should it be released?')
+  await draft.getByRole('button',{name:'Apply draft',exact:true}).click()
+  await expect(page.locator('.preview-container svg')).toContainText('Where should it be released?')
+  await expect(page.getByLabel('Follow-up for Ready')).toHaveValue('channel')
+})
+test('structural changes during simplification are rejected and cancellation keeps the previous draft',async({page})=>{
+  await prepare(page)
+  let calls=0,started:()=>void=()=>{},release:()=>void=()=>{}
+  const received=new Promise<void>(resolve=>{started=resolve}),held=new Promise<void>(resolve=>{release=resolve})
+  await page.route('https://fra.cloud.appwrite.io/v1/functions/mermaider-ai-gateway/executions',async route=>{
+    calls++;const draft=structuredClone(plan)
+    if(calls===2)draft.questions[0].options[1].nextId='channel'
+    if(calls===3){started();await held;draft.questions[1].text='Late simplified question'}
+    await route.fulfill({json:{status:'completed',responseStatusCode:200,responseBody:JSON.stringify({choices:[{message:{content:JSON.stringify(draft)}}]})}}).catch(()=>{})
+  })
+  await page.getByRole('button',{name:'Adapt flow with AI',exact:true}).click()
+  const draft=page.getByRole('region',{name:'Proposed flow'})
+  await draft.getByRole('button',{name:'Simplify wording',exact:true}).click()
+  await expect(page.getByRole('complementary',{name:'Decision workspace'}).getByRole('alert')).toContainText('previous draft is kept')
+  await expect(draft).toContainText('Which channel?')
+  await draft.getByRole('button',{name:'Simplify wording',exact:true}).click()
+  await received
+  await expect(draft.getByRole('button',{name:'Apply draft',exact:true})).toBeDisabled()
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();release()
+  await expect(draft.getByRole('button',{name:'Apply draft',exact:true})).toBeEnabled()
+  await expect(draft).not.toContainText('Late simplified question')
+  await draft.getByRole('button',{name:'Discard',exact:true}).click()
+  await expect(page.locator('.preview-container svg')).toContainText('Which channel?')
+})

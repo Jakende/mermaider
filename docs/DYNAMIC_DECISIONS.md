@@ -209,3 +209,18 @@ Antwortkarten nennen die nächste Frage oder das Ende des Zweigs. KI-Entwürfe z
 hinzugefügte, geänderte und entfernte Fragen sowie einen geänderten Startpunkt vor
 der Übernahme. Modellvorschläge erläutern die verwendete Routing-Regel und zeigen
 Provider, Modell, Zeitpunkt und Dauer. Das ist kein fachlicher Nachweis der Antwort.
+
+## Kurze Fragen und Entwürfe vereinfachen
+
+Die Planung soll jeweils eine Entscheidung kurz und neutral formulieren. Fakten
+bleiben im Zustand; Antwortoptionen sollen keine Absätze oder wiederholte
+Zustandsbeschreibungen sein. Eine einzelne Frage ist sinnvoll, wenn nur eine
+Entscheidung offen ist; unabhängig klärbare Voraussetzungen sollen getrennt werden.
+Die Richtwerte von 120 Zeichen pro Frage und 60 pro Antwort sind Formulierungshilfen,
+keine Beschränkung bestehender manueller Abläufe.
+
+„Simplify wording“ kürzt einen Entwurf mit dem eingestellten Chat-Provider. Die
+Ablaufstruktur und vollständigen Bewertungsregeln müssen unverändert bleiben.
+Fehler oder Abbruch behalten den bisherigen Entwurf; „Apply draft“ bleibt ein
+eigener Schritt. Die Bedeutung der verkürzten Texte wird weiterhin vom Nutzer
+geprüft. Das Verfahren belegt keine automatisch geprüfte sprachliche Qualität.

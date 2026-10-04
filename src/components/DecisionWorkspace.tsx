@@ -4,7 +4,7 @@ import type { FlowPlan, FlowQuestion, FlowSession } from '../decision/flow'
 import { decisionDefaults, evaluateDecision, loadDecisionKey, saveDecisionKey } from '../decision/service'
 import type { DecisionConfig, DecisionProvider } from '../decision/types'
 import { planChanges } from '../decision/planChanges'
-import { planFlow } from '../decision/planner'
+import { planFlow, simplifyFlow } from '../decision/planner'
 import UserBlob from './UserBlob'
 import DecisionRuleEditor from './DecisionRuleEditor'
 import {mapDecisionAnswer,ruleDescription} from '../decision/rules'
@@ -32,7 +32,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
   const [apiKey,setApiKey]=useState('')
   const [mode,setMode]=useState<Mode>('manual')
   const [autoAdapt,setAutoAdapt]=useState(false)
-  const [busy,setBusy]=useState<'plan'|'evaluate'|null>(null)
+  const [busy,setBusy]=useState<'plan'|'evaluate'|'simplify'|null>(null)
   const [error,setError]=useState('')
   const [draft,setDraft]=useState<FlowPlan|null>(null)
   const context=session.context
@@ -117,6 +117,17 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
     }catch(failure){if(token===operation.current&&!controller.signal.aborted)setError(failure instanceof Error?failure.message:'Planning failed.')}
     finally{if(token===operation.current)setBusy(null)}
   }
+  const simplify=async()=>{
+    if(!draft||busy)return
+    const snapshot=latest.current,previous=draft
+    cancel();const token=operation.current
+    const controller=new AbortController();abort.current=controller;setBusy('simplify');setError('')
+    try{
+      const result=await simplifyFlow(previous,controller.signal)
+      if(token===operation.current&&snapshot.revision===latest.current.revision)setDraft(result)
+    }catch(failure){if(token===operation.current&&!controller.signal.aborted)setError(failure instanceof Error?failure.message:'Simplification failed. The previous draft is kept.')}
+    finally{if(token===operation.current)setBusy(null)}
+  }
   useEffect(()=>{
     if(mode==='manual'||flowPath(session).review.length||busy||!path.pending||context!==session.context||config.provider==='jev'&&!apiKey.trim())return
     const signature=JSON.stringify([session.id,session.revision,path.pending,settings.current])
@@ -174,7 +185,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
   return <aside id="decision-workspace" className="decision-workspace" aria-label="Decision workspace" style={{width}}>
     <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>
     <header><UserBlob busy={!!busy}/><strong>DECISIONS</strong><span className="flow-preview-label">Preview</span><button onClick={onClose} aria-label="Close decision workspace">×</button></header>
-    {(error||busy)&&<div className="flow-feedback">{error&&<p role="alert">{error}</p>}{busy&&<div role="status">{busy==='plan'?'Drafting questions…':'Evaluating current state…'} <button onClick={cancel}>Cancel</button></div>}</div>}
+    {(error||busy)&&<div className="flow-feedback">{error&&<p role="alert">{error}</p>}{busy&&<div role="status">{busy==='plan'?'Drafting questions…':busy==='simplify'?'Simplifying wording…':'Evaluating current state…'} <button onClick={cancel}>Cancel</button></div>}</div>}
     <div className="decision-scroll" ref={scrollRef}>
       {session.plan&&<nav className="flow-navigator" aria-label="Decision navigation">
         <div className="flow-view-switch" role="group" aria-label="Decision view"><button aria-pressed={!editing} onClick={()=>changeView('decide')}>Decide</button><button aria-pressed={editing} onClick={()=>changeView('edit')}>Edit flow</button></div>
@@ -209,7 +220,7 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
       <label htmlFor="flow-mode">Response mode</label><select id="flow-mode" disabled={path.review.length>0} value={mode} onChange={event=>{lastAuto.current='';setMode(event.target.value as Mode)}}><option value="manual">Manual · evaluate on demand</option><option value="suggest">Live suggestions · review each answer</option><option value="follow">Auto follow · apply at ≥80% option probability</option></select>
       {mode!=='manual'&&<p className="flow-hint">Updates call the selected decision provider. Auto follow can advance up to 20 questions per update; score and unclear results stay for review.</p>}
 
-      {draft&&<section className="flow-draft" aria-label="Proposed flow"><strong>{draft.title}</strong><p>{draft.questions.length} questions · review before applying</p>{changes&&<div className="flow-draft-impact" aria-label="Draft changes"><p>{changes.added.length} added · {changes.changed.length} changed · {changes.removed.length} removed{changes.startChanged?' · Start question changes':''}</p>{session.plan&&<><details><summary>What changes?</summary>{(['added','changed','removed'] as const).map(kind=>changes[kind].length>0&&<div key={kind}><strong>{kind}</strong><ul>{changes[kind].map(question=><li key={question.id}>{question.text}</li>)}</ul></div>)}</details><p>Changed question meanings and answer paths can reset selections. Unchanged choices remain; answers awaiting review still need confirmation.</p></>}</div>}<ul>{draft.questions.map(question=><li key={question.id}>{question.text}<small>{question.options.map(option=>option.label).join(' / ')} · {ruleDescription(question)}</small></li>)}</ul><details className="flow-draft-editor"><summary>Edit proposed wording</summary>{draft.questions.map((question,index)=><div key={question.id}><label>Question {index+1}<input aria-label={`Draft question ${index+1}`} value={question.text} maxLength={1000} onChange={event=>setDraft({...draft,questions:draft.questions.map(item=>item.id===question.id?{...item,text:event.target.value}:item)})}/></label>{question.options.map((option,optionIndex)=><label key={option.id}>Answer {optionIndex+1}<input aria-label={`Draft answer ${index+1}.${optionIndex+1}`} value={option.label} maxLength={300} onChange={event=>setDraft({...draft,questions:draft.questions.map(item=>item.id===question.id?{...item,options:item.options.map(answer=>answer.id===option.id?{...answer,label:event.target.value}:answer)}:item)})}/></label>)}</div>)}</details><button disabled={draft.questions.some(question=>!question.text.trim()||question.options.some(option=>!option.label.trim()))} onClick={()=>{onApplyPlan(changeFlow(session,{plan:draft},'Applied AI draft'));setDraft(null)}}>Apply draft</button><button onClick={()=>setDraft(null)}>Discard</button></section>}
+      {draft&&<section className="flow-draft" aria-label="Proposed flow"><strong>{draft.title}</strong><p>{draft.questions.length} questions · review before applying</p>{changes&&<div className="flow-draft-impact" aria-label="Draft changes"><p>{changes.added.length} added · {changes.changed.length} changed · {changes.removed.length} removed{changes.startChanged?' · Start question changes':''}</p>{session.plan&&<><details><summary>What changes?</summary>{(['added','changed','removed'] as const).map(kind=>changes[kind].length>0&&<div key={kind}><strong>{kind}</strong><ul>{changes[kind].map(question=><li key={question.id}>{question.text}</li>)}</ul></div>)}</details><p>Changed question meanings and answer paths can reset selections. Unchanged choices remain; answers awaiting review still need confirmation.</p></>}</div>}<ul>{draft.questions.map(question=><li key={question.id}>{question.text}<small>{question.options.map(option=>option.label).join(' / ')} · {ruleDescription(question)}</small></li>)}</ul><details className="flow-draft-editor"><summary>Edit proposed wording</summary>{draft.questions.map((question,index)=><div key={question.id}><label>Question {index+1}<input aria-label={`Draft question ${index+1}`} disabled={!!busy} value={question.text} maxLength={1000} onChange={event=>setDraft({...draft,questions:draft.questions.map(item=>item.id===question.id?{...item,text:event.target.value}:item)})}/></label>{question.options.map((option,optionIndex)=><label key={option.id}>Answer {optionIndex+1}<input aria-label={`Draft answer ${index+1}.${optionIndex+1}`} disabled={!!busy} value={option.label} maxLength={300} onChange={event=>setDraft({...draft,questions:draft.questions.map(item=>item.id===question.id?{...item,options:item.options.map(answer=>answer.id===option.id?{...answer,label:event.target.value}:answer)}:item)})}/></label>)}</div>)}</details><div className="flow-actions"><button disabled={!!busy||draft.questions.some(question=>!question.text.trim()||question.options.some(option=>!option.label.trim()))} onClick={()=>{onApplyPlan(changeFlow(session,{plan:draft},'Applied AI draft'));setDraft(null)}}>Apply draft</button><button disabled={!!busy} onClick={()=>void simplify()}>Simplify wording</button><button disabled={!!busy} onClick={()=>setDraft(null)}>Discard</button></div><p className="flow-hint">Simplify wording keeps follow-ups and evaluation rules. Review the meaning before applying.</p></section>}
       {nodeProposal&&<section className="flow-draft" aria-label="Diagram question"><strong>{nodeProposal.text}</strong><p>{nodeProposal.options.map(option=>option.label).join(' / ')}</p><button onClick={()=>onApplyPlan(changeFlow(session,{plan:{title:nodeProposal.text,startId:nodeProposal.id,questions:[nodeProposal]}},'Imported branching node'))}>Use this node as a question</button></section>}
       {!session.plan&&<p className="flow-hint">Start from a goal or add your first question. A new flow opens in its own tab and preserves the current diagram.</p>}
       {session.plan&&!session.linked&&<p className="flow-hint">This diagram was edited separately. <button onClick={()=>onApplyPlan(session)}>Open managed flow in new tab</button></p>}

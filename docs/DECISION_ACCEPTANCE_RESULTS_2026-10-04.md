@@ -1,8 +1,8 @@
 # Erste fachliche Jev-Abnahme am 04.10.2026
 
 Quelle: Nutzerbericht aus der Web-App, Modellbezeichnung `jev-1.13.0`.
-Es handelt sich um sechs Fälle mit jeweils drei Fragen, nicht um drei
-Wiederholungsläufe pro Fall. Persönliche Schlüssel und vollständige
+Das erste Einzelprotokoll enthält sechs Fälle mit jeweils drei Fragen, nicht
+drei Wiederholungsläufe pro Fall. Spätere Wiederholungen sind unten dokumentiert. Persönliche Schlüssel und vollständige
 Providerantworten liegen der Arbeitsumgebung nicht vor.
 
 Die Bezeichnung A/1 bedeutet Frage 1 von Fall A. Frage 1 ist Choice,
@@ -44,9 +44,8 @@ nachgewiesenen Routingfehler dar. Sie ersetzt jedoch keinen bestätigten Score
 für die vorgesehene Score-Frage in F. Die Fall-/Fragebezeichnung allein belegt
 nicht den tatsächlich verwendeten Bewertungstyp.
 
-Die weiteren gemeldeten Werte bleiben als Nutzerbericht dokumentiert. Eine
-vollständige fachliche Bestätigung aller Fragen aller sechs Fälle wird ohne
-das fehlende Score-Ergebnis für F nicht ausgesprochen. Genauigkeit oder
+Die weiteren gemeldeten Werte bleiben als Nutzerbericht dokumentiert. Zum Zeitpunkt dieser Einzelwerte war der Score-Fall F noch offen. Die spätere
+allgemeine Nutzerbestätigung der Wiederholungen ist im folgenden Abschnitt erfasst. Genauigkeit oder
 Kalibrierung wurden nicht gemessen.
 
 
@@ -54,7 +53,7 @@ Kalibrierung wurden nicht gemessen.
 
 - Der neueste F/2-Bericht bestätigt eine konsistente Noul-Anzeige. Ein
   Modell- oder Routing-Workaround ist daraus nicht begründet; die Score-Abnahme
-  von Fall F muss separat ergänzt werden.
+  von Fall F war zum Zeitpunkt dieser Einzelwerte noch separat zu ergänzen.
 - Die fachlichen Antwort-Routen des vorbereiteten Abnahmesatzes sind erstmals
   mit echten Nutzerzugängen nachvollziehbar berichtet worden.
 - Noul bewertet die Wahrheit einer Aussage. „Nicht ausreichend belegt“ und
@@ -66,13 +65,25 @@ Kalibrierung wurden nicht gemessen.
   über Auto-Follow-Eignung oder Konfidenz. Provider-Konfidenz ersetzt ohnehin
   nicht die Wahrscheinlichkeit der gewählten Option.
 
+## Spätere Nutzerbestätigung am selben Tag
+
+Der Nutzer hat A–F erneut durchgeführt und bestätigt, dass die Ergebnisse passen.
+Diese Rückmeldung schließt die zuvor angefragten Wiederholungen als qualitative
+Nutzerabnahme; zusätzliche Einzelwerte und genaue Wiederholungszahlen wurden
+nicht mitgesendet. Auch der Score-Fall F ist damit im Rahmen der allgemeinen
+Erfolgsbestätigung erfasst, ohne dass ein neuer Rohwert dokumentiert wird.
+
+Die OpenAI-Planungsprüfung wurde ebenfalls durchgeführt. Überarbeitung und
+Zustandsübernahme funktionieren laut Nutzer; die Formulierung ist jedoch zu
+lang und bündelt mehrere Voraussetzungen in einer Frage. Die konkrete
+[Rückmeldung und Ableitung](PLANNING_ACCEPTANCE_RESULTS_2026-10-04.md) ist separat dokumentiert.
+
 ## Noch fehlende Nachweise
 
-Ein eindeutig zugeordnetes Score-Ergebnis für F, zwei weitere vollständige
-Wiederholungen pro Fall und Modell, genaue Feldbezeichnung
-bzw. Verteilung der Choice-Ergebnisse, Laufzeiten und vollständige Anfrage-/Antwort-
-Zuordnung sind nicht dokumentiert. Eine Zustandsfolge A → B → A im selben Tab ist
-noch nicht bestätigt. Die OpenAI-Planungsprüfung, Laya, weitere individuelle
+Die zusätzlichen Rohwerte und genaue Anzahl der nun bestätigten Wiederholungen,
+Feldbezeichnung bzw. Verteilung der Choice-Ergebnisse, Laufzeiten und vollständige
+Anfrage-/Antwort-Zuordnung sind nicht dokumentiert. Eine Zustandsfolge A → B → A im selben Tab ist
+noch nicht bestätigt. Die erneute Prüfung der verbesserten OpenAI-Formulierungen, Laya, weitere individuelle
 Anwendungsfälle und statistische Modellkalibrierung bleiben separat offen.
 
 Diese Prüfung schließt die erste qualitative Rückmeldung zu Jev, nicht die komplette
