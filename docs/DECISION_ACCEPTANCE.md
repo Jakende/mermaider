@@ -3,7 +3,10 @@
 Stand: 04.10.2026. Automatisierte Ablaufprüfung und echte Modellqualität sind
 getrennte Ergebnisse. Die Tests verwenden kontrollierte Providerantworten;
 sie messen keine Jev-/Laya-Genauigkeit. Persönliche Schlüssel sind in der
-Arbeitsumgebung nicht verfügbar. Die echte Qualitätsabnahme bleibt offen.
+Arbeitsumgebung nicht verfügbar. Der Nutzer hat einen ersten echten Jev-Durchlauf
+mit sechs Fällen und jeweils drei Fragen berichtet: [Ergebnisse vom 04.10.2026](DECISION_ACCEPTANCE_RESULTS_2026-10-04.md).
+Die korrigierten Antwort-Routen entsprechen dem Prüfsatz; Wiederholungen und weitere
+Anbieter-/Planungsprüfungen bleiben offen.
 
 ## Echte deutsche Modellabnahme
 
@@ -40,9 +43,12 @@ Fragen in Pfadreihenfolge auswerten und die passende Antwort übernehmen; keine 
 Antwort bestätigen, ohne sie gegen den neuen Zustand zu prüfen. Danach eine Antwort ändern, Undo/Redo ausführen und die Datei exportieren,
 neu importieren und auf identische Regeln prüfen.
 
-Ergebnisprotokoll je Provider/Modell:
+Ergebnisprotokoll je Provider/Modell: Jede Zeile bezeichnet eine Frage in einer
+Wiederholung, beispielsweise `A / 1 / 2` für Frage 1 in der zweiten Wiederholung
+von Fall A. Bei Choice die Antwort und den genauen Feldnamen jeder notierten Zahl
+angeben; bei Score den Rohwert, bei Noul P(true).
 
-| Fall / Lauf | Datum | Provider / Modell | Choice | Score / Route | P(true) / Route | Fachlich plausibel? | Dauer / Bemerkung |
+| Fall / Frage / Wiederholung | Datum | Provider / Modell | Typ | Modellwert / Feldname | Geroutete Antwort | Fachlich plausibel? | Dauer / Bemerkung |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | | | | | | | | |
 
@@ -68,8 +74,8 @@ Ergebnisprotokoll je Provider/Modell:
 ## Verbesserungen aus technisch belegbaren Schwächen
 
 Die Arbeitsumgebung besitzt weiterhin keine persönlichen Modellzugänge; echte Ergebnisse
-für A–F sind vom Nutzer angefragt. Es wurden keine realen Modellantworten simuliert oder
-als Qualitätsnachweis ausgegeben. Unabhängig davon werden erhaltene manuelle Antworten
+für A–F liegen für einen Jev-Durchlauf als Nutzerbericht vor. Kontrollierte
+Testantworten wurden nicht als reale Modellantworten oder Qualitätsnachweis ausgegeben. Unabhängig davon werden erhaltene manuelle Antworten
 nach Ziel-/Zustands- oder vorherigen Pfadänderungen sichtbar zur Prüfung markiert.
 Nachfolgende Bewertungen und automatische Übernahmen warten auf diese Prüfung.
 Prüfstatus überlebt lokale Wiederherstellung und portable Version-3-Dateien; ältere
@@ -80,7 +86,7 @@ Fakten. Ob die realen Modelle diesen Vorgaben zuverlässig folgen, bleibt Teil v
 
 ## Noch offen
 
-Echte Jev-/Laya-Modellqualität, Modellkalibrierung, repräsentative individuelle
+Weitere Jev-Wiederholungen, Laya-Modellqualität, Modellkalibrierung, repräsentative individuelle
 Anwendungsfälle und Laya-Browser-CORS bleiben separat abzunehmen. Automatische
 Übernahme ist opt-in und startet nach Öffnen einer Sitzung deaktiviert. Das
 Prüfpaket ist ein erster Release-Abnahmesatz, kein statistischer Qualitätsnachweis.
