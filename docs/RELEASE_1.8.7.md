@@ -1,7 +1,7 @@
 # Mermaider 1.8.7 – Releasekandidat
 
 Aktueller konsolidierter Stand: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
-App/Website, 54 Logiktests, 43 Live-Browserfälle (2 WebKit-Protokoll-Skips) und
+App/Website, 54 Logiktests, 50 Live-Browserfälle (2 WebKit-Protokoll-Skips) und
 beide nativen Builds sind geprüft. Der Nutzer bestätigt iPhone-Bedienung,
 Entscheidungsdatei-Import, wiederholte Jev-Fälle A–F und die überarbeitete Planung
 qualitativ. Aktuelle native Praxisabnahme, Signierung und öffentliche Desktop-
