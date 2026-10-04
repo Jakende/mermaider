@@ -1,7 +1,9 @@
 # Abschlussstand Mermaider 1.8.7
 
 Stand: 04.10.2026. Die Webversion und die Produktwebsite sind bereitgestellt;
-der vereinbarte Web-Abschluss ist erfolgt. Desktop bleibt ein privater Kandidat.
+der vereinbarte Web-Abschluss ist erfolgt. Beide aktuellen Desktop-Installer
+sind vom Nutzer praktisch abgenommen und zur unsignierten öffentlichen
+Veröffentlichung freigegeben. Uploadstand: [Veröffentlichung](PUBLICATION_1.8.7.md).
 
 - App: https://mermaider.appwrite.network/
 - Website: https://mermaider.appwrite.network/website/
@@ -61,19 +63,34 @@ Release Notes, Attribution und die Quellen-/CI-Zuordnung. Der Web-Build wird
 separat als ZIP bereitgestellt. Ältere Prüfpakete werden nicht überschrieben.
 Ein späterer Tag-Build erhält eigene Prüfsummen.
 
-## Verbleibende externe Voraussetzungen
+## Praktische Abnahme und öffentliche Freigabe
 
-- Aktuelle native Kandidaten praktisch auf macOS und Windows prüfen. Die positive
-  Rückmeldung zum früheren Mac-Kandidaten ersetzt keine neue Installationsabnahme;
-  ein Windows-Test wurde bisher ausdrücklich verneint.
-- Developer-ID-Signierung und Apple-Notarisierung einrichten. Der Nutzer hat noch
-  keinen Apple-Developer-Zugang. Windows-Signierung ebenfalls vor öffentlicher
-  Distribution klären. Erfolgreiche Builds und Prüfsummen ersetzen diese Nachweise nicht.
-- Repository und öffentliche Desktop-Downloads bleiben privat/deaktiviert.
-  Herkunft und bestehende Attribution bleiben erhalten; alleinige Urheberschaft
-  wird nicht behauptet. Keine Tags, Zusammenführung oder Veröffentlichung erfolgen hier.
+Am 04.10.2026 bestätigt der Nutzer: „auf Windows und auf Mac läuft alles perfekt“.
+Diese qualitative Abnahme gilt für die hier aufgeführten Installer. OS-Versionen
+und einzelne neue Testprotokolle wurden nicht mitgesendet. Die zuvor offene
+aktuelle Mac-/Windows-Abnahme ist damit abgeschlossen.
 
-Konkrete Übergabe: [Desktop-Abschluss](DESKTOP_RELEASE_HANDOFF.md).
-Lokales Laya/CORS, zusätzliche Modellfälle und Kalibrierung bleiben separate
-Preview-Arbeit; sie blockieren nicht den vereinbarten gehosteten Web-Abschluss.
-[Modellabnahme](DECISION_ACCEPTANCE.md), [Release Notes](RELEASE_NOTES_1.8.7.md).
+Der Nutzer autorisiert anschließend ausdrücklich: „Repository und abgenommene
+Installer öffentlich veröffentlichen“. MIT und vorhandene Fremdattribution
+bleiben erhalten. Die Dateien werden unverändert als unsignierte Version
+veröffentlicht; öffentliche Signierung/Notarisierung ist eine spätere Erweiterung.
+
+Die Diagrammbibliothek wird danach in die obere Toolbar verschoben. Diese
+kleine Änderung wird lokal für Web gebaut und geprüft; sie ist nicht in den
+abgenommenen Desktop-Dateien enthalten. Wegen des ausgeschöpften Actions-Budgets
+wird kein neuer nativer Build ausgelöst. Die Veröffentlichung verwendet dieselben
+Installer und dieselben Prüfsummen.
+
+Der lokale Toolbar-/Website-Abschluss besteht ESLint und den TypeScript-/Vite-
+Produktionsbuild. Die betroffenen Bedienungsfälle (Diagrammsuche, Fokus/Vollbild,
+Menüs und mobile Darstellung) und beide Websitefälle bestehen in Chromium.
+Die Website wurde nach einer Korrektur auch bei 320 Pixeln und 200 % Schrift
+erneut geprüft. Vier Offline-Prüfungen des Veröffentlichungswegs bestätigen
+Dateiintegrität, Abbruch bei geändertem Hauptbranch vor Schreibzugriffen und
+Credential-Entfernung bei Redirects auf andere Hosts. Der externe Upload selbst
+ist durch diese lokalen Prüfungen nicht nachgewiesen.
+
+Lokales Laya/CORS, weitere Modellfälle, Kalibrierung, Signierung und zusätzliche
+Plattformen stehen in der [Roadmap](ROADMAP.md). Tatsächliche externe
+Upload-/Sichtbarkeitsaktionen und die budgetfreie Übergabe:
+[Veröffentlichung](PUBLICATION_1.8.7.md).

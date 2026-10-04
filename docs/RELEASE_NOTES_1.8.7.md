@@ -1,6 +1,6 @@
 # Mermaider 1.8.7
 
-Abgeschlossene Webversion mit privaten Desktop-Kandidaten für macOS Apple Silicon
+Abgeschlossene Webversion und praktisch abgenommene Desktop-Installer für macOS Apple Silicon
 und Windows x64. Die Web-App ist unter
 https://mermaider.appwrite.network/ verfügbar; die Produktwebsite liegt unter
 https://mermaider.appwrite.network/website/.
@@ -36,8 +36,8 @@ https://mermaider.appwrite.network/website/.
 
 | System | Datei | Status |
 | --- | --- | --- |
-| macOS Apple Silicon / ARM64 | `Mermaider_1.8.7_aarch64.dmg` | Kandidat ohne Developer-ID-Signierung / Notarisierung |
-| Windows x64 | `Mermaider_1.8.7_x64-setup.exe` | Unsignierter Kandidat; praktischer Windows-Test offen |
+| macOS Apple Silicon / ARM64 | `Mermaider_1.8.7_aarch64.dmg` | Praktisch abgenommen; ohne Developer-ID-Signierung / Notarisierung |
+| Windows x64 | `Mermaider_1.8.7_x64-setup.exe` | Unsigniert; praktischer Windows-Test vom Nutzer bestätigt |
 
 Kein Intel-Mac-Installer. Die Installationsdateien nur aus der geprüften Quelle
 beziehen und vor Installation mit der mitgelieferten `SHA256SUMS.txt` vergleichen:
@@ -51,7 +51,7 @@ Bei macOS- oder Windows-Hinweisen auf einen unbekannten Herausgeber zuerst Herku
 und Prüfsumme prüfen. Ein signierter öffentlicher Release wird erst nach Einrichtung
 und Prüfung der jeweiligen Signierung bereitgestellt.
 
-## Grenzen dieses Kandidaten
+## Grenzen dieser Version
 
 Die Bedienung, Providerzugänge OpenAI/Jev/Embeddings, mobile iPhone-Bedienung und
 Entscheidungsdatei-Import wurden vom Nutzer bestätigt. Automatisierte Ablaufprüfungen
@@ -66,7 +66,15 @@ im Browser Origin-Freigabe und lokale Netzwerkberechtigung. ChatGPT/Codex-Kontoa
 ist im Web durch OpenAI-API-Zugang ersetzt; die native Anmeldung bleibt vorhanden.
 Der gehostete Transport puffert SSE, begrenzt Anfragen auf 50 Sekunden und 512 KB.
 
-Windows-Praxistest, Developer-ID-Signierung/Notarisierung und öffentliche
-Repository-/Downloadfreigabe stehen noch aus. Die Desktop-Dateien bleiben ein privates
-Prüfpaket. Die Web-App ist verfügbar. Aktuelle Nachweise und Prüfsummen:
-[Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
+Die praktische Abnahme beider aktuellen Installer wurde vom Nutzer am
+04.10.2026 bestätigt: „auf Windows und auf Mac läuft alles perfekt“.
+Developer-ID-Signierung/Notarisierung und Windows-Signierung bleiben optionale
+Distributionserweiterungen für einen späteren signierten Build. Die öffentliche
+Verteilung dieser unsignierten Dateien wurde ausdrücklich freigegeben.
+
+Die nachträgliche Platzierung der Diagrammbibliothek in der oberen Toolbar ist
+im lokal vorbereiteten Web-Build enthalten. Die abgenommenen Desktop-Dateien
+bleiben unverändert beim Stand `4108f40`; kein weiterer nativer Build und kein
+GitHub-Actions-Lauf wird dafür ausgelöst. Aktuelle Prüfsummen:
+[Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md). Tatsächlicher Publikationsstand:
+[Veröffentlichung](PUBLICATION_1.8.7.md).

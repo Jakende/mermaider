@@ -447,6 +447,16 @@ function AppContent() {
       onDragOver={handleDragOver}
     >
       <Toolbar
+        diagramLibrary={<DiagramSwitcher
+          toolbar
+          open={diagramSearchOpen}
+          onOpen={setDiagramSearchOpen}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelectTab={setActiveTabId}
+          onCloseTab={handleCloseTab}
+          onNewTab={handleNewTab}
+        />}
         ref={toolbarRef}
         code={activeTab.code}
         setCode={setCode}
@@ -461,16 +471,6 @@ function AppContent() {
         onToggleDecisions={() => setIsDecisionsOpen(!isDecisionsOpen)}
         isDecisionsOpen={isDecisionsOpen}
         onEnterFullscreen={enterFocus}
-      />
-
-      <DiagramSwitcher
-        open={diagramSearchOpen}
-        onOpen={setDiagramSearchOpen}
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelectTab={setActiveTabId}
-        onCloseTab={handleCloseTab}
-        onNewTab={handleNewTab}
       />
 
       {focusMode && <nav className="focus-controls" aria-label="Fullscreen controls">

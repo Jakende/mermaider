@@ -1,5 +1,11 @@
 # GitHub Actions
 
+Für den Abschluss von 1.8.7 ist das Actions-Budget ausgeschöpft. Neue Commits
+und der Merge verwenden `[skip ci]`; vor der öffentlichen Tag-/Release-Aktion
+pausiert der direkte Veröffentlichungsweg die aktiven Workflows. Die bereits
+abgenommenen Installer werden unverändert verwendet. Ablauf und späteres
+Wiederaktivieren: [Veröffentlichung](../../docs/PUBLICATION_1.8.7.md).
+
 | Workflow | Trigger | Ergebnis |
 | --- | --- | --- |
 | `build-web.yml` | PR, Push auf `main`, manuell | Lint, Regressionstests, Chromium-Browsertests und typgeprüfter Webbuild als `mermaider-web-<sha>`, 14 Tage aufbewahrt |

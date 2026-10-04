@@ -1,6 +1,13 @@
 # Mermaider bereitstellen
 
-Stand: 30.09.2026. Commit `b0a673d` wurde nach einem frischen `npm ci` mit
+Aktueller Abschluss vom 04.10.2026: App und Website sind bereitgestellt; der
+letzte Web-Patch und die öffentliche Distribution verwenden die
+[budgetfreie Veröffentlichung](PUBLICATION_1.8.7.md). Der abgenommene native
+Quellstand ist `4108f40`; aktive Site `6ac262d4c945c1d52673`, Gateway
+`6ac262bd99aca4704ffe`. Beide Installer sind praktisch abgenommen und unsigniert.
+Die folgenden historischen Angaben dokumentieren die Einrichtung ab 30.09.2026.
+
+Historischer Ausgangsstand: Commit `b0a673d` wurde nach einem frischen `npm ci` mit
 Node 20.20.2 erfolgreich gebaut. Die Anwendung ist eine statische React-SPA;
 Editor und Vorschau benötigen kein Backend. AI benötigt einen erreichbaren Provider.
 
@@ -20,12 +27,12 @@ der absoluten Dokumentationspfade. `file://` ist keine unterstützte Startmethod
 
 Der neue [Build-Web-Workflow](../.github/workflows/build-web.yml) erzeugt bei PRs,
 Pushes auf `main` und manuellem Start ein `mermaider-web-<commit>`-Artefakt aus
-`dist/`, aufbewahrt für 14 Tage. Er benötigt keine Appwrite-Secrets. Ein GitHub-Lauf
-dieser lokal vorbereiteten Änderung steht noch aus.
+`dist/`, aufbewahrt für 14 Tage. Er benötigt keine Appwrite-Secrets. Die aktuellen erfolgreichen Läufe stehen im Release-Abschluss; wegen des
+ausgeschöpften Budgets wird für die letzte Toolbar-Anpassung kein Lauf gestartet.
 
 ## Appwrite Sites
 
-Die bisherige Pipeline scheitert vor Checkout und Build, weil
+Die ursprüngliche Pipeline scheiterte vor Checkout und Build, weil
 `appwrite/setup-for-appwrite@v2` nicht als Tag existiert. Nachweis:
 [Lauf 30946848188](https://github.com/Jakende/mermaider/actions/runs/30946848188),
 Job `92118845076`, Log vom 04.08.2026.
@@ -45,8 +52,9 @@ Konkretes Ziel (vom Projektinhaber am 01.10.2026 bereitgestellt):
 | GitHub Secret `APPWRITE_API_KEY` | Direkt in GitHub hinterlegen; nicht im Repository |
 
 Endpoint und IDs sind im Deploymentjob konfiguriert. Nur der API-Schlüssel
-wird als Actions-Secret benötigt. Die Zugehörigkeit der Site zum Projekt,
-Deployment-Rechte und der Live-Zustand sind noch nicht per API bestätigt.
+wird als Actions-Secret benötigt. Site, Deployment-Rechte und Live-Zustand wurden in den erfolgreichen
+Deployment-Läufen bestätigt. Neue Secrets in der aktuellen Arbeitsumgebung
+sind davon unabhängig und für den direkten Veröffentlichungsupload nötig.
 
 Die Ziel-Site muss statisches Hosting verwenden. Hochgeladen wird der
 **bereits gebaute** Inhalt von `dist/`; Appwrite-Installations- und Buildkommando
@@ -106,22 +114,26 @@ beschreibt jetzt ausschließlich die Trennung von Browser- und Deploymentdaten.
 
 Im Browser läuft Ollama auf dem Rechner des Besuchers, nicht auf dem Hostingserver.
 CORS, HTTPS/HTTP-Regeln und Browserberechtigungen für lokale Verbindungen für
-die Zielumgebung prüfen. AI-Provider wurden hier nicht live getestet.
+die Zielumgebung prüfen. OpenAI, Jev und Embeddings wurden vom Nutzer mit echten Zugängen geprüft.
 Monaco wird derzeit über jsDelivr geladen, Fonts über Google; der Webbuild
 ist deshalb keine vollständige Offline-Garantie.
 
 ## Desktop und öffentliche Downloads
 
 `npm run tauri:build` benötigt Rust/Cargo und die Werkzeuge des jeweiligen OS.
-Die bestätigten v1.8.6-Artefakte sind Apple-Silicon-DMG und Windows-x64-NSIS;
+Die abgenommenen v1.8.7-Artefakte sind Apple-Silicon-DMG und Windows-x64-NSIS;
 Intel-macOS und Linux sind keine bestätigten Releaseziele.
 
-Das Repository ist privat und alle 16 erfassten Releases sind Entwürfe.
-Öffentliche Downloadbuttons benötigen eine öffentliche Downloadquelle und
-einen veröffentlichten, geprüften Release. Das kann auch ein separates
-öffentliches Distributionsrepository bei weiterhin privaten Quellen sein.
+Die öffentliche Veröffentlichung von Repository und abgenommenen Installern
+ist autorisiert. Downloadbuttons werden erst nach erfolgreichem Upload und
+anonymer Integritätsprüfung aktiviert. Der tatsächliche Status steht im
+Veröffentlichungsprotokoll; alte Draft-Releases bleiben unverändert.
 
-Der [Release-Helper](../.agents/skills/auto-release/scripts/release.cjs) verändert
+Für 1.8.7 keine neuen Tags/Builds über den Helper auslösen. Die budgetfreie
+Übergabe pausiert Actions vor dem Tag-/Release-Schritt und verwendet die
+bestehenden Dateien.
+
+Für spätere Versionen: Der [Release-Helper](../.agents/skills/auto-release/scripts/release.cjs) verändert
 Versionen, verlangt einen sauberen Arbeitsbaum, prüft Build und Tests, erstellt
 Commit und Tag und pusht beides. Er ist kein lokaler Buildcheck. Vorher Änderungen prüfen und die
 Voraussetzungen aus [ROADMAP.md](ROADMAP.md) abarbeiten.

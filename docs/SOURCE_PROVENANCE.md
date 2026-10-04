@@ -1,7 +1,8 @@
 # Herkunftsprüfung und Bereinigung
 
-Stand: 02.10.2026. Die technische Bereinigung und historische Bestandsaufnahme
-sind durchgeführt. Das Repository bleibt privat; kein Release ist veröffentlicht.
+Stand: 04.10.2026. Die technische Bereinigung und historische Bestandsaufnahme
+sind durchgeführt. Die öffentliche Veröffentlichung wurde vom Nutzer bestätigt;
+der tatsächliche Uploadstand steht in [PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md).
 Eine ausschließliche Urheberschaft von Jakob Endemann wird nicht behauptet.
 
 ## Herkunft und Lizenzgrundlage
@@ -33,7 +34,7 @@ Das zugrunde liegende Freigabedokument wurde hier nicht unabhängig eingesehen;
 eine exklusive Rechteübertragung oder alleinige Urheberschaft wird nicht daraus
 abgeleitet. Vorhandene Fremdhinweise bleiben erhalten.
 
-## Durchgeführte Bereinigung
+## Frühere Bereinigung und damaliger Stand
 
 - Die nicht aktive `.test-compile/`-Kopie mit 150 Dateien aus dem aktuellen Baum
   entfernt und ihre erneute Aufnahme in `.gitignore` ausgeschlossen.
@@ -70,15 +71,17 @@ verbleibenden versionierten Dateien mittels `git log --follow`. Erstautor und
 letzter Autor sind Provenienzhinweise, keine vollständige Zeilen-/Rechteanalyse;
 Icons, Vorlagen und Bibliotheken können weitere externe Ursprünge haben.
 
-## Noch ausstehende Freigabeschritte
+## Aktuelle Freigabe
 
 Die bestätigte MIT-Erlaubnis löst die zuvor offene Frage für Darios übernommene
-Beiträge. Abhängigkeiten behalten ihre eigenen Lizenzen. Für einen öffentlichen
-Release bleiben die Zielsystem-Abnahme, Signierungs-/Installationshinweise und
-öffentliche Distribution gemäß [Releasecheckliste](RELEASE_1.8.7.md) offen.
-Repository-Sichtbarkeit und Downloadmanifest wurden nicht freigegeben.
+Beiträge. Abhängigkeiten behalten ihre eigenen Lizenzen.
+Am 04.10.2026 bestätigte der Nutzer die praktische Abnahme beider aktueller
+Installer und die öffentliche MIT-Veröffentlichung mit bestehender Attribution.
+Installationshinweise für die unsignierten Dateien sind dokumentiert.
+Signierung/Notarisierung ist für spätere signierte Builds vorgesehen. Die
+tatsächliche öffentliche Distribution wird im Veröffentlichungsprotokoll erfasst.
 
-## Technische Prüfung
+## Technische Prüfung der früheren Bereinigung
 
 Release-Versionsprüfung, ESLint, alle 19 Regressionstests und der TypeScript-/
 Vite-Produktionsbuild bestanden. Alle fünf Chromium-Tests für Editor und Website
@@ -86,3 +89,12 @@ bestanden, einschließlich Erreichbarkeit der Herkunftshinweise. Cargo-Metadaten
 ließen sich mit `--locked --offline --no-deps` prüfen und nennen die korrigierten
 Autoren bei unveränderter Version 1.8.7. Diese Metadatenprüfung ersetzt keinen
 nativen Build oder Windows-Praxistest.
+
+## Erneute Mustersuche vor der Veröffentlichung
+
+Am 04.10.2026 wurden alle Remote-Branches und Tags explizit geladen. Die erneute
+Suche vor dem letzten Toolbar-/Dokumentationscommit erfasst 166 erreichbare
+Commits, 809 eindeutige Blobs (739 Text, 70 binär). Ergebnis: keine Treffer für
+die oben beschriebenen Schlüssel-/Credential-Muster. Die Einschränkungen der
+heuristischen Mustersuche bleiben gültig; keine fremden Copyright-Hinweise oder
+Historie wurden entfernt.

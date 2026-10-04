@@ -24,33 +24,32 @@ Keine privaten GitHub-Tokens, CI-Artefakt-URLs oder zeitlich begrenzten URLs
 in diese öffentliche Datei aufnehmen. Ein nicht erreichbares Manifest lässt
 die vorhandenen Hinweise stehen.
 
-## Vor öffentlicher Quellcodefreigabe
+## Öffentliche Freigabe und Herkunft
 
-Nutzervorgabe vom 02.10.2026: Repository bis zur Bereinigung und Prüfung der
-Urheberzuordnung privat lassen. Die Website weist beim GitHub-Link darauf hin.
-Eine MIT-Lizenz ist keine automatische Zustimmung zur Veröffentlichung.
+Der Nutzer hat am 04.10.2026 die Veröffentlichung von Repository und abgenommenen
+Installern autorisiert. Bereinigung, historische Lizenzwechsel und Grenzen der
+Credential-Mustersuche stehen in [SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md).
+Die MIT-Freigabe der übernommenen Dario-Beiträge wurde bestätigt; eine alleinige
+Urheberschaft wird nicht behauptet. [Attribution](../ATTRIBUTION.md),
+[Dateiherkunft](SOURCE_FILE_ORIGINS.md) und [Abhängigkeitslizenzen](DEPENDENCY_LICENSES.md)
+bleiben erhalten. Der veraltete Privathinweis am GitHub-Link ist entfernt.
 
-Die erste Herkunftssichtung und konkrete historische Lizenzwechsel sind in
-[SOURCE_PROVENANCE.md](SOURCE_PROVENANCE.md) dokumentiert. Eine alleinige
-Urheberschaft wird nicht behauptet. Die MIT-Freigabe der übernommenen Dario-
-Beiträge wurde vom Projektverantwortlichen am 02.10.2026 bestätigt.
+Die Downloadkonfiguration wird erst nach tatsächlicher Veröffentlichung und
+anonymer Datei-/Prüfsummenprüfung aktiviert. Ausführung und Zugangsvoraussetzungen:
+[PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md). Der aktuelle Abschluss verwendet
+einen lokal geprüften statischen Webbuild und löst keine neuen Actions-Builds aus.
 
-Stand nach der Bereinigung vom 02.10.2026:
+Jev und Laya werden als interaktive Preview beschrieben. Jev und OpenAI wurden
+qualitativ vom Nutzer geprüft; lokale Laya-Abnahme und breitere Modellgüte stehen
+in der Roadmap. Domainwechsel und ein späterer Umzug der Website auf `/` sind
+separate Schritte.
 
-- `.test-compile/` und ungenutzte Konfiguration entfernt; Dateiherkunft erfasst.
-- Erreichbare Git-Historie auf definierte Credential-Muster geprüft, ohne Treffer.
-  Umfang und Grenzen sind im Herkunftsbericht dokumentiert.
-- Jakob Endemann und Dario Novoa Vergara in den Autorenangaben genannt;
-  Fremdhinweise erhalten. Die MIT-Freigabe der Dario-Beiträge ist bestätigt.
-- [Attribution](../ATTRIBUTION.md), [Dateiherkunft](SOURCE_FILE_ORIGINS.md) und
-  [Abhängigkeitslizenzen](DEPENDENCY_LICENSES.md) dokumentieren die Zuordnung.
-- Repository bleibt privat. Öffentliche Downloads benötigen weiterhin Release-
-  Abnahme und eine öffentliche Quelle. Erst dann Downloadmanifest aktivieren
-  und Privathinweis anpassen.
+## Aktuelle lokale Prüfung am 04.10.2026
 
-Jev und Laya werden als interaktive Preview beschrieben; die Website weist
-auf die noch offene Modellabnahme hin. Domainwechsel und ein späterer
-Umzug der Website auf `/` sind separate Schritte.
+Der Webbuild und ESLint bestehen. Die Websiteprüfungen bestätigen mobile/Desktop-
+Darstellung, Demo, Theme und die Freigabe ausschließlich gültiger veröffentlichter
+HTTPS-Downloads. Die Preview-Beschriftung passt auch bei 320 Pixeln und auf 200 %
+vergrößerter Schrift. Die Seite lädt weiterhin keine Editor-/Modellbibliotheken.
 
 ## Prüfung am 02.10.2026
 

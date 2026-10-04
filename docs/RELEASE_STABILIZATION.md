@@ -1,5 +1,9 @@
 # Release-Stabilisierung – 01.10.2026
 
+Historischer Arbeitsbericht. Aktueller Abschluss und Nutzerabnahme:
+[RELEASE_CLOSEOUT_1.8.7.md](RELEASE_CLOSEOUT_1.8.7.md). Die nachfolgenden offenen
+Punkte beschreiben den damaligen Stand.
+
 Lokaler Arbeitsstand auf Basis von `b0a673d` (Manifestversion 1.8.6).
 Kein neuer Tag, Push, veröffentlichter Release oder Appwrite-Deployment wurde
 in diesem Arbeitslauf ausgeführt. Für den nächsten nativen Release eine neue

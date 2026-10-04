@@ -81,7 +81,7 @@ ersetzt keine Bedienungsabnahme mit einer echten iPhone-Bildschirmtastatur.
 
 ## Diagrammübersicht und Vollbild
 
-Die horizontale Tab-Leiste ist durch eine kompakte Auswahl ersetzt. „Diagrams“
+Die horizontale Tab-Leiste ist durch eine kompakte Auswahl direkt in der oberen Toolbar ersetzt. „Diagrams“
 oder Cmd/Ctrl+K öffnet die Übersicht; gesucht wird ohne Groß-/Kleinschreibung in
 Namen und aktuellem Mermaid-Code. Mehrere Suchwörter dürfen an verschiedenen
 Stellen vorkommen. Die passende Codezeile dient als Vorschau. Pfeiltasten wechseln

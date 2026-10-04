@@ -24,3 +24,10 @@
 .diagram-empty { padding:24px 8px; text-align:center; }
 .diagram-library footer { display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid var(--border); padding:12px 20px; }
 @media(max-width:700px) { .diagram-switcher { padding:5px 8px; gap:8px; } .diagram-library header { padding:16px; } .diagram-search { padding:0 16px; } .diagram-library footer { padding:12px; } }
+
+.diagram-switcher.in-toolbar { border:0; padding:0; min-height:0; flex:none; display:contents; }
+.toolbar .diagram-library-trigger { min-width:0; gap:6px; }
+@media(max-width:700px) { .toolbar-files { flex-wrap:wrap; justify-content:flex-start; } .toolbar .diagram-library-trigger { gap:4px; } }
+
+.in-toolbar .current-diagram { max-width:100px; font-size:10px; text-transform:none!important; letter-spacing:normal; }
+@media(max-width:700px) { .in-toolbar .current-diagram { display:none; } .toolbar-files .action-menu { position:static; } .toolbar-files .action-menu-items { top:100%; left:8px; right:auto; } }

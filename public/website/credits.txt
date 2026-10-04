@@ -11,8 +11,9 @@ Vorhandener Hinweis: Copyright (c) 2024 Appwrite.
 Mermaid, Monaco, React, Tauri und weitere Bibliotheken behalten ihre eigenen
 Lizenzbedingungen und Urheberhinweise.
 
-Der Quellcode ist derzeit privat. Öffentliche Desktop-Downloads folgen nach
-Release-Abnahme und Freigabe der Distribution.
+Repository und die auf macOS/Windows abgenommenen unsignierten Installer
+wurden am 04.10.2026 zur öffentlichen Veröffentlichung freigegeben.
+Quellcode, Release-Dateien und Prüfsummen: https://github.com/Jakende/mermaider
 
 Blobatar und @blobatar/react 2.7.0: MIT, Copyright (c) 2026 Alain.
 Originaler Lizenztext: /website/blobatar-license.txt

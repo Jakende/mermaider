@@ -12,6 +12,7 @@ import { jsPDF } from 'jspdf'
 import './Toolbar.css'
 
 interface ToolbarProps {
+  diagramLibrary: React.ReactNode
   code: string
   setCode: (code: string) => void
   error: string | null
@@ -36,7 +37,7 @@ export interface ToolbarRef {
   handleAIFix: () => Promise<void>
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isChatOpen, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen, onEnterFullscreen }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ diagramLibrary, code, setCode, error, onToggleChat, isChatOpen, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen, onEnterFullscreen }, ref) => {
   const { theme, toggleTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -596,6 +597,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
     <>
       <nav className={`toolbar ${theme}`} aria-label="Workspace actions">
         <div className="toolbar-section toolbar-files">
+          {diagramLibrary}
           <button onClick={handleNew} className="toolbar-btn" title="New (⌘N)">New</button>
           <ActionMenu label="File" actions={[
             { label: 'Import diagram…', title: 'Import / Open (⌘O)', onClick: handleOpen },

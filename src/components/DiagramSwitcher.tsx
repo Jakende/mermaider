@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Tab } from '../types'
 import './DiagramSwitcher.css'
 
 interface Props {
+  toolbar?: boolean
   tabs: Tab[]; activeTabId: string; open: boolean; onOpen: (open: boolean) => void
   onSelectTab: (id: string) => void; onCloseTab: (id: string) => void; onNewTab: () => void
 }
 
-export default function DiagramSwitcher({ tabs, activeTabId, open, onOpen, onSelectTab, onCloseTab, onNewTab }: Props) {
+export default function DiagramSwitcher({ toolbar = false, tabs, activeTabId, open, onOpen, onSelectTab, onCloseTab, onNewTab }: Props) {
   const [query, setQuery] = useState('')
   const dialog = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -41,14 +43,14 @@ export default function DiagramSwitcher({ tabs, activeTabId, open, onOpen, onSel
   }, [open, onOpen])
   const select = (id: string) => { onSelectTab(id); onOpen(false) }
   return <>
-    <div className="diagram-switcher" data-diagram-count={tabs.length}>
-      <button className="diagram-library-trigger" onClick={() => onOpen(true)} title="Search diagrams and Mermaid code (⌘/Ctrl K)" aria-haspopup="dialog" aria-expanded={open}>
-        Diagrams <span className="diagram-count">{tabs.length}</span> <span aria-hidden="true">⌄</span>
+    <div className={`diagram-switcher ${toolbar ? 'in-toolbar' : ''}`} data-diagram-count={tabs.length}>
+      <button className="diagram-library-trigger toolbar-btn" onClick={() => onOpen(true)} title="Search diagrams and Mermaid code (⌘/Ctrl K)" aria-haspopup="dialog" aria-expanded={open}>
+        Diagrams <span className="diagram-count">{tabs.length}</span>{toolbar && <span className="current-diagram" title={active.name}>{active.name || 'Untitled'}</span>} <span aria-hidden="true">⌄</span>
       </button>
-      <span className="current-diagram" title={active.name}>{active.name || 'Untitled'}</span>
-      <button className="diagram-new" onClick={onNewTab} aria-label="New diagram">+</button>
+      {!toolbar && <><span className="current-diagram" title={active.name}>{active.name || 'Untitled'}</span>
+      <button className="diagram-new" onClick={onNewTab} aria-label="New diagram">+</button></>}
     </div>
-    {open && <div className="modal-overlay diagram-library-overlay" onClick={() => onOpen(false)}>
+    {open && createPortal(<div className="modal-overlay diagram-library-overlay" onClick={() => onOpen(false)}>
       <div className="diagram-library" role="dialog" aria-modal="true" aria-labelledby="diagram-library-title" ref={dialog} onClick={event => event.stopPropagation()}>
         <header><div><h2 id="diagram-library-title">Your diagrams</h2><p>Find a diagram by name or Mermaid code.</p></div><button aria-label="Close diagram search" onClick={() => onOpen(false)}>×</button></header>
         <label className="diagram-search"><span>Search diagrams</span><input ref={input} type="search" placeholder="Name, node, label or Mermaid code…" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
@@ -74,6 +76,6 @@ export default function DiagramSwitcher({ tabs, activeTabId, open, onOpen, onSel
         </div>
         <footer><span>↑ ↓ to browse · Enter to open</span><button onClick={() => { onOpen(false); onNewTab() }}>New diagram</button></footer>
       </div>
-    </div>}
+    </div>, document.querySelector('.app') || document.body)}
   </>
 }

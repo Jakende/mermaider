@@ -63,3 +63,6 @@ debug-*.ts
 
 # Live verification reports are CI artifacts.
 ai-gateway-verification.json
+
+# Python publication tooling cache
+__pycache__/

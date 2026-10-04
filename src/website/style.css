@@ -104,3 +104,5 @@ h1, h2, h3, p, a { overflow-wrap: anywhere; }
 .demo-bar { flex-wrap: wrap; }
 .example-picker { flex-wrap: wrap; }
 .button { max-width: 100%; }
+
+.planned-label { max-width:100%; overflow-wrap:anywhere; }

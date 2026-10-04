@@ -20,8 +20,10 @@ the inherited Dario Novoa contributions is available. This is a reported grant;
 the underlying permission document was not independently inspected. See the detailed
 [provenance review](docs/SOURCE_PROVENANCE.md).
 
-The repository remains private and public installer downloads remain disabled
-until the remaining release checks and public distribution are completed. Existing
+On 2026-10-04 the project owner confirmed successful practical acceptance on
+Windows and macOS and explicitly authorized public MIT repository/installer
+distribution. Actual publication and upload status are tracked in
+[the publication handoff](docs/PUBLICATION_1.8.7.md). Existing
 foreign notices and Git history are retained. No history rewrite was performed.
 
 Blob avatars use the official `blobatar` and `@blobatar/react` packages, version

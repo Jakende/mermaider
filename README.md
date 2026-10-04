@@ -2,7 +2,7 @@
 
 Mermaider is a live Mermaid editor with local Ollama and hosted OpenAI assistance. Create and edit diagrams from code or natural-language descriptions, preview changes, and export the result.
 
-The repository currently remains private while release preparation is completed. Project development is maintained by Jakob Endemann; original application contributions by Dario Novoa are retained and documented in [Attribution](ATTRIBUTION.md).
+Mermaider is licensed under MIT. Project development is maintained by Jakob Endemann; original application contributions by Dario Novoa are retained and documented in [Attribution](ATTRIBUTION.md).
 
 ## Key Characteristics
 
@@ -26,6 +26,8 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - JSON to Mermaid: Convert structured data into visual representations using AI.
 - Code Extraction: Automatically detects and extracts Mermaid code blocks from Markdown files.
 - Local Knowledge Base (RAG): Index your unstructured text locally to generate context-aware diagrams or detailed AI Reports with source tracking.
+- **Diagram library**: Search diagram names and Mermaid code from the top toolbar with `Cmd/Ctrl+K`; browse matching code lines instead of a long tab strip.
+- **Fullscreen workspace**: Hide the editor and toolbar, with movable Chat and Decisions windows; use Escape to return.
 - **Minimal workspace**: File and View menus keep every action accessible on desktop and phones. Settings separates Connection, Embeddings, Generation and Appearance; personal blobs animate gently and respect reduced-motion preferences.
 - **Custom AI Settings**: Select Ollama or OpenAI, configure endpoints, authentication, temperature, generation depth/complexity, and custom chat and embedding models.
 - **OpenAI/Codex Login**: On desktop, authenticate an OpenAI/Codex account through Device Code / Browser login, paste an access token, or use an OpenAI API key. Account-provided Codex models can be loaded from Settings; compatible custom model names may also be entered manually. OpenAI embeddings for RAG require an API key; Codex OAuth users can keep Ollama embeddings.
@@ -58,13 +60,13 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 Visit [the web app](https://mermaider.appwrite.network/) to start creating diagrams immediately. No installation or sign-up is required.
 
 ### Desktop Application
-Version 1.8.7 is a release candidate. Public installer downloads are not yet enabled; current acceptance and distribution status is tracked in the [release checklist](docs/RELEASE_1.8.7.md). Once a release is published:
+The macOS Apple Silicon and Windows x64 installers for 1.8.7 have passed the project owner’s practical acceptance. These installers are unsigned. Release files and checksums belong to the [GitHub release](https://github.com/Jakende/mermaider/releases/tag/v1.8.7); the [publication handoff](docs/PUBLICATION_1.8.7.md) records the final distribution status. Installation:
 
 1. Download the installer from the [product website](https://mermaider.appwrite.network/website/).
 2. For Windows: Run the NSIS installer.
 3. For macOS: Open the DMG file and move Mermaider to your Applications folder.
 
-Note: As the application is currently unsigned, you may need to grant permission in your system security settings to run it for the first time.
+Unsigned installers may show an unknown-developer warning. Check the source and SHA-256 before opening them. macOS: Finder → right-click the installed app → Open, or review Privacy & Security in System Settings. Windows: review the publisher warning and proceed only after verifying the file. There is no Intel-Mac or Linux installer in this release.
 
 ## Technical Stack
 
@@ -80,7 +82,9 @@ Mermaider is built using modern, efficient technologies:
 - **New Diagram**: `Cmd+N` (Mac) / `Ctrl+N` (Windows)
 - **Open / Import**: `Cmd+O` / `Ctrl+O`
 - **Export / Save**: `Cmd+S` / `Ctrl+S`
-- **Close Tab**: `Cmd+W` / `Ctrl+W`
+- **Search diagrams and Mermaid code**: `Cmd+K` / `Ctrl+K`
+- **Exit fullscreen**: `Escape`
+- **Close diagram**: `Cmd+W` / `Ctrl+W`
 - **Toggle Settings**: `Cmd+,` / `Ctrl+,`
 - **Toggle Help/Info**: `Cmd+/` / `Ctrl+/`
 
@@ -101,7 +105,7 @@ Mermaider is built using modern, efficient technologies:
 See [the project overview and verified status](docs/PROJECT_OVERVIEW.md),
 [deployment instructions](docs/DEPLOYMENT.md), and
 [the release, website, and live-decision roadmap](docs/ROADMAP.md).
-Interactive decision flows support editable questions, branching answers, AI drafts, live suggestions and optional auto follow beside the diagram. See [dynamic decisions](docs/DYNAMIC_DECISIONS.md). OpenAI/Jev access is user-confirmed; new planning quality and local Laya browser CORS still require acceptance. The protocol and remaining work are described in
+Interactive decision flows support editable questions, branching answers, AI drafts, live suggestions and optional auto follow beside the diagram. See [dynamic decisions](docs/DYNAMIC_DECISIONS.md). OpenAI/Jev access is user-confirmed; planning adaptation is qualitatively accepted; local Laya browser CORS remains a later acceptance task. The protocol and remaining work are described in
 [decision providers](docs/DECISION_PROVIDERS.md).
 
 ### Prerequisites
@@ -144,15 +148,15 @@ Mermaider uses the [MIT License](LICENSE). The project owner confirmed MIT permi
 
 ---
 
-Mermaider is being prepared for public distribution after the remaining release checks.
+Public distribution of the accepted unsigned 1.8.7 files is authorized; [publication status](docs/PUBLICATION_1.8.7.md) records the actual upload and visibility state.
 
 ### Release checks
 
 With Node 20: `npm ci`, `npm run check:release`, `npm run lint`, `npm test`,
 `npm run build`, `npx playwright install chromium webkit`, and `npm run test:e2e`.
-Native release checks and remaining gates: [Release stabilization](docs/RELEASE_STABILIZATION.md).
+Historical stabilization notes: [Release stabilization](docs/RELEASE_STABILIZATION.md).
 
-Current release candidate: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).
+Accepted release: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).
 
 Product website and reviewed download configuration: [Website guide](docs/WEBSITE.md).
 
