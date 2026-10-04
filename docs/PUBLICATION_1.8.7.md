@@ -7,35 +7,40 @@ ausdrücklich autorisiert. MIT und bestehende Fremdhinweise bleiben erhalten.
 Übergabe für neue Arbeitsumgebungen, einschließlich Wiederherstellung fehlender
 lokaler Artefakte: [NEXT_SESSION_1.8.7.md](NEXT_SESSION_1.8.7.md).
 
-Das neue Webdeployment ist abgeschlossen: App und Website sind unter
-https://mermaider.appwrite.network/ und https://mermaider.appwrite.network/website/
-aktiv. Deployment-ID: `6ac2d3ebaf5eed9a7bec`. HTML und referenzierte JS-/CSS-Dateien
-wurden anonym bytegenau gegen den lokalen Node-20-Build geprüft. Die Diagrammbibliothek
-sitzt im Web in der oberen Toolbar; die Desktop-Dateien bleiben unverändert.
+Die öffentliche Veröffentlichung ist abgeschlossen. Repository und Release sind
+anonym erreichbar; beide Installer wurden öffentlich heruntergeladen und erneut
+mit den abgenommenen SHA-256-Werten verglichen. Alle sechs Release-Assets sind vorhanden.
 
-Die GitHub-Veröffentlichung ist **nicht abgeschlossen**. Repository weiterhin privat,
-Release `403236834` für `v1.8.7` weiterhin Draft ohne Assets; Tag noch nicht angelegt.
-Die vorhandene Integration kann trotz gemeldeter Adminberechtigung die Sichtbarkeit
-nicht ändern: HTTP 403 `Resource not accessible by integration`. Uploads über
-`uploads.github.com` scheitern mit HTTP 400 `Bad Content-Length`, reproduzierbar
-mit Python und curl sowie einer kleinen Textdatei ohne Credentials. Die Ursache
-im HTTP-Transport muss behoben werden; es wurden keine Schutzmechanismen umgangen.
-Die Downloadlinks bleiben folgerichtig deaktiviert (`published: false`).
+- Repository: https://github.com/Jakende/mermaider
+- Release: https://github.com/Jakende/mermaider/releases/tag/v1.8.7
+- App: https://mermaider.appwrite.network/
+- Website: https://mermaider.appwrite.network/website/
+- macOS ARM64: https://github.com/Jakende/mermaider/releases/download/v1.8.7/Mermaider_1.8.7_aarch64.dmg
+- Windows x64: https://github.com/Jakende/mermaider/releases/download/v1.8.7/Mermaider_1.8.7_x64-setup.exe
 
-Beide Installer wurden über die dokumentierten Artefakt-IDs wiederhergestellt;
-Dateigrößen und SHA-256 stimmen exakt. Releasechecks, ESLint, TypeScript/Vite,
-54 Logiktests und vier Offline-Veröffentlichungstests bestehen.
-Sieben Repository-Workflows sind pausiert, kein neuer Actions-Build wurde gestartet.
-Die GitHub-verwalteten Copilot-Einträge sind vom Pausieren ausgenommen: Die API
-verweigert ihre Deaktivierung mit HTTP 422; sie sind keine Push-/Tag-Releasebuilds.
+Release-ID: `403236834`. Tag `v1.8.7` verweist auf den abgenommenen Desktop-Commit
+`4108f4083e1e8311c37b7672d16f6426ac2bea48`. Beide Installer bleiben unsigniert.
+Der Nutzer hat die blockierten GitHub-Schritte lokal mit dem geprüften Paket
+abgeschlossen; danach wurden alle externen Veröffentlichungsschritte verifiziert.
+Die vorherigen Upload-/Sichtbarkeitsfehler sind für diesen Abschluss erledigt.
 
-Pausierte IDs: `371965644`, `371965645`, `373058894`, `229726543`, `373053762`,
-`229726544`, `372034029`. Das Paket und `publication-state.json` liegen in dieser
-Umgebung unter `/workspace/mermaider-artifacts/Mermaider_1.8.7_publication/`.
-`completed` bleibt `false`. Nach Behebung der Zugriffs-/Uploadprobleme kann der
-bestehende Draft mit demselben geprüften Paket fortgesetzt werden. Änderungen
-an Main sind vor Aktualisierung von `repositoryCommit` zu prüfen; der tatsächlich
-gebaute `webSourceCommit` bleibt `a362a57654c1817e76e2772907554787fe2718e5`.
+Appwrite-Deployment `6ac2d72bad273d52be1f` ist bereit und aktiv. HTML und referenzierte
+JS-/CSS-Dateien von App und Website stimmen anonym bytegenau mit dem lokalen
+Node-20-Build überein. Das Live-Downloadmanifest enthält die geprüften Release-URLs,
+`published: true` und `signed: false`. Manifest-Commit:
+`ccef7f1edb6d5352e54a74d84f21dff98f49121b`.
+
+Der tatsächlich gebaute Webquellstand bleibt
+`a362a57654c1817e76e2772907554787fe2718e5`; die Toolbar-Anpassung ist Web-only.
+Releasechecks, ESLint, TypeScript/Vite, 54 Logiktests und sechs
+Offline-Veröffentlichungstests bestehen. Das lokale `publication-state.json`
+bestätigt `completed: true`, `repositoryPublic: true`, `releasePublished: true`
+und `webDeployed: true`.
+
+Sieben Repository-Workflows bleiben pausiert; es wurden keine neuen Actions-Builds
+zur Veröffentlichung gestartet. Pausierte IDs: `371965644`, `371965645`, `373058894`,
+`229726543`, `373053762`, `229726544`, `372034029`. GitHub-verwaltete Copilot-Einträge
+sind ausgenommen, da die API deren Deaktivierung verweigert.
 
 ## Fertiges Veröffentlichungspaket
 

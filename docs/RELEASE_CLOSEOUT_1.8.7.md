@@ -95,15 +95,22 @@ Plattformen stehen in der [Roadmap](ROADMAP.md). Tatsächliche externe
 Upload-/Sichtbarkeitsaktionen und die budgetfreie Übergabe:
 [Veröffentlichung](PUBLICATION_1.8.7.md).
 
-## Fortsetzung am 05.10.2026
+## Öffentliche Veröffentlichung am 05.10.2026 abgeschlossen
 
-Das lokale Webdeployment `6ac2d3ebaf5eed9a7bec` ist bereit und aktiv; App-/Website-HTML
-und referenzierte JS-/CSS-Dateien stimmen anonym mit dem geprüften Build überein.
-Beide abgenommenen Installer wurden aus Actions-Artefakten wiederhergestellt und
-anhand der obigen Größen und SHA-256 geprüft. Kein neuer Actions-Build wurde gestartet.
-Lokale Releasechecks, Lint, Build, 54 Logiktests und vier Veröffentlichungstests bestehen.
+Repository https://github.com/Jakende/mermaider und Release
+https://github.com/Jakende/mermaider/releases/tag/v1.8.7 sind öffentlich.
+Beide unveränderten, unsignierten Installer sind anonym heruntergeladen und SHA-256-geprüft.
+Tag `v1.8.7` zeigt auf `4108f4083e1e8311c37b7672d16f6426ac2bea48`.
+Alle sechs Release-Assets sind vorhanden. Das Downloadmanifest wurde erst nach
+Integritätsprüfung veröffentlicht (Commit `ccef7f1edb6d5352e54a74d84f21dff98f49121b`).
 
-GitHub bleibt unvollständig: Draft-Release `403236834` ohne Assets, Repository privat,
-Downloads deaktiviert. Upload: HTTP 400 `Bad Content-Length`; Sichtbarkeitsänderung:
-HTTP 403 `Resource not accessible by integration`. Sieben Repository-Workflows sind
-pausiert. Konkrete Wiederaufnahmehinweise: [Veröffentlichung](PUBLICATION_1.8.7.md).
+Appwrite-Deployment `6ac2d72bad273d52be1f` ist bereit und aktiv. App-/Website-HTML
+und referenzierte JS-/CSS-Dateien stimmen bytegenau mit dem geprüften Webbuild überein.
+Die Website bietet die echten macOS-/Windows-Downloads mit unsigniertem Status.
+Das Veröffentlichungsprotokoll bestätigt `completed: true`.
+
+54 Logiktests, Releasechecks, Lint, TypeScript/Vite und sechs Veröffentlichungstests
+bestehen. Keine neuen Actions-Builds; sieben Repository-Workflows bleiben pausiert.
+Die zuvor dokumentierten Upload-/Sichtbarkeitsblockaden wurden durch den lokalen
+GitHub-Abschluss des Nutzers überwunden. Nachweise und URLs:
+[Veröffentlichung](PUBLICATION_1.8.7.md).

@@ -131,16 +131,14 @@ neue Main-SHA in ein fremdes/älteres Paket schreiben. Reine Dokumentations-
 Weitere Details: [Veröffentlichungsablauf](PUBLICATION_1.8.7.md),
 [Abschlussnachweise](RELEASE_CLOSEOUT_1.8.7.md), [Roadmap](ROADMAP.md).
 
-## Neuester Fortsetzungsstand (05.10.2026)
+## Neuester Stand: Veröffentlichung abgeschlossen (05.10.2026)
 
-Webdeployment `6ac2d3ebaf5eed9a7bec` ist aktiv und bytegenau geprüft. Installer sind
-in dieser Umgebung wiederhergestellt und SHA-256-geprüft. Sieben Repository-Workflows
-wurden pausiert; keine neuen Actions-Builds. Das Veröffentlichungsskript berücksichtigt
-jetzt die zwei nicht deaktivierbaren GitHub-verwalteten Copilot-Workflows.
-
-GitHub ist weiterhin blockiert: Draft `403236834` für `v1.8.7` ohne Assets;
-Uploads liefern HTTP 400 `Bad Content-Length`, Sichtbarkeitsänderung HTTP 403
-`Resource not accessible by integration`. Repository privat, Downloadmanifest unveröffentlicht,
-`completed: false`. Zugang für Sichtbarkeit und HTTP-Uploadweg korrigieren, dann mit
-geprüftem Paket fortsetzen. Details und pausierte Workflow-IDs stehen in
-[PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md). Keine erneute Veröffentlichungsfreigabe nötig.
+Repository und Release sind öffentlich. Beide Installer wurden anonym heruntergeladen
+und mit den dokumentierten SHA-256-Werten geprüft. Tag `v1.8.7` zeigt auf den
+abgenommenen Desktop-Commit. Downloadmanifest ist veröffentlicht; Appwrite-Deployment
+`6ac2d72bad273d52be1f` ist bereit und aktiv. App-/Website-HTML und referenzierte
+JS-/CSS-Dateien entsprechen bytegenau dem geprüften Webstand.
+`publication-state.json` bestätigt `completed: true`. Die früheren Blockaden wurden
+durch den lokalen GitHub-Abschluss des Nutzers überwunden. Keine neuen Actions-Builds;
+sieben Repository-Workflows bleiben pausiert. Details:
+[PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md). Keine Wiederholung der Veröffentlichung nötig.
