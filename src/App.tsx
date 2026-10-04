@@ -129,9 +129,11 @@ function AppContent() {
     if (session?.linked && session.plan) {
       const question=session.plan.questions.find(item=>item.id===nodeId||item.options.some(option=>`${item.id}__${option.id}`===nodeId))
       if(question){
-        setIsDecisionsOpen(true);setSelectedNodeId(question.id)
+        const path=flowPath(session)
+        const blocked=path.questions.slice(0,path.questions.indexOf(question.id)).some(id=>session.selections[id]?.needsReview)
+        setIsDecisionsOpen(true);setSelectedNodeId(blocked?path.review[0]:question.id)
         const option=question.options.find(item=>`${question.id}__${item.id}`===nodeId)
-        if(option&&flowPath(session).questions.includes(question.id))updateDecision(chooseFlow(session,question.id,option.id))
+        if(option&&!blocked&&path.questions.includes(question.id))updateDecision(chooseFlow(session,question.id,option.id))
       }
     }
     if(!session?.linked&&questionFromDiagram(activeTab.code,nodeId)){setSelectedNodeId(nodeId);setIsDecisionsOpen(true)}

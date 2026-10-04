@@ -397,6 +397,7 @@ test('manual decisions start with a long goal without an AI connection',async({p
 })
 
 test('changed facts require ordered confirmation and persist review status without rerendering the diagram',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message))
   await prepare(page)
   await page.getByRole('button',{name:'Decide',exact:true}).click()
   await expect(page.getByRole('button',{name:'Choose Ready',exact:true})).toContainText('Next: Which channel?')
@@ -414,6 +415,10 @@ test('changed facts require ordered confirmation and persist review status witho
   const child=page.getByRole('region',{name:'Question: Which channel?'})
   await expect(child.getByRole('button',{name:'Confirm previous answer',exact:true})).toBeDisabled()
   await expect(child.getByRole('button',{name:'Evaluate',exact:true})).toBeDisabled()
+  await page.locator('.preview-container .node[id^="flowchart-channel__private-"]').click()
+  await expect(root).toHaveClass(/focused/)
+  await expect(child.getByRole('button',{name:'Choose Public release',exact:true})).toHaveAttribute('aria-pressed','true')
+  expect(errors).toEqual([])
   await page.reload();await page.getByTitle('Decisions (Preview)').click()
   await expect(page.getByRole('navigation',{name:'Decision navigation'})).toContainText('2 to review')
   await root.getByRole('button',{name:'Confirm previous answer',exact:true}).click()
