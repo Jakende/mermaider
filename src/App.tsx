@@ -2,14 +2,20 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
+import DecisionWorkspace from './components/DecisionWorkspace'
+import { newFlowSession, flowDiagram, flowId, flowPath, chooseFlow } from './decision/flow'
+import type { FlowSession } from './decision/flow'
+import { questionFromDiagram } from './decision/fromDiagram'
 import Toolbar, { ToolbarRef } from './components/Toolbar'
 import ChatPanel, { ChatPanelRef } from './components/ChatPanel'
-import TabBar from './components/TabBar'
+import DiagramSwitcher from './components/DiagramSwitcher'
 import ResizableSplitter from './components/ResizableSplitter'
 import NewDiagramModal from './components/NewDiagramModal'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
 import { getStoredConfig } from './utils/aiService'
+import { restoreWorkspace } from './utils/workspaceStorage'
 import type { Tab, ChatSession } from './types'
+import { useMobileViewport } from './hooks/useMobileViewport'
 import './App.css'
 
 const DEFAULT_CODE = 'graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E'
@@ -21,26 +27,19 @@ const createInitialSession = (): ChatSession => ({
 })
 
 function AppContent() {
+  useMobileViewport()
   const { theme } = useTheme()
 
   // Tabs State
-  const [tabs, setTabs] = useState<Tab[]>([{
-    id: 'initial',
-    name: 'diagram',
-    code: DEFAULT_CODE,
-    chatSessions: [createInitialSession()],
-    activeChatSessionId: '' // Will be set in useMemo or useEffect if missing
-  }])
-  const [activeTabId, setActiveTabId] = useState<string>('initial')
-
-  // Migration and Active Session resolution
-  const activeTab = useMemo(() => {
-    const tab = tabs.find(t => t.id === activeTabId) || tabs[0]
-    if (!tab.activeChatSessionId && tab.chatSessions.length > 0) {
-      tab.activeChatSessionId = tab.chatSessions[0].id
-    }
-    return tab
-  }, [tabs, activeTabId])
+  const [initialWorkspace] = useState(() => {
+    const session = createInitialSession()
+    const fallback: Tab[] = [{ id: 'initial', name: 'diagram', code: DEFAULT_CODE,
+      chatSessions: [session], activeChatSessionId: session.id }]
+    return restoreWorkspace(window.localStorage, fallback)
+  })
+  const [tabs, setTabs] = useState<Tab[]>(initialWorkspace.tabs)
+  const [activeTabId, setActiveTabId] = useState(initialWorkspace.activeTabId)
+  const activeTab = useMemo(() => tabs.find(t => t.id === activeTabId) || tabs[0], [tabs, activeTabId])
 
   const activeSession = useMemo(() => {
     return activeTab.chatSessions.find(s => s.id === activeTab.activeChatSessionId) || activeTab.chatSessions[0]
@@ -49,8 +48,77 @@ function AppContent() {
   const [error, setError] = useState<string | null>(null)
   const [isNewDiagramModalOpen, setIsNewDiagramModalOpen] = useState(false)
 
+  const [diagramSearchOpen, setDiagramSearchOpen] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [isDecisionPoppedOut, setIsDecisionPoppedOut] = useState(false)
+  const appRef = useRef<HTMLDivElement>(null)
+  const ownsFullscreen = useRef(false)
+  const ownsNativeFullscreen = useRef(false)
+  const focusModeRef = useRef(false)
+  const focusOrigin = useRef<HTMLElement | null>(null)
+  const exitFocus = () => {
+    focusModeRef.current = false
+    setFocusMode(false)
+    if (ownsNativeFullscreen.current) {
+      ownsNativeFullscreen.current = false
+      void import('@tauri-apps/api/window').then(({getCurrentWindow}) => getCurrentWindow().setFullscreen(false)).catch(() => {})
+    }
+    if (ownsFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+    ownsFullscreen.current = false
+    requestAnimationFrame(() => focusOrigin.current?.focus())
+  }
+  const enterFocus = () => {
+    focusOrigin.current = document.activeElement as HTMLElement
+    focusModeRef.current = true
+    setFocusMode(true)
+    // iPhone and embedded webviews may lack native fullscreen; the clean canvas still works.
+    if ((window as unknown as {__TAURI_INTERNALS__?: unknown}).__TAURI_INTERNALS__) {
+      ownsNativeFullscreen.current = true
+      void import('@tauri-apps/api/window').then(async ({getCurrentWindow}) => {
+        const nativeWindow = getCurrentWindow()
+        await nativeWindow.setFullscreen(true)
+        if (!focusModeRef.current) await nativeWindow.setFullscreen(false)
+      }).catch(() => { ownsNativeFullscreen.current = false })
+    } else if (document.fullscreenEnabled && appRef.current?.requestFullscreen) {
+      void appRef.current.requestFullscreen().catch(() => { ownsFullscreen.current = false })
+    }
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.focus-controls button')?.focus())
+  }
+  useEffect(() => {
+    const changed = () => {
+      if (document.fullscreenElement === appRef.current) {
+        ownsFullscreen.current = true
+        if (!focusModeRef.current) void document.exitFullscreen().catch(() => {})
+      }
+      else if (ownsFullscreen.current) { ownsFullscreen.current = false; focusModeRef.current = false; setFocusMode(false); requestAnimationFrame(() => focusOrigin.current?.focus()) }
+    }
+    document.addEventListener('fullscreenchange', changed)
+    return () => document.removeEventListener('fullscreenchange', changed)
+  }, [])
+
+  const [isDecisionsOpen, setIsDecisionsOpen] = useState(false)
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth)
+  const [decisionWidth, setDecisionWidth] = useState(() => {
+    try { const saved=Number(localStorage.getItem('mermaider-decision-width')); return Number.isFinite(saved)&&saved>=200&&saved<=760?saved:380 } catch { return 380 }
+  })
+  const decisionMaxWidth = Math.min(760, viewportWidth * (viewportWidth<=800?0.9:0.65))
+  const decisionMinWidth = Math.min(viewportWidth<=800?240:280, decisionMaxWidth)
+  const visibleDecisionWidth = Math.max(decisionMinWidth, Math.min(decisionWidth, decisionMaxWidth))
+  useEffect(() => {
+    const resize=()=>setViewportWidth(window.innerWidth)
+    window.addEventListener('resize',resize)
+    return()=>window.removeEventListener('resize',resize)
+  },[])
+  useEffect(() => {
+    try { localStorage.setItem('mermaider-decision-width',String(decisionWidth)) } catch { /* Width stays available in memory. */ }
+  },[decisionWidth])
+  const resizeDecision=(width:number)=>setDecisionWidth(Math.max(decisionMinWidth,Math.min(width,decisionMaxWidth)))
+  const emptyDecision = useMemo(() => newFlowSession(), [activeTab.id])
+  const decisionSession = activeTab.decision || emptyDecision
+  const decisionHighlights = useMemo(() => activeTab.decision?.linked ? flowPath(activeTab.decision) : undefined, [activeTab.decision])
+
   // Chat Panel State
-  const [isChatOpen, setIsChatOpen] = useState(true)
+  const [isChatOpen, setIsChatOpen] = useState(() => window.innerWidth > 800)
   const [isChatPoppedOut, setIsChatPoppedOut] = useState(false)
   const [chatWidth, setChatWidth] = useState(300)
 
@@ -58,6 +126,7 @@ function AppContent() {
   const [isEditorVisible, setIsEditorVisible] = useState(true)
   const [isVisualEditMode, setIsVisualEditMode] = useState(false)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const nodeProposal = useMemo(() => !activeTab.decision?.linked && selectedNodeId ? questionFromDiagram(activeTab.code,selectedNodeId) : undefined, [activeTab.code,activeTab.decision?.linked,selectedNodeId])
   const [scrollToNodeId, setScrollToNodeId] = useState<string | null>(null)
 
   const toolbarRef = useRef<ToolbarRef>(null)
@@ -83,7 +152,41 @@ function AppContent() {
   }, [error])
 
   const setCode = (newCode: string) => {
-    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode } : t))
+    setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, code: newCode, decision:t.decision && newCode !== t.code ? {...t.decision, linked:false} : t.decision } : t))
+  }
+
+  const updateDecision = (next: FlowSession) => {
+    setTabs(previous => previous.map(tab => tab.id === activeTabId ? {
+      ...tab, decision:next,
+      code:next.linked ? next.plan ? flowDiagram(next.plan) : '' : tab.code
+    } : tab))
+  }
+  const openDecisionTab = (next: FlowSession) => {
+    if (!next.plan) return
+    const session = createInitialSession()
+    const tab:Tab = {id:flowId('tab'),name:next.plan.title||'Decision flow',code:flowDiagram(next.plan),
+      chatSessions:[session],activeChatSessionId:session.id,decision:{...next,id:flowId('session'),linked:true}}
+    setTabs(previous=>[...previous,tab]);setActiveTabId(tab.id);setIsDecisionsOpen(true)
+  }
+  const applyDecisionPlan = (next: FlowSession) => {
+    if (activeTab.decision?.linked) { updateDecision({...next, linked:true}); return }
+    openDecisionTab(next)
+  }
+  const decisionNodeClick = (nodeId:string) => {
+    const session = activeTab.decision
+    if (session?.linked && session.plan) {
+      const question=session.plan.questions.find(item=>item.id===nodeId||item.options.some(option=>`${item.id}__${option.id}`===nodeId))
+      if(question){
+        const path=flowPath(session)
+        const blocked=path.questions.slice(0,path.questions.indexOf(question.id)).some(id=>session.selections[id]?.needsReview)
+        setIsDecisionsOpen(true);setSelectedNodeId(blocked?path.review[0]:question.id)
+        const option=question.options.find(item=>`${question.id}__${item.id}`===nodeId)
+        if(option&&!blocked&&path.questions.includes(question.id))updateDecision(chooseFlow(session,question.id,option.id))
+      }
+    }
+    if(!session?.linked&&questionFromDiagram(activeTab.code,nodeId)){setSelectedNodeId(nodeId);setIsDecisionsOpen(true)}
+    setScrollToNodeId(null)
+    setTimeout(()=>setScrollToNodeId(nodeId),0)
   }
 
   const setDiagramName = (newName: string) => {
@@ -215,7 +318,7 @@ function AppContent() {
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      const availableWidth = width - (isChatOpen && !isChatPoppedOut ? chatWidth : 0)
+      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800&&!isDecisionPoppedOut?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut && viewportWidth > 800 ? chatWidth : 0)
       if (availableWidth <= 0) return
 
       const newWidth = ((clientX - left) / availableWidth) * 100
@@ -235,51 +338,25 @@ function AppContent() {
     }
   }
 
-  // Load from localStorage and Migration
-  useEffect(() => {
-    const savedTabs = localStorage.getItem('mermaider-tabs')
-    const savedActiveId = localStorage.getItem('mermaider-active-tab')
-    if (savedTabs) {
-      try {
-        let parsed = JSON.parse(savedTabs)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Migration logic
-          const migrated = parsed.map((tab: any) => {
-            if (tab.chatSessions) return tab
-            const session: ChatSession = {
-              id: 'initial-session-' + tab.id,
-              messages: tab.chatHistory || [],
-              timestamp: Date.now()
-            }
-            return {
-              ...tab,
-              chatSessions: [session],
-              activeChatSessionId: session.id
-            }
-          })
-          setTabs(migrated)
-        }
-      } catch (e) {
-        console.error('Failed to parse or migrate saved tabs')
-      }
-    }
-    if (savedActiveId) {
-      setActiveTabId(savedActiveId)
-    }
-  }, [])
-
   // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('mermaider-tabs', JSON.stringify(tabs))
-    localStorage.setItem('mermaider-active-tab', activeTabId)
+    try {
+      localStorage.setItem('mermaider-tabs', JSON.stringify(tabs))
+      localStorage.setItem('mermaider-active-tab', activeTabId)
+    } catch (error) { console.warn('Workspace could not be saved', error) }
   }, [tabs, activeTabId])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || document.querySelector('.modal-overlay')) return
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const modifier = isMac ? e.metaKey : e.ctrlKey
 
-      if (modifier && e.key === 'n') {
+      if (e.key === 'Escape' && focusMode) {
+        e.preventDefault(); exitFocus()
+      } else if (modifier && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setDiagramSearchOpen(true)
+      } else if (modifier && e.key === 'n') {
         e.preventDefault()
         handleNewTab()
       } else if (modifier && e.key === 't') {
@@ -301,9 +378,11 @@ function AppContent() {
         setIsEditorVisible(prev => !prev)
       } else if (modifier && e.key === 'j') {
         e.preventDefault()
-        setIsChatOpen(prev => !prev)
+        setIsDecisionsOpen(false)
+        setIsChatOpen(prev => isDecisionsOpen ? true : !prev)
       } else if (modifier && e.key === 'l') {
         e.preventDefault()
+        setIsDecisionsOpen(false)
         setIsChatOpen(true)
         setTimeout(() => chatPanelRef.current?.focusInput(), 100)
       } else if (modifier && e.key === 'e') {
@@ -323,7 +402,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTabId, tabs.length])
+  }, [activeTabId, tabs.length, isDecisionsOpen, focusMode])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -358,40 +437,55 @@ function AppContent() {
   }
 
   // If in Visual Edit mode, hide the editor regardless of isEditorVisible
-  const showEditor = isEditorVisible && !isVisualEditMode
+  const showEditor = isEditorVisible && !isVisualEditMode && !focusMode
 
   return (
     <div
-      className={`app ${theme}`}
+      ref={appRef}
+      className={`app ${theme} ${focusMode ? 'focus-mode' : ''}`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
       <Toolbar
+        diagramLibrary={<DiagramSwitcher
+          toolbar
+          open={diagramSearchOpen}
+          onOpen={setDiagramSearchOpen}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelectTab={setActiveTabId}
+          onCloseTab={handleCloseTab}
+          onNewTab={handleNewTab}
+        />}
         ref={toolbarRef}
         code={activeTab.code}
         setCode={setCode}
         error={error}
-        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        isChatOpen={isChatOpen}
+        onToggleChat={() => { setIsDecisionsOpen(false); setIsChatOpen(isDecisionsOpen ? true : !isChatOpen) }}
         isEditorVisible={isEditorVisible}
         onToggleEditor={() => setIsEditorVisible(!isEditorVisible)}
         diagramName={activeTab.name}
         onUpdateDiagramName={setDiagramName}
         onNewTab={handleNewTab}
+        onToggleDecisions={() => setIsDecisionsOpen(!isDecisionsOpen)}
+        isDecisionsOpen={isDecisionsOpen}
+        onEnterFullscreen={enterFocus}
       />
 
-      <TabBar
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelectTab={setActiveTabId}
-        onCloseTab={handleCloseTab}
-        onNewTab={handleNewTab}
-      />
+      {focusMode && <nav className="focus-controls" aria-label="Fullscreen controls">
+        <button onClick={() => setDiagramSearchOpen(true)} title={activeTab.name}>Diagrams</button>
+        <button aria-pressed={isChatOpen && !isDecisionsOpen} onClick={() => { setIsDecisionsOpen(false); setIsChatOpen(isDecisionsOpen ? true : !isChatOpen) }}>Chat</button>
+        <button aria-pressed={isDecisionsOpen} onClick={() => setIsDecisionsOpen(!isDecisionsOpen)}>Decisions</button>
+        <button onClick={exitFocus} title="Exit fullscreen (Esc)">Exit fullscreen</button>
+      </nav>}
 
       <div className="app-content" ref={appContentRef}>
         <div style={{ display: 'flex', flex: 1, minWidth: 0, position: 'relative' }}>
+          <div className="diagram-workspace" style={{display:'flex',flex:1,minWidth:0}}>
           {showEditor && (
             <>
-              <div style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <div className="diagram-editor" style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <Editor 
                   code={activeTab.code} 
                   setCode={setCode} 
@@ -400,7 +494,7 @@ function AppContent() {
                   scrollToNode={scrollToNodeId}
                 />
               </div>
-              <ResizableSplitter onResize={handleResizeEditor} />
+              <div className="editor-splitter"><ResizableSplitter onResize={handleResizeEditor} /></div>
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -409,59 +503,31 @@ function AppContent() {
               setError={setError} 
               onCodeChange={setCode} 
               targetNodeId={selectedNodeId} 
-              onNodeClick={(nodeId) => {
-                setScrollToNodeId(null) // Reset first to ensure effect triggers
-                setTimeout(() => setScrollToNodeId(nodeId), 0)
-              }}
-              isVisualEditMode={isVisualEditMode}
+              onNodeClick={decisionNodeClick}
+              decisionHighlights={decisionHighlights}
+              autoFit={focusMode || !!activeTab.decision?.linked || viewportWidth <= 700}
+              isVisualEditMode={isVisualEditMode && !focusMode}
               onToggleVisualEdit={setIsVisualEditMode}
             />
           </div>
 
-          {isChatOpen && !isChatPoppedOut && (
-            <ResizableSplitter onResize={handleResizeChat} />
-          )}
+          </div>
 
-          {isChatOpen && !isChatPoppedOut && (
-            <div style={{ width: chatWidth }}>
-              <ChatPanel
-                code={activeTab.code}
-                setCode={setCode}
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-                isPoppedOut={false}
-                onTogglePopout={() => setIsChatPoppedOut(true)}
-                messages={activeSession.messages}
-                onSendMessage={handleSendMessage}
-                sessions={activeTab.chatSessions}
-                activeSessionId={activeTab.activeChatSessionId}
-                onNewChat={handleNewChat}
-                onSwitchSession={handleSwitchSession}
-                onEditMessage={handleEditMessage}
-                ref={chatPanelRef}
-              />
-            </div>
-          )}
+          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} floating={focusMode || isDecisionPoppedOut} onTogglePopout={focusMode ? exitFocus : () => setIsDecisionPoppedOut(!isDecisionPoppedOut)} width={visibleDecisionWidth} minWidth={decisionMinWidth} maxWidth={decisionMaxWidth} onResize={resizeDecision} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
+            onChange={updateDecision} onApplyPlan={applyDecisionPlan} onImportSession={openDecisionTab} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
+
+          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && !focusMode && <div className="chat-dock-splitter"><ResizableSplitter onResize={handleResizeChat} /></div>}
+          {isChatOpen && <div hidden={isDecisionsOpen} className={`chat-host ${isChatPoppedOut || focusMode ? 'floating' : 'chat-dock'}`} style={isChatPoppedOut || focusMode ? undefined : {width:chatWidth,flexShrink:0}}>
+            <ChatPanel
+              code={activeTab.code} setCode={setCode} isOpen={isChatOpen && !isDecisionsOpen} onClose={() => setIsChatOpen(false)}
+              isPoppedOut={isChatPoppedOut || focusMode} onTogglePopout={focusMode ? exitFocus : () => setIsChatPoppedOut(!isChatPoppedOut)}
+              messages={activeSession.messages} onSendMessage={handleSendMessage} sessions={activeTab.chatSessions}
+              activeSessionId={activeTab.activeChatSessionId} onNewChat={handleNewChat} onSwitchSession={handleSwitchSession}
+              onEditMessage={handleEditMessage} ref={chatPanelRef}
+            />
+          </div>}
         </div>
 
-        {isChatOpen && isChatPoppedOut && (
-          <ChatPanel
-            code={activeTab.code}
-            setCode={setCode}
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            isPoppedOut={true}
-            onTogglePopout={() => setIsChatPoppedOut(false)}
-            messages={activeSession.messages}
-            onSendMessage={handleSendMessage}
-            sessions={activeTab.chatSessions}
-            activeSessionId={activeTab.activeChatSessionId}
-            onNewChat={handleNewChat}
-            onSwitchSession={handleSwitchSession}
-            onEditMessage={handleEditMessage}
-            ref={chatPanelRef}
-          />
-        )}
       </div>
 
       <NewDiagramModal 

@@ -9,7 +9,53 @@
 }
 
 .app-content {
+  position: relative;
+  min-height: 0;
   display: flex;
   flex: 1;
   overflow: hidden;
 }
+.app { height:100dvh; }
+.chat-dock-splitter { display:flex; flex-shrink:0; }
+@media(max-width:800px) {
+  .chat-dock { position:absolute; right:0; top:0; bottom:0; width:min(380px,100%)!important; max-width:100%; z-index:15; }
+  .chat-dock-splitter { display:none; }
+}
+@media(prefers-reduced-motion:reduce) { .app { transition:none; } }
+.editor-splitter { display:flex; flex-shrink:0; }
+@media(max-width:700px) {
+  .diagram-workspace { flex-direction:column; }
+  .diagram-editor { flex:0 0 38%!important; min-height:0; border-bottom:1px solid var(--border); }
+  .editor-splitter { display:none; }
+}
+.diagram-workspace,.diagram-workspace>div { min-height:0; }
+.chat-host.floating { width:0; flex:none; }
+.focus-mode>.toolbar,.focus-mode>.diagram-switcher,.focus-mode .preview-header { display:none; }
+.focus-controls { position:fixed; top:calc(var(--app-top,0px) + 10px); left:50%; transform:translateX(-50%); display:flex; gap:4px; padding:5px; background:var(--surface); border:1px solid var(--border); box-shadow:0 4px 20px #0002; z-index:1100; max-width:calc(100vw - 16px); }
+.focus-controls button { font-size:10px; white-space:nowrap; padding:0 10px; }
+.focus-controls button[aria-pressed=true] { background:var(--ink); color:var(--surface); }
+.focus-mode .preview-viewport { flex:1; }
+.decision-workspace.floating { position:fixed; right:auto; bottom:auto; z-index:1000; height:min(700px,calc(var(--app-height,100dvh) - 76px)); max-width:calc(100vw - 16px); border:1px solid var(--border); box-shadow:0 8px 24px #0003; }
+.decision-window-actions { display:flex; gap:4px; margin-left:auto; }
+.decision-workspace.floating>header,.chat-panel.popped-out .chat-header { touch-action:none; cursor:move; }
+.chat-panel.popped-out { max-width:calc(100vw - 16px); min-width:min(300px,calc(100vw - 16px)); min-height:min(400px,calc(var(--app-height,100dvh) - 76px)); max-height:calc(var(--app-height,100dvh) - 76px); }
+
+.app { height:var(--app-height,100dvh); }
+.modal-overlay { top:var(--app-top,0px); bottom:auto; height:var(--app-height,100dvh); padding:12px 0; }
+.settings-modal { height:min(860px,calc(var(--app-height,100dvh) - 24px)); max-height:min(860px,calc(var(--app-height,100dvh) - 24px)); }
+.help-modal,.new-diagram-modal,.export-modal,.kb-modal { max-height:calc(var(--app-height,100dvh) - 24px); overflow-y:auto; }
+.settings-content,.decision-scroll,.chat-messages,.chat-history-list,.config-content,.help-content,.modal-content { -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y pinch-zoom; }
+@media (max-width:800px), (pointer:coarse) {
+  .app input:not([type="checkbox"]):not([type="radio"]),.app select,.app textarea,.app [contenteditable="true"] { font-size:16px!important; }
+  .app input[type="text"],.app input[type="password"],.app input[type="number"],.app select { min-height:44px; }
+  .app textarea { min-height:44px; }
+  .app .toolbar button,.settings-modal button,.decision-workspace button { min-height:40px; }
+  .chat-panel.popped-out { height:min(550px,calc(var(--app-height,100dvh) - 76px)); }
+  .focus-controls { gap:2px; padding:3px; }
+  .focus-controls button { padding:0 6px; min-height:36px; }
+}
+
+/* Modal dialogs stay above floating panels and fullscreen controls. */
+.app>.modal-overlay { z-index:2000; }
+
+.chat-host[hidden] { display:none; }

@@ -147,6 +147,13 @@ interface EditorProps {
 }
 
 export default function Editor({ code, setCode, error, onNodeSelected, scrollToNode }: EditorProps) {
+  const [mobileText, setMobileText] = useState(() => window.matchMedia('(max-width: 800px), (pointer: coarse)').matches)
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 800px), (pointer: coarse)')
+    const update = () => setMobileText(media.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
   const { theme } = useTheme()
   const debounceTimer = useRef<NodeJS.Timeout>()
   const editorRef = useRef<any>(null)
@@ -265,7 +272,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
         editorContainer.removeEventListener('paste', handlePaste, true)
       }
     }
-  }, [setCode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [setCode])
 
   return (
     <div className="editor-container">
@@ -302,7 +309,7 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
         theme={theme === 'dark' ? 'vs-dark' : 'vs'}
         options={{
           minimap: { enabled: false },
-          fontSize: 14,
+          fontSize: mobileText ? 16 : 14,
           tabSize: 2,
           wordWrap: 'on',
           automaticLayout: true,

@@ -71,6 +71,36 @@ fn clear_openai_secrets() -> Result<(), String> {
   save_secret("id-token", "")
 }
 
+// Decision keys use a separate service and explicit provider accounts.
+fn decision_credential(provider: &str) -> Result<keyring::Entry, String> {
+  if provider != "jev" && provider != "laya" {
+    return Err("Unsupported decision provider".into());
+  }
+  keyring::Entry::new("com.mermaider.desktop.decisions", provider).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn save_decision_key(provider: String, key: String) -> Result<(), String> {
+  let entry = decision_credential(&provider)?;
+  if key.is_empty() {
+    match entry.delete_credential() {
+      Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+      Err(error) => Err(error.to_string()),
+    }
+  } else {
+    entry.set_password(&key).map_err(|error| error.to_string())
+  }
+}
+
+#[tauri::command]
+fn load_decision_key(provider: String) -> Result<String, String> {
+  match decision_credential(&provider)?.get_password() {
+    Ok(value) => Ok(value),
+    Err(keyring::Error::NoEntry) => Ok(String::new()),
+    Err(error) => Err(error.to_string()),
+  }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -78,7 +108,9 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       save_openai_secrets,
       load_openai_secrets,
-      clear_openai_secrets
+      clear_openai_secrets,
+      save_decision_key,
+      load_decision_key
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

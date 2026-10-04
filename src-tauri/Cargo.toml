@@ -1,9 +1,9 @@
 [package]
 name = "mermaider"
-version = "1.8.6"
-description = "Mermaider - A native macOS Mermaid diagram editor"
-authors = ["Dario Novoa Vergara"]
-license = "CC-BY-NC-SA-4.0"
+version = "1.8.7"
+description = "Mermaider - A native macOS and Windows Mermaid diagram editor"
+authors = ["Jakob Endemann", "Dario Novoa Vergara"]
+license = "MIT"
 edition = "2021"
 rust-version = "1.77.2"
 
@@ -21,4 +21,12 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "2.11.0", features = [] }
 tauri-plugin-http = "2.5.9"
-keyring = "3"
+# Keyring 3 has no default native backend; otherwise it silently uses a mock.
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["linux-native"] }

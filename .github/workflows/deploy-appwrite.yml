@@ -7,9 +7,24 @@ on:
       - feature/appwrite-sites
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: appwrite-production
+  cancel-in-progress: false
+
 jobs:
+  verify-web:
+    uses: ./.github/workflows/build-web.yml
+
   deploy:
+    needs: verify-web
     runs-on: ubuntu-latest
+    env:
+      APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+      APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+      APPWRITE_SITE_ID: 6abe2ff1000fd13c6ca6
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,25 +38,60 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - run: npm run check:release
+      - run: npm run lint
+      - run: npm test
       - name: Build project
         run: npm run build
 
-      - name: Setup Appwrite CLI
-        uses: appwrite/setup-for-appwrite@v2
+      - name: Deploy and verify hosted AI service before activating the web build
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/deploy-ai-gateway.mjs
+
+      # The upstream action documents @v2 but does not publish that tag.
+      - name: Install Appwrite CLI
+        run: npm install --global appwrite-cli@28.1.0
+
+      - name: Configure Appwrite CLI
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          : "${APPWRITE_ENDPOINT:?Missing configured APPWRITE_ENDPOINT}"
+          : "${APPWRITE_API_KEY:?Set APPWRITE_API_KEY in repository secrets}"
+          : "${APPWRITE_PROJECT_ID:?Missing configured APPWRITE_PROJECT_ID}"
+          : "${APPWRITE_SITE_ID:?Missing configured APPWRITE_SITE_ID}"
+          appwrite client \
+            --endpoint "$APPWRITE_ENDPOINT" \
+            --project-id "$APPWRITE_PROJECT_ID" \
+            --key "$APPWRITE_API_KEY"
+
+      - name: Upload built web application to Appwrite Sites
+        run: |
+          appwrite sites create-deployment \
+            --site-id "$APPWRITE_SITE_ID" \
+            --code dist \
+            --install-command "true" \
+            --build-command "true" \
+            --output-directory "." \
+            --activate --json > "$RUNNER_TEMP/appwrite-deployment.json"
+
+      - name: Verify new deployment and public URL
+        env:
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_DEPLOYMENT_FILE: ${{ runner.temp }}/appwrite-deployment.json
+        run: node scripts/verify-appwrite.mjs
+
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Test the live application
+        env:
+          E2E_BASE_URL: https://mermaider.appwrite.network
+        run: npm run test:e2e
+
+      - uses: actions/upload-artifact@v4
         with:
-          method: key
-          key: ${{ secrets.APPWRITE_API_KEY }}
-          project: ${{ secrets.APPWRITE_PROJECT_ID }}
-          endpoint: ${{ secrets.APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1' }}
-
-      - name: Deploy to Appwrite Sites
-        run: |
-          appwrite deploy sites \
-            --siteId ${{ secrets.APPWRITE_SITE_ID }} \
-            --entrypoint dist/index.html \
-            --output dist
-
-      - name: Deployment Status
-        run: |
-          echo "✅ Deployment completed successfully!"
-          echo "🌐 Your site should be available shortly"
+          name: appwrite-verification-${{ github.sha }}
+          path: |
+            appwrite-verification.json
+            ai-gateway-verification.json
+          if-no-files-found: error

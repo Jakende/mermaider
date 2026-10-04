@@ -1,0 +1,39 @@
+name: Verify Appwrite Deployment
+
+on:
+  push:
+    branches: ['release/1.8.7-stabilization']
+    paths: ['.github/workflows/verify-appwrite.yml', 'scripts/verify-appwrite.mjs', 'playwright.config.ts']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Verify build, activation and public URL
+        env:
+          APPWRITE_ENDPOINT: https://fra.cloud.appwrite.io/v1
+          APPWRITE_PROJECT_ID: 6abe2e810023326f2b87
+          APPWRITE_SITE_ID: 6abe2ff1000fd13c6ca6
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: node scripts/verify-appwrite.mjs
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Test deployed application in Chromium
+        env:
+          E2E_BASE_URL: https://mermaider.appwrite.network
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: appwrite-verification-${{ github.sha }}
+          path: appwrite-verification.json
+          if-no-files-found: error

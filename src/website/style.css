@@ -1,0 +1,108 @@
+/* Product page layout. Colors, type and controls come from the app's shared CSS. */
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+body { font-size: 16px; line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+[hidden] { display: none !important; }
+.wrap { width: min(1160px, calc(100% - 64px)); margin-inline: auto; }
+.skip-link { position: absolute; left: 16px; top: -100px; padding: 12px; background: var(--surface); z-index: 5; }
+.skip-link:focus { top: 16px; }
+.site-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 24px; border-bottom: 1px solid var(--border); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 1.125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.brand img { filter: invert(1); }
+.theme-invert .brand img { filter: none; }
+nav { display: flex; gap: 20px; align-items: center; font-size: .875rem; }
+nav .nav-app { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border); text-transform: uppercase; font-weight: 600; }
+nav button { min-height: 36px; text-transform: uppercase; font-size: .875rem; }
+.hero { display: grid; grid-template-columns: 1fr 1.12fr; align-items: center; gap: 48px; padding-block: 72px; }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; font-weight: 600; color: var(--muted); margin: 0 0 20px; }
+h1 { font-size: clamp(2rem, 3.3vw, 3rem); line-height: 1.2; letter-spacing: .01em; margin: 0 0 24px; font-weight: 700; }
+.intro { color: var(--muted); font-size: 1rem; max-width: 440px; margin: 0 0 28px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.button { min-height: 42px; padding: 8px 14px; font-size: .875rem; text-transform: uppercase; letter-spacing: .03em; }
+.hero-note { font-size: .875rem; color: var(--muted); margin-top: 18px; }
+.demo { border: 1px solid var(--border); background: var(--surface); }
+.demo-bar { display: flex; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: .875rem; }
+.demo-title { font-weight: 600; text-transform: uppercase; }
+.file-label { color: var(--muted); font-size: .75rem; }
+.demo-preview { padding: 20px 16px 8px; min-height: 230px; display: flex; align-items: center; justify-content: center; }
+.demo-preview svg { width: 100%; height: auto; max-height: 245px; }
+.demo-bottom { border-top: 1px solid var(--border); padding: 16px; }
+.example-picker { display: flex; gap: 8px; margin-bottom: 16px; }
+.example-picker button { font-size: .875rem; text-transform: uppercase; }
+.example-picker button[aria-pressed=true] { background: var(--control-bg); color: var(--control-ink); border-color: var(--control-border); }
+pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: .875rem/1.8 var(--font-mono); color: var(--muted); }
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; padding: 32px 0 56px; border-top: 1px solid var(--border); }
+.feature-number { font-size: .75rem; color: var(--muted); }
+.features h2 { font-size: 1.0625rem; margin: 14px 0 12px; }
+.features p { color: var(--muted); margin: 0; font-size: .9375rem; }
+.download-section { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 56px 0; }
+.download-layout { display: grid; grid-template-columns: 1fr 1.12fr; gap: 48px; }
+.download-layout h2 { font-size: 2rem; line-height: 1.3; margin: 0 0 20px; text-transform: uppercase; }
+.download-intro { max-width: 370px; color: var(--muted); }
+.release-status { font-size: .875rem; color: var(--muted); }
+.platforms { display: grid; gap: 14px; }
+.platform { padding: 20px; border: 1px solid var(--border); }
+.platform-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.platform h3 { font-size: 1.0625rem; margin: 0; }
+.platform-heading span { font-size: .875rem; color: var(--muted); }
+.platform > p { margin: 8px 0; font-size: .875rem; color: var(--muted); }
+.platform .availability { margin-top: 16px; max-width: 420px; }
+.download-link { margin-top: 12px; width: 100%; }
+#release-notes { font-size: .875rem; text-decoration: underline; }
+.outlook { display: grid; grid-template-columns: 1fr 1.12fr; gap: 48px; padding-block: 48px; }
+.outlook h2 { font-size: 1.375rem; margin: 0 0 16px; }
+.outlook p:not(.eyebrow) { color: var(--muted); margin: 0 0 16px; font-size: .9375rem; }
+.planned-label { display: inline-block; border: 1px solid var(--border); padding: 3px 8px; font-size: .75rem; color: var(--muted); text-transform: uppercase; }
+footer { display: flex; gap: 24px; align-items: center; padding-block: 24px; border-top: 1px solid var(--border); }
+footer .brand { font-size: .9375rem; }
+footer p { font-size: .875rem; color: var(--muted); flex: 1; }
+footer > div { display: flex; gap: 20px; font-size: .875rem; }
+.private-note { color: var(--muted); font-size: .75rem; }
+@media (max-width: 960px) {
+  .hero, .download-layout { gap: 28px; grid-template-columns: 1fr 1fr; }
+  .hero { padding-block: 48px; }
+  .demo-title { font-size: .75rem; }
+  .file-label { display: none; }
+  .features { gap: 24px; }
+  .outlook { gap: 28px; }
+}
+@media (max-width: 700px) {
+  .wrap { width: calc(100% - 32px); }
+  .site-header { padding-block: 16px; flex-wrap: wrap; gap: 16px; }
+  nav { gap: 12px; width: 100%; flex-wrap: wrap; }
+  nav .nav-app { margin-left: auto; }
+  .hero { grid-template-columns: 1fr; padding-block: 36px 40px; gap: 32px; }
+  h1 { font-size: clamp(1.8rem, 7vw, 2.7rem); }
+  .intro { max-width: 100%; }
+  .hero-note { font-size: .8125rem; }
+  .demo-title { font-size: .875rem; }
+  .features { grid-template-columns: 1fr; padding-block: 24px 36px; gap: 24px; }
+  .features h2 { margin-top: 8px; }
+  .download-layout, .outlook { grid-template-columns: 1fr; gap: 24px; }
+  .download-section { padding-block: 36px; }
+  .download-layout h2 { font-size: 1.7rem; }
+  .outlook { padding-block: 36px; }
+  .outlook .eyebrow { margin-bottom: 0; }
+  footer { flex-wrap: wrap; gap: 12px; }
+  footer p { flex-basis: 65%; margin: 0; }
+  footer > div { width: 100%; padding-top: 6px; flex-wrap: wrap; }
+  .demo-preview { min-height: 200px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (max-width: 360px) {
+  .actions .button { width: 100%; }
+  nav { font-size: .875rem; }
+  .demo-bar { padding: 12px; }
+  .demo-bottom { padding: 14px; }
+  .platform-heading { flex-wrap: wrap; }
+}
+/* Let content shrink and reflow when visitors enlarge text. */
+.hero > *, .download-layout > *, .outlook > *, .features > * { min-width: 0; }
+h1, h2, h3, p, a { overflow-wrap: anywhere; }
+.demo-bar { flex-wrap: wrap; }
+.example-picker { flex-wrap: wrap; }
+.button { max-width: 100%; }
+
+.planned-label { max-width:100%; overflow-wrap:anywhere; }

@@ -1,0 +1,136 @@
+import {test} from 'node:test'
+import assert from 'node:assert/strict'
+import {newFlowSession,validateFlow,changeFlow,chooseFlow,flowPath,flowDiagram,flowRequest,restoreFlow,undoFlow,redoFlow} from '../src/decision/flow'
+const plan=()=>validateFlow({title:'Release',startId:'ready',questions:[
+  {id:'ready',text:'Ready?',options:[{id:'yes',label:'Ready',nextId:'ship'},{id:'no',label:'Needs changes'}]},
+  {id:'ship',text:'Which channel?',options:[{id:'public',label:'Public release'},{id:'private',label:'Private test'}]}
+]})
+test('branch switches invalidate downstream answers and undo restores decisions; context invalidates only model choices',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),goal:'Prepare release',context:'Ready for public distribution'},'Plan')
+  session=chooseFlow(session,'ready','yes')
+  session=chooseFlow(session,'ship','public','model',0.95)
+  assert.deepEqual(flowPath(session).questions,['ready','ship'])
+  const switched=chooseFlow(session,'ready','no')
+  assert.deepEqual(Object.keys(switched.selections),['ready'])
+  assert.equal(switched.selections.ready.optionId,'no')
+  assert.equal(undoFlow(switched).selections.ship.optionId,'public')
+  const updated=changeFlow(session,{context:'Private distribution only'},'Updated state')
+  assert.equal(updated.selections.ready.optionId,'yes')
+  assert.equal(updated.selections.ship,undefined)
+  assert.deepEqual(flowPath(updated).review,['ready'])
+  assert.throws(()=>flowRequest(updated,'ship'),/Review preceding/)
+  const confirmed=chooseFlow(updated,'ready','yes')
+  const request=flowRequest(confirmed,'ship')
+  assert.equal(request.questions.ship.type,'choice')
+  assert.equal((request.state as any).path[0].answer,'Ready')
+})
+test('criteria edits invalidate selections, follow-up link edits preserve the unchanged answer meaning',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan()},'Plan');session=chooseFlow(session,'ready','yes')
+  const changed=plan();changed.questions[0].options[0].label='Not ready'
+  assert.equal(changeFlow(session,{plan:changed},'Edit').selections.ready,undefined)
+  const linked=plan();linked.questions[0].options[0].nextId=undefined
+  assert.equal(changeFlow(session,{plan:linked},'Relink').selections.ready.optionId,'yes')
+  assert.throws(()=>chooseFlow(changeFlow(newFlowSession(),{plan:plan()},'Plan'),'ship','public'),/reachable/)
+})
+test('invalid graphs and corrupted sessions cannot enter the engine; valid history survives reload',()=>{
+  const cyclic=plan();cyclic.questions[1].options[0].nextId='ready';assert.throws(()=>validateFlow(cyclic),/loop/)
+  const missing=plan();missing.questions[0].options[0].nextId='missing';assert.throws(()=>validateFlow(missing),/missing/)
+  const duplicate=plan();duplicate.questions[1].id='ready';assert.throws(()=>validateFlow(duplicate),/unique/)
+  const collision=plan();collision.questions[1].id='ready__yes';collision.questions[0].options[0].nextId='ready__yes';assert.throws(()=>validateFlow(collision),/unique diagram/);
+  assert.equal(restoreFlow({version:99}),undefined)
+  let session=changeFlow(newFlowSession(),{plan:plan()},'Plan');session=chooseFlow(session,'ready','yes')
+  const restored=restoreFlow(JSON.parse(JSON.stringify(session)))!
+  assert.equal(restored.selections.ready.optionId,'yes');assert.equal(restored.history.length,2)
+  assert.equal(undoFlow(restored).selections.ready,undefined)
+  const source=flowDiagram(plan())
+  assert.ok(!source.includes('selected'));assert.match(source,/ready__yes --> ship/)
+  assert.equal(flowDiagram(session.plan!),source)
+})
+
+test('typing coalesces into one undo step and retains revision protection',()=>{
+  let session=changeFlow(newFlowSession(),{context:'a'},'Updated state')
+  session=changeFlow(session,{context:'ab'},'Updated state')
+  session=changeFlow(session,{context:'abc'},'Updated state')
+  assert.equal(session.history.length,1);assert.equal(session.revision,3)
+  assert.equal(undoFlow(session).context,'')
+})
+
+
+test('redo restores a pruned branch after reload and a new edit discards the redo branch',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),context:'Ready'},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public','model',0.95)
+  const before=session
+  session=chooseFlow(session,'ready','no');session=undoFlow(session)
+  assert.deepEqual(session.selections,before.selections)
+  assert.equal(session.future.length,1)
+  session=restoreFlow(JSON.parse(JSON.stringify(session)))!
+  const redone=redoFlow(session)
+  assert.equal(redone.selections.ready.optionId,'no');assert.equal(redone.selections.ship,undefined)
+  assert.equal(redone.revision,session.revision+1);assert.equal(redone.future.length,0)
+  assert.deepEqual(undoFlow(redone).selections,JSON.parse(JSON.stringify(before.selections)))
+  const edited=changeFlow(session,{context:'New update'},'Updated state')
+  assert.equal(edited.future.length,0);assert.equal(redoFlow(edited),edited)
+})
+
+test('older sessions migrate without redo and corrupted history cannot recurse',()=>{
+  const old={...newFlowSession(),future:undefined}
+  assert.deepEqual(restoreFlow(old)?.future,[])
+  assert.deepEqual(restoreFlow({...old,history:[null],future:[null]})?.history,[])
+  let session=changeFlow(newFlowSession(),{context:'a'},'Updated state')
+  session=changeFlow(session,{context:'b'},'Updated state');session=undoFlow(session)
+  session=changeFlow(session,{context:'c'},'Updated state')
+  assert.equal(undoFlow(session).context,'')
+})
+
+test('German converging branches invalidate dependent model answers but preserve human choices',()=>{
+  const converging=validateFlow({title:'Freigabe',startId:'budget',questions:[
+    {id:'budget',text:'Wie wird finanziert?',options:[{id:'intern',label:'Internes Budget',nextId:'freigabe'},{id:'extern',label:'Externe Förderung',nextId:'freigabe'}]},
+    {id:'freigabe',text:'Ist die Finanzierung freigegeben?',options:[{id:'ja',label:'Freigegeben'},{id:'offen',label:'Noch offen'}]}
+  ]})
+  let session=changeFlow(newFlowSession(),{plan:converging,context:'Das interne Budget ist freigegeben; externe Förderung ist offen.'},'Plan')
+  session=chooseFlow(session,'budget','intern')
+  const model=chooseFlow(session,'freigabe','ja','model',0.95)
+  const changed=chooseFlow(model,'budget','extern')
+  assert.equal(changed.selections.freigabe,undefined)
+  assert.equal(flowPath(changed).pending,'freigabe')
+  assert.equal(undoFlow(changed).selections.freigabe.optionId,'ja')
+  assert.equal(chooseFlow(chooseFlow(session,'freigabe','offen'),'budget','extern').selections.freigabe.optionId,'offen')
+})
+
+test('re-evaluating an earlier question excludes its previous answer and downstream answers',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),context:'The checks have changed.'},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public')
+  assert.deepEqual((flowRequest(session,'ready').state as any).path,[])
+  assert.deepEqual((flowRequest(session,'ship').state as any).path,[{question:'Ready?',answer:'Ready',source:'manual'}])
+  const switched=chooseFlow(session,'ready','no')
+  assert.throws(()=>flowRequest(switched,'ship'),/reachable/)
+})
+
+test('changed facts preserve human answers as pending review and require confirmation in path order',()=>{
+  let session=changeFlow(newFlowSession(),{plan:plan(),context:'Ready'},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public')
+  const updated=changeFlow(session,{context:'Some checks failed'},'Updated state')
+  assert.deepEqual(flowPath(updated).review,['ready','ship'])
+  assert.equal(updated.selections.ship.optionId,'public')
+  assert.throws(()=>chooseFlow(updated,'ship','private'),/Review preceding/)
+  assert.throws(()=>flowRequest(updated,'ship'),/Review preceding/)
+  assert.equal(flowRequest(updated,'ready').questions.ready.type,'choice')
+  const confirmed=chooseFlow(updated,'ready','yes')
+  assert.deepEqual(flowPath(confirmed).review,['ship'])
+  assert.deepEqual(flowPath(chooseFlow(confirmed,'ship','public')).review,[])
+  assert.deepEqual(restoreFlow(JSON.parse(JSON.stringify(updated)))!.selections,JSON.parse(JSON.stringify(updated.selections)))
+  assert.deepEqual(flowPath(undoFlow(updated)).review,[])
+  assert.deepEqual(flowPath(redoFlow(undoFlow(updated))).review,['ready','ship'])
+  assert.equal(flowDiagram(updated.plan!),flowDiagram(session.plan!))
+})
+test('upstream changes on converging paths mark human decisions for review without replacing them',()=>{
+  const graph=plan();graph.questions[0].options[1].nextId='ship'
+  let session=changeFlow(newFlowSession(),{plan:graph},'Plan')
+  session=chooseFlow(session,'ready','yes');session=chooseFlow(session,'ship','public')
+  const switched=chooseFlow(session,'ready','no')
+  assert.equal(switched.selections.ship.optionId,'public')
+  assert.deepEqual(flowPath(switched).review,['ship'])
+  assert.equal(chooseFlow(switched,'ship','private').selections.ship.needsReview,undefined)
+  const changedGoal=changeFlow(session,{goal:'Change release scope'},'Updated goal')
+  assert.deepEqual(flowPath(changedGoal).review,['ready','ship'])
+})

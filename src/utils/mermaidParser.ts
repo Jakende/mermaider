@@ -25,149 +25,136 @@ export interface ParsedMermaidDiagram {
   subgraphs?: Array<{ id: string; label?: string; nodes: string[] }>
 }
 
-/**
- * Detects if a Mermaid diagram is a flowchart/graph that can be visually edited
- */
+/** A supported node token, including its source range for visual edits. */
+export interface MermaidNodeToken {
+  node: MermaidNode
+  start: number
+  end: number
+  labelStart?: number
+  labelEnd?: number
+}
+
+const shapes: Array<[string, string, MermaidNode['shape']]> = [
+  ['(((', ')))', 'doublecircle'], ['[[', ']]', 'subroutine'],
+  ['[(', ')]', 'cylinder'], ['([', '])', 'stadium'], ['((', '))', 'circle'],
+  ['{{', '}}', 'hexagon'], ['[/', '\\]', 'trapezoid'],
+  ['[\\', '/]', 'trapezoidAlt'], ['[/', '/]', 'parallelogram'],
+  ['[', ']', 'rect'], ['(', ')', 'rounded'], ['{', '}', 'diamond'],
+]
+
+export function readMermaidNode(text: string, offset = 0): MermaidNodeToken | null {
+  const match = text.slice(offset).match(/^\s*([\w](?:[\w-]*[\w])?)/)
+  if (!match) return null
+  const start = offset + match[0].indexOf(match[1])
+  let end = offset + match[0].length
+  const node: MermaidNode = { id: match[1], label: match[1], shape: 'rect' }
+  let labelStart: number | undefined
+  let labelEnd: number | undefined
+  const shapeStart = end + (text.slice(end).match(/^\s*/)?.[0].length ?? 0)
+  if ('[({'.includes(text[shapeStart] ?? '\0')) {
+    let found = false
+    for (const [open, close, shape] of shapes) {
+      if (!text.startsWith(open, shapeStart)) continue
+      let quoted = false
+      for (let i = shapeStart + open.length; i < text.length; i++) {
+        if (text[i] === '"' && text[i - 1] !== '\\') quoted = !quoted
+        if (!quoted && text.startsWith(close, i)) {
+          labelStart = shapeStart + open.length
+          labelEnd = i
+          node.label = text.slice(labelStart, labelEnd).replace(/^"([\s\S]*)"$/, '$1')
+          node.shape = shape
+          end = i + close.length
+          found = true
+          break
+        }
+      }
+      if (found) break
+    }
+    if (!found) return null
+  }
+  const classMatch = text.slice(end).match(/^:::(\w[\w-]*)/)
+  if (classMatch) { node.class = classMatch[1]; end += classMatch[0].length }
+  return { node, start, end, labelStart, labelEnd }
+}
+
+/** Split statements without cutting quoted labels or configuration blocks. */
+export function flowchartStatements(code: string): string[] {
+  const body = code.trim().replace(/^---\s*\n[\s\S]*?\n---\s*/, '')
+    .replace(/%%\{init:[\s\S]*?\}%%/g, '')
+  const statements: string[] = []
+  let current = '', quoted = false, depth = 0
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i]
+    if (c === '"' && body[i - 1] !== '\\') quoted = !quoted
+    if (!quoted && c === '%' && body[i + 1] === '%') {
+      while (i < body.length && body[i] !== '\n') i++
+      statements.push(current.trim()); current = ''; continue
+    }
+    if (!quoted && '[({'.includes(c)) depth++
+    if (!quoted && '])}'.includes(c)) depth--
+    if (!quoted && depth === 0 && (c === '\n' || c === ';')) {
+      statements.push(current.trim()); current = ''
+    } else current += c
+  }
+  statements.push(current.trim())
+  return statements.filter(Boolean)
+}
+
 export function isEditableDiagram(code: string): boolean {
-  const trimmed = code.trim()
-  // Support code with YAML frontmatter
-  const flowchartRegex = /(?:^|\n)\s*(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i
-  return flowchartRegex.test(trimmed)
+  return parseMermaidFlowchart(code) !== null
 }
 
 /**
- * Parses Mermaid flowchart/graph code into structured data
+ * Parse the flowchart subset supported by the visual editor. Unknown statements
+ * disable visual editing rather than displaying an incomplete graph.
  */
 export function parseMermaidFlowchart(code: string): ParsedMermaidDiagram | null {
-  const trimmed = code.trim()
-
-  // Check if it's a flowchart or graph (allowing leading frontmatter)
-  const flowchartRegex = /(?:^|\n)\s*(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i
-  const flowchartMatch = trimmed.match(flowchartRegex)
-
-  if (!flowchartMatch) {
-    return null
-  }
-
-  const type = flowchartMatch[1].toLowerCase() as 'flowchart' | 'graph'
-  let directionRaw = flowchartMatch[2].toUpperCase()
-
-  // Normalize direction
-  let direction: 'TD' | 'BT' | 'LR' | 'RL' = 'TD'
-  if (directionRaw === 'TB' || directionRaw === 'TD') direction = 'TD'
-  else if (directionRaw === 'DT' || directionRaw === 'BT') direction = 'BT'
-  else if (directionRaw === 'LR') direction = 'LR'
-  else if (directionRaw === 'RL') direction = 'RL'
-
-  const nodes: MermaidNode[] = []
-  const edges: MermaidEdge[] = []
+  const statements = flowchartStatements(code)
+  const declaration = statements.shift()?.match(/^(flowchart|graph)\s+(TD|TB|BT|LR|RL|DT)\s*$/i)
+  if (!declaration) return null
+  const directionRaw = declaration[2].toUpperCase()
+  const direction = directionRaw === 'TB' ? 'TD' : directionRaw === 'DT' ? 'BT' : directionRaw
+  const nodes: MermaidNode[] = [], edges: MermaidEdge[] = []
   const nodeMap = new Map<string, MermaidNode>()
-  const subgraphs: Array<{ id: string; label?: string; nodes: string[] }> = []
-
-  // Remove YAML frontmatter if present for parsing lines
-  const codeWithoutFrontmatter = trimmed.replace(/^---\s*[\s\S]*?---\s*/, '')
-
-  // Remove comments
-  const withoutComments = codeWithoutFrontmatter.replace(/%%[^\n]*/g, '')
-
-  // Split into lines
-  const lines = withoutComments.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%'))
-
-  // Parse nodes and edges
-  for (const line of lines) {
-    // Skip the diagram declaration line
-    if (/^(flowchart|graph)\s+(TD|BT|LR|RL|TB|DT)/i.test(line)) {
-      continue
+  const subgraphs: NonNullable<ParsedMermaidDiagram['subgraphs']> = []
+  const stack: Array<NonNullable<ParsedMermaidDiagram['subgraphs']>[number]> = []
+  const addNode = (token: MermaidNodeToken) => {
+    const existing = nodeMap.get(token.node.id)
+    if (!existing) { nodes.push(token.node); nodeMap.set(token.node.id, token.node) }
+    else if (token.labelStart !== undefined) Object.assign(existing, token.node)
+    for (const group of stack) if (!group.nodes.includes(token.node.id)) group.nodes.push(token.node.id)
+  }
+  for (const line of statements) {
+    const subgraph = line.match(/^subgraph\s+([\w-]+)(?:\s*\[([^\]]+)\]|\s+"([^"]+)"|\s+(.+))?$/)
+    if (subgraph) {
+      const group = { id: subgraph[1], label: subgraph[2] ?? subgraph[3] ?? subgraph[4], nodes: [] as string[] }
+      subgraphs.push(group); stack.push(group); continue
     }
-
-    // Parse subgraphs
-    const subgraphMatch = line.match(/subgraph\s+(\w+)(?:\s+"([^"]+)")?/i)
-    if (subgraphMatch) {
-      subgraphs.push({
-        id: subgraphMatch[1],
-        label: subgraphMatch[2],
-        nodes: []
-      })
-      continue
-    }
-
-    if (line === 'end') {
-      continue
-    }
-
-    // Parse edges: A --> B, A -->|label| B, A --> B(label)
-    const edgeMatch = line.match(/^(\w+)\s*([-=.]+>|--|==>|==>|-->)\s*(\|([^|]+)\|)?\s*(\w+)/)
-    if (edgeMatch) {
-      const source = edgeMatch[1]
-      const target = edgeMatch[5]
-      const label = edgeMatch[4] || undefined
-      const arrowType = edgeMatch[2]
-
-      // Determine edge type
-      let type: 'arrow' | 'line' | 'thick' | 'dotted' = 'arrow'
-      if (arrowType.includes('==')) type = 'thick'
-      if (arrowType.includes('.')) type = 'dotted'
-      if (arrowType === '--') type = 'line'
-
-      edges.push({
-        source,
-        target,
-        label,
-        type
-      })
-
-      // Ensure nodes exist
-      if (!nodeMap.has(source)) {
-        nodes.push({ id: source, label: source, shape: 'rect' })
-        nodeMap.set(source, nodes[nodes.length - 1])
-      }
-      if (!nodeMap.has(target)) {
-        nodes.push({ id: target, label: target, shape: 'rect' })
-        nodeMap.set(target, nodes[nodes.length - 1])
-      }
-      continue
-    }
-
-    // Parse node definitions
-    const nodeMatch = line.match(/^(\w+)(\{\{([^}]+)\}\}|\[\\\\([^\]]+)\/\]|\[\/([^\]]+)\\\]|\[\/([^\]]+)\/\]|\[\[\[([^\]]+)\]\]\]|\(\(\(([^)]+)\)\)\)|\[\[([^\]]+)\]\]|\(\(([^)]+)\)\)|\[\(([^\]]+)\)\]|\(\[([^\]]+)\]\)|\[([^\]]+)\]|\(([^)]+)\)|\{([^}]+)\})/)
-    if (nodeMatch) {
-      const id = nodeMatch[1]
-      const fullMatch = nodeMatch[2]
-
-      const label = nodeMatch[3] || nodeMatch[4] || nodeMatch[5] || nodeMatch[6] || nodeMatch[7] ||
-        nodeMatch[8] || nodeMatch[9] || nodeMatch[10] || nodeMatch[11] || nodeMatch[12] ||
-        nodeMatch[13] || nodeMatch[14] || nodeMatch[15] || id
-
-      let shape: MermaidNode['shape'] = 'rect'
-      if (fullMatch?.startsWith('{{')) shape = 'hexagon'
-      else if (fullMatch?.startsWith('[\\')) shape = 'trapezoidAlt'
-      else if (fullMatch?.startsWith('[/')) shape = 'trapezoid'
-      else if (fullMatch?.startsWith('(((')) shape = 'doublecircle'
-      else if (fullMatch?.startsWith('[[')) shape = 'subroutine'
-      else if (fullMatch?.startsWith('((')) shape = 'stadium'
-      else if (fullMatch?.startsWith('[(')) shape = 'circle'
-      else if (fullMatch?.startsWith('([')) shape = 'cylinder'
-      else if (fullMatch?.startsWith('(')) shape = 'rounded'
-      else if (fullMatch?.startsWith('{')) shape = 'diamond'
-      else if (fullMatch?.startsWith('[')) shape = 'rect'
-
-      if (!nodeMap.has(id)) {
-        const node: MermaidNode = { id, label, shape }
-        nodes.push(node)
-        nodeMap.set(id, node)
-      } else {
-        const existing = nodeMap.get(id)!
-        existing.label = label
-        existing.shape = shape
-      }
+    if (line === 'end') { if (!stack.pop()) return null; continue }
+    if (/^(classDef|class|click|linkStyle|direction)\s/.test(line)) continue
+    const style = line.match(/^style\s+([\w-]+)\s+(.+)$/)
+    if (style) { const node = nodeMap.get(style[1]); if (node) node.style = style[2]; continue }
+    let source = readMermaidNode(line)
+    if (!source) return null
+    addNode(source)
+    let offset = source.end
+    while (line.slice(offset).trim()) {
+      const rest = line.slice(offset)
+      // Inline labels, pipe labels, and chained edges; labels can contain arrows.
+      const connector = rest.match(/^\s*(-->|==>|-\.->|---|===|-\.-)(?:\s*\|([^|]*)\|)?\s*/)
+        ?? rest.match(/^\s*(--|==|-\.)\s+(.+?)\s*(-->|==>|\.->)\s*/)
+      if (!connector) return null
+      const target = readMermaidNode(line, offset + connector[0].length)
+      if (!target) return null
+      addNode(target)
+      const arrow = connector[1]
+      edges.push({ source: source.node.id, target: target.node.id, label: connector[2]?.trim() || undefined,
+        type: arrow.startsWith('=') ? 'thick' : arrow.includes('.') ? 'dotted' : arrow === '---' ? 'line' : 'arrow' })
+      offset = target.end
+      source = target
     }
   }
-
-  return {
-    type,
-    direction,
-    nodes,
-    edges,
-    subgraphs: subgraphs.length > 0 ? subgraphs : undefined
-  }
+  if (stack.length) return null
+  return { type: declaration[1].toLowerCase() as 'flowchart' | 'graph', direction: direction as ParsedMermaidDiagram['direction'],
+    nodes, edges, subgraphs: subgraphs.length ? subgraphs : undefined }
 }

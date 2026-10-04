@@ -17,9 +17,12 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
 
     const content = [
         { title: 'Live Editor', text: 'Real-time preview and syntax highlighting for all Mermaid diagram types. Changes are saved automatically.' },
-        { title: 'AI Assistant', text: 'Use the Chat panel to edit diagrams with natural language or ask questions. Powered by your local Ollama instance for maximum privacy.' },
+        { title: 'AI Assistant', text: 'Use the Chat panel to edit diagrams with natural language or ask questions. Choose local Ollama or hosted OpenAI in Settings → Connection.' },
         { title: 'AI Fix', text: 'Whenever a syntax error occurs, an [AI FIX] button appears. Click it to let the AI resolve the issue automatically.' },
         { title: 'MCP Integration', text: 'The Model Context Protocol (MCP) layer is always active. It enriches every AI call with curated diagram templates, syntax references, and post-generation validation — automatically, no extra setup needed.' },
+        { title: 'Workspace menus', text: 'File contains import, knowledge base and copy actions. View contains full preview, theme switching and help. Chat, Decisions and Export remain directly accessible.' },
+        { title: 'Settings', text: 'Connection, Embeddings and Generation keep AI controls organized. Appearance controls theme, diagram palette, label case and blob animation.' },
+        { title: 'Interactive decisions', text: 'Edit questions and answers alongside the diagram. Review AI suggestions, score rules and probability thresholds in the resizable Decisions panel.' },
         { title: 'Export Options', text: 'Export your diagrams as high-quality SVG or PNG images, or copy the code block for your documents.' },
         { title: 'Keyboard Shortcuts', text: '⌘N for New, ⌘O for Open, ⌘S for Save.' }
     ]
@@ -57,16 +60,18 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                                 <div className="shortcut-category">
                                     <h4>General</h4>
                                     <ul>
-                                        <li><span>New Tab</span> <kbd>⌘N</kbd></li>
+                                        <li><span>New diagram</span> <kbd>⌘N</kbd></li>
                                         <li><span>Import</span> <kbd>⌘O</kbd></li>
                                         <li><span>Export</span> <kbd>⌘S</kbd></li>
-                                        <li><span>Close Tab</span> <kbd>⌘W</kbd></li>
+                                        <li><span>Close diagram</span> <kbd>⌘W</kbd></li>
                                         <li><span>Settings</span> <kbd>⌘,</kbd></li>
                                     </ul>
                                 </div>
                                 <div className="shortcut-category">
                                     <h4>UI & Navigation</h4>
                                     <ul>
+                                        <li><span>Search diagrams & code</span> <kbd>⌘K</kbd></li>
+                                        <li><span>Exit fullscreen</span> <kbd>Esc</kbd></li>
                                         <li><span>Toggle Editor</span> <kbd>⌘B</kbd></li>
                                         <li><span>Toggle Chat</span> <kbd>⌘J</kbd></li>
                                         <li><span>Focus Chat</span> <kbd>⌘L</kbd></li>

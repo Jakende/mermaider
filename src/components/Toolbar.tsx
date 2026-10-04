@@ -3,6 +3,8 @@ import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import { fixMermaidErrorWithAI, getStoredConfig, convertTextToMermaidWithAI, generateMarkdownReport } from '../utils/aiService'
 import Settings from './Settings'
+import UserBlob from './UserBlob'
+import ActionMenu from './ActionMenu'
 import HelpModal from './HelpModal'
 import ExportModal from './ExportModal'
 import KnowledgeBaseModal from './KnowledgeBaseModal'
@@ -10,15 +12,20 @@ import { jsPDF } from 'jspdf'
 import './Toolbar.css'
 
 interface ToolbarProps {
+  diagramLibrary: React.ReactNode
   code: string
   setCode: (code: string) => void
   error: string | null
   onToggleChat: () => void
+  isChatOpen: boolean
   isEditorVisible: boolean
   onToggleEditor: () => void
   diagramName: string
   onUpdateDiagramName: (name: string) => void
   onNewTab: () => void
+  onToggleDecisions: () => void
+  isDecisionsOpen: boolean
+  onEnterFullscreen: () => void
 }
 
 export interface ToolbarRef {
@@ -30,7 +37,7 @@ export interface ToolbarRef {
   handleAIFix: () => Promise<void>
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ diagramLibrary, code, setCode, error, onToggleChat, isChatOpen, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen, onEnterFullscreen }, ref) => {
   const { theme, toggleTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -588,73 +595,35 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
 
   return (
     <>
-      <div className={`toolbar ${theme}`}>
-        <div className="toolbar-section">
-          <button onClick={handleNew} className="toolbar-btn" title="New (⌘N)">
-            New
-          </button>
-          <button onClick={handleOpen} className="toolbar-btn" title="Import / Open (⌘O)">
-            Import...
-          </button>
-          <button onClick={() => setShowKB(true)} className="toolbar-btn" title="Knowledge Base / Quick Import">
-            RAG / IMPORT
-          </button>
-          <button onClick={handleExportClick} className="toolbar-btn button-primary" title="Export Diagram (⌘S)">
-            Export...
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".mmd,.txt,.md,.markdown,.json"
-            onChange={handleFileChange}
-            style={{ display: 'none' }}
-          />
+      <nav className={`toolbar ${theme}`} aria-label="Workspace actions">
+        <div className="toolbar-section toolbar-files">
+          {diagramLibrary}
+          <button onClick={handleNew} className="toolbar-btn" title="New (⌘N)">New</button>
+          <ActionMenu label="File" actions={[
+            { label: 'Import diagram…', title: 'Import / Open (⌘O)', onClick: handleOpen },
+            { label: 'Knowledge base / RAG…', title: 'Knowledge Base / Quick Import', onClick: () => setShowKB(true) },
+            { label: 'Copy code', title: 'Copy Code', onClick: handleCopyCode },
+            { label: 'Copy image', title: 'Copy Image', onClick: handleCopyImage },
+          ]} />
+          <button onClick={handleExportClick} className="toolbar-btn button-primary" title="Export Diagram (⌘S)">Export…</button>
+          <ActionMenu label="View" align="end" actions={[
+            { label: 'Fullscreen workspace', onClick: onEnterFullscreen },
+            { label: isEditorVisible ? 'Full preview' : 'Show editor', title: 'Toggle Editor / Full Preview', onClick: onToggleEditor },
+            { label: theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme', title: 'Toggle Theme', onClick: toggleTheme },
+            { label: 'Help & features…', title: 'App Documentation & Features (⌘/)', onClick: () => setShowHelp(true) },
+          ]} />
+          <input ref={fileInputRef} type="file" accept=".mmd,.txt,.md,.markdown,.json" onChange={handleFileChange} style={{ display: 'none' }} />
         </div>
-
-        <div className="toolbar-section">
-          <button onClick={handleCopyCode} className="toolbar-btn" title="Copy Code">
-            Copy Code
-          </button>
-          <button onClick={handleCopyImage} className="toolbar-btn" title="Copy Image">
-            Copy Image
-          </button>
-          {error && (
-            <button
-              onClick={handleAIFix}
-              className="toolbar-btn ai-fix-btn"
-              title="AI Fix Error (uses Ollama)"
-              disabled={isFixing}
-            >
-              {isFixing ? 'FIXING...' : 'AI FIX'}
-            </button>
-          )}
-          <button onClick={onToggleChat} className="toolbar-btn text-btn" title="Toggle AI Chat">
-            CHAT
-          </button>
-          <button onClick={onToggleEditor} className="toolbar-btn text-btn" title="Toggle Editor / Full Preview">
-            {isEditorVisible ? 'FULL PREVIEW' : 'SHOW EDITOR'}
-          </button>
-        </div>
-
-        <div className="toolbar-section">
-          <button onClick={toggleTheme} className="toolbar-btn text-btn" title="Toggle Theme">
-            {theme === 'light' ? 'DARK' : 'LIGHT'}
-          </button>
-          <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings (⌘,)">
-            SETTINGS
-          </button>
-        </div>
-
+        {error && <button onClick={handleAIFix} className="toolbar-btn ai-fix-btn" title="AI Fix Error (uses your selected provider)" disabled={isFixing}>
+          {isFixing ? 'Fixing…' : 'AI Fix'}
+        </button>}
         <div className="toolbar-section toolbar-section-right">
-          <button
-            onClick={() => setShowHelp(true)}
-            className="toolbar-btn text-btn"
-            title="App Documentation & Features (⌘/)"
-          >
-            INFO
-          </button>
+          <button onClick={onToggleChat} aria-pressed={isChatOpen && !isDecisionsOpen} className="toolbar-btn text-btn" title="Toggle AI Chat">Chat</button>
+          <button onClick={onToggleDecisions} aria-pressed={isDecisionsOpen} className="toolbar-btn text-btn" title="Decisions (Preview)">Decisions</button>
+          <button onClick={() => setShowSettings(true)} className="toolbar-btn text-btn" title="Settings (⌘,)">Settings</button>
+          <UserBlob ambient busy={isFixing || isExportingReport} />
         </div>
-      </div>
+      </nav>
       <Settings isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
       <KnowledgeBaseModal

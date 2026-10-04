@@ -42,6 +42,7 @@ export function getDiagramTemplate(typeId: string): DiagramTemplate | null {
 
 // ─── Tool: validate_mermaid_syntax ──────────────────────────────────────────────
 export interface ValidationResult {
+  scope: 'entry_point';
   valid: boolean;
   detectedType: string | null;
   message: string;
@@ -49,7 +50,7 @@ export interface ValidationResult {
 
 export function validateMermaidSyntax(code: string): ValidationResult {
   if (!code || !code.trim()) {
-    return { valid: false, detectedType: null, message: 'Empty code provided.' };
+    return { scope: 'entry_point', valid: false, detectedType: null, message: 'Empty code provided.' };
   }
 
   const trimmed = code.trim();
@@ -57,19 +58,20 @@ export function validateMermaidSyntax(code: string): ValidationResult {
   // Strip config blocks before checking
   let codeBody = trimmed;
   // Remove YAML frontmatter
-  codeBody = codeBody.replace(/^---[\s\S]*?---\s*/m, '');
+  codeBody = codeBody.replace(/^---\s*\n[\s\S]*?\n---\s*/, '');
   // Remove %%{init: ...}%%
   codeBody = codeBody.replace(/^%%\{init:[\s\S]*?\}%%\s*/m, '');
 
-  const firstLine = codeBody.trim().split('\n')[0].trim();
-  const firstWord = firstLine.split(/[\s({[\-]/)[0];
+  const firstLine = codeBody.split(/\r?\n/).map(line => line.trim()).find(line => line && !line.startsWith('%%')) || '';
+  const firstWord = firstLine.split(/[\s;]/)[0];
 
   const detectedKeyword = VALID_DIAGRAM_KEYWORDS.find(kw =>
-    firstWord === kw || firstLine.startsWith(kw)
+    firstWord === kw
   );
 
   if (!detectedKeyword) {
     return {
+      scope: 'entry_point',
       valid: false,
       detectedType: null,
       message: `Code does not start with a recognized Mermaid diagram keyword. Expected one of: ${VALID_DIAGRAM_KEYWORDS.slice(0, 8).join(', ')}...`
@@ -77,9 +79,10 @@ export function validateMermaidSyntax(code: string): ValidationResult {
   }
 
   return {
+    scope: 'entry_point',
     valid: true,
     detectedType: detectedKeyword,
-    message: `Valid Mermaid entry point detected: "${detectedKeyword}".`
+    message: `Mermaid entry point detected (full syntax must be checked by rendering): "${detectedKeyword}".`
   };
 }
 

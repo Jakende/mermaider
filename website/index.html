@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mermaider macht aus Text verständliche Diagramme. Mermaid live bearbeiten, mit Ollama oder OpenAI arbeiten und als SVG, PNG oder PDF teilen.">
+  <meta name="author" content="Jakob Endemann">
+  <meta name="theme-color" content="#000000">
+  <title>Mermaider — Gedanken werden Diagramme</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+</head>
+<body>
+  <a class="skip-link" href="#inhalt">Zum Inhalt</a>
+  <header class="site-header wrap">
+    <a class="brand" href="./" aria-label="Mermaider Startseite"><img src="/icon.svg" alt="" width="32" height="32">Mermaider</a>
+    <nav aria-label="Hauptnavigation"><a href="#download">Desktop</a><a href="https://github.com/Jakende/mermaider">GitHub</a><button id="theme-toggle" type="button" aria-label="Helles Design aktivieren">Hell</button><a class="nav-app" href="/">Web-App öffnen</a></nav>
+  </header>
+  <main id="inhalt">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">MERMAID. MIT WENIGER UMWEGEN.</p>
+        <h1 id="hero-title">Gedanken werden<br><span>Diagramme.</span></h1>
+        <p class="intro">Mach Ideen und Abläufe verständlich. Schreibe Mermaid, sieh das Ergebnis live und teile es mit deinem Team.</p>
+        <div class="actions"><a class="button button-primary primary" href="/">Im Browser öffnen</a><a class="button secondary" href="#download">Desktop-Version</a></div>
+        <p class="hero-note">Web-App 1.8.7 verfügbar · Ohne Konto starten</p>
+      </div>
+      <div class="demo" aria-label="Diagrammbeispiel mit Mermaid-Code">
+        <div class="demo-bar"><span class="demo-title">Ein Gedanke. Ein klarer Ablauf.</span><span class="file-label">idee.mmd</span></div>
+        <div class="demo-preview" id="diagram" aria-live="polite"></div>
+        <div class="demo-bottom">
+          <div class="example-picker" role="group" aria-label="Diagrammbeispiel auswählen"><button type="button" data-example="flow" aria-pressed="true">Ablauf</button><button type="button" data-example="decision" aria-pressed="false">Entscheidung</button></div>
+          <pre aria-label="Mermaid-Code des Beispiels"><code id="example-code"></code></pre>
+        </div>
+      </div>
+    </section>
+    <section class="features wrap" aria-label="Was Mermaider kann">
+      <article><span class="feature-number">01</span><h2>Text rein. Klarheit raus.</h2><p>Bearbeite Mermaid-Code mit Live-Vorschau. Nutze die visuelle Bearbeitung für unterstützte Flowcharts.</p></article>
+      <article><span class="feature-number">02</span><h2>Deine KI. Dein Weg.</h2><p>Nutze Ollama lokal oder OpenAI gehostet, um aus einer Beschreibung Diagramm-Code zu erstellen.</p></article>
+      <article><span class="feature-number">03</span><h2>Bereit zum Teilen.</h2><p>Exportiere als SVG, PNG oder PDF. Für Dokumentation, Präsentationen und das nächste Gespräch.</p></article>
+    </section>
+    <section class="download-section" id="download" aria-labelledby="download-title">
+      <div class="wrap download-layout">
+        <div><p class="eyebrow">AUCH AUF DEINEM DESKTOP</p><h2 id="download-title">Ein Werkzeug.<br>Dein Arbeitsplatz.</h2><p class="download-intro">Im Browser starten oder die geprüfte Desktop-Version nutzen.</p><p class="release-status" id="release-status" role="status">Desktop-Release 1.8.7 in Vorbereitung.</p></div>
+        <div class="platforms">
+          <article class="platform"><div class="platform-heading"><h3>macOS</h3><span>Apple Silicon</span></div><p>Version 1.8.7 · DMG</p><a class="button secondary download-link" id="download-macos" hidden>Für macOS herunterladen</a><p class="availability" id="status-macos">Auf macOS abgenommen. Unsigniert; Installationshinweise beim Download beachten.</p></article>
+          <article class="platform"><div class="platform-heading"><h3>Windows</h3><span>x64</span></div><p>Version 1.8.7 · Installer</p><a class="button secondary download-link" id="download-windows" hidden>Für Windows herunterladen</a><p class="availability" id="status-windows">Auf Windows abgenommen. Unsigniert; Installationshinweise beim Download beachten.</p></article>
+          <a id="release-notes" hidden>Release Notes und Prüfsummen</a>
+        </div>
+      </div>
+    </section>
+    <section class="outlook wrap" aria-labelledby="outlook-title"><p class="eyebrow">INTERAKTIVE PREVIEW</p><div><h2 id="outlook-title">Entscheidungen sichtbar machen.</h2><p>Interaktive Vorschau: Fragen und Antworten bearbeiten, neue Schritte vorschlagen lassen und Entscheidungen direkt im Diagramm verfolgen. Mit Jev gehostet oder Laya lokal.</p><span class="planned-label">Preview · Interaktive Entscheidungsabläufe</span></div></section>
+  </main>
+  <footer class="wrap"><a class="brand" href="./">Mermaider</a><p>Diagramme für gemeinsame Klarheit.</p><div><a href="https://github.com/Jakende/mermaider">GitHub</a><a href="./credits.txt">Lizenz &amp; Herkunft</a></div></footer>
+  <script type="module" src="/src/website/main.ts"></script>
+</body>
+</html>

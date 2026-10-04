@@ -441,3 +441,11 @@
 .app.dark .history-item.active {
     background-color: rgba(0, 120, 215, 0.1);
 }
+.chat-heading { display:flex; align-items:center; gap:10px; min-width:0; }
+.chat-header { gap:8px; flex-shrink:0; flex-wrap:wrap; }
+.chat-header-actions { margin-left:auto; }
+.chat-message:focus-within .message-header-actions { opacity:1; }
+@media(hover:none) { .message-header-actions { opacity:1; } }
+@media(max-width:800px) {
+  .chat-panel.popped-out { left:8px!important; top:140px!important; width:calc(100vw - 16px); min-width:0; height:min(550px,calc(100dvh - 155px)); min-height:0; max-height:calc(100dvh - 155px); }
+}

@@ -1,14 +1,20 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import mermaid from 'mermaid'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
-import { isEditableDiagram, parseMermaidFlowchart } from '../utils/mermaidParser'
+import { parseMermaidFlowchart } from '../utils/mermaidParser'
 import VisualEditor from './VisualEditor'
-import { mermaidThemes } from '../utils/mermaidThemes'
+import { mermaidThemes, diagramThemeVariables } from '../utils/mermaidThemes'
 import { parseInitBlock } from '../utils/mermaidConfig'
+import { queueMermaidRender } from '../utils/renderQueue'
+import { applyDecisionOverlay } from '../decision/overlay'
+import type { flowPath } from '../decision/flow'
+import { useDiagramGestures } from '../hooks/useDiagramGestures'
 import './Preview.css'
 
 interface PreviewProps {
+  decisionHighlights?: ReturnType<typeof flowPath>
+  autoFit?: boolean
   code: string
   setError: (error: string | null) => void
   onCodeChange?: (code: string) => void
@@ -25,24 +31,31 @@ export default function Preview({
   targetNodeId,
   onNodeClick,
   isVisualEditMode = false,
-  onToggleVisualEdit
+  onToggleVisualEdit,
+  decisionHighlights,
+  autoFit = false
 }: PreviewProps) {
-  const { mermaidTheme, textTransform } = useTheme()
+  const { theme, mermaidTheme, textTransform } = useTheme()
   const mermaidContainerRef = useRef<HTMLDivElement>(null)
   const renderIdRef = useRef(0)
+  const [renderedVersion, setRenderedVersion] = useState(0)
+  const onNodeClickRef = useRef(onNodeClick)
+  const zoomRef = useRef(1)
+  const followsFit = useRef(autoFit)
+  useEffect(() => { onNodeClickRef.current = onNodeClick }, [onNodeClick])
 
   // Zoom & Pan State
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [isPanning, setIsPanning] = useState(false)
-  const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
+  const { viewportRef, isPanning, handlers: gestureHandlers } = useDiagramGestures(zoom, pan, setZoom, setPan, !isVisualEditMode, () => { followsFit.current = false })
 
   const [layoutPositions, setLayoutPositions] = useState<Record<string, { x: number, y: number }>>({})
 
-  const extractedCode = extractMermaidCode(code)
+  zoomRef.current = zoom
+  const extractedCode = useMemo(() => extractMermaidCode(code), [code])
   const trimmedCode = extractedCode.trim()
-  const parsedDiagram = trimmedCode ? parseMermaidFlowchart(trimmedCode) : null
-  const canEdit = parsedDiagram !== null && isEditableDiagram(trimmedCode)
+  const parsedDiagram = useMemo(() => trimmedCode ? parseMermaidFlowchart(trimmedCode) : null, [trimmedCode])
+  const canEdit = parsedDiagram !== null
 
   const handleCodeChange = (newCode: string) => {
     if (onCodeChange) {
@@ -50,56 +63,19 @@ export default function Preview({
     }
   }
 
+  useEffect(() => {
+    if (!mermaidContainerRef.current) return
+    return applyDecisionOverlay(mermaidContainerRef.current, decisionHighlights)
+  }, [decisionHighlights, renderedVersion])
+
   // Zoom Logic
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 20))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.05))
+  const handleZoomIn = () => { followsFit.current = false; setZoom(prev => Math.min(prev + 0.1, 20)) }
+  const handleZoomOut = () => { followsFit.current = false; setZoom(prev => Math.max(prev - 0.1, 0.05)) }
   const handleZoomReset = () => {
+    followsFit.current = false
     setZoom(1)
     setPan({ x: 0, y: 0 })
   }
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    setZoom(prev => Math.min(Math.max(prev + delta, 0.05), 20))
-  }
-
-  // Pan Logic
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (isVisualEditMode) return
-    setIsPanning(true)
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-    document.body.style.cursor = 'grabbing'
-  }
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isPanning) return
-    e.preventDefault()
-    const dx = e.clientX - lastMousePos.x
-    const dy = e.clientY - lastMousePos.y
-    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }))
-    setLastMousePos({ x: e.clientX, y: e.clientY })
-  }, [isPanning, lastMousePos])
-
-  const handleMouseUp = useCallback(() => {
-    setIsPanning(false)
-    document.body.style.cursor = ''
-  }, [])
-
-  useEffect(() => {
-    if (isPanning) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    } else {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isPanning, handleMouseMove, handleMouseUp])
 
   // Initial mermaid setup
   useEffect(() => {
@@ -109,10 +85,12 @@ export default function Preview({
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!mermaidContainerRef.current) return
-
-      const currentId = ++renderIdRef.current
+    const currentId = ++renderIdRef.current
+    let cancelled = false
+    const isCurrent = () => !cancelled && renderIdRef.current === currentId
+    const timer = setTimeout(() => {
+      void queueMermaidRender(async () => {
+      if (!isCurrent() || !mermaidContainerRef.current) return
       const container = mermaidContainerRef.current
 
       if (isVisualEditMode && canEdit) {
@@ -122,7 +100,7 @@ export default function Preview({
       const trimmedCode = extractedCode.trim()
 
       if (!trimmedCode) {
-        if (renderIdRef.current === currentId) {
+        if (isCurrent()) {
           container.innerHTML = '<div class="empty-preview">Start typing your Mermaid diagram...</div>'
           setError(null)
           setLayoutPositions({})
@@ -151,7 +129,7 @@ export default function Preview({
           initConfig.theme = 'default'
         } else {
           initConfig.theme = selectedTheme.config.theme
-          initConfig.themeVariables = selectedTheme.config.themeVariables
+          initConfig.themeVariables = diagramThemeVariables(mermaidTheme, theme)
         }
 
         // Apply "look" (hand-drawn)
@@ -175,7 +153,6 @@ export default function Preview({
         mermaid.initialize(initConfig)
         // ------------------------------
 
-        mermaid.parse(trimmedCode)
         const id = `mermaid-${currentId}-${Date.now()}`
 
         const renderContainer = document.createElement('div')
@@ -194,11 +171,12 @@ export default function Preview({
         try {
           const result = await mermaid.render(id, trimmedCode)
 
-          if (renderIdRef.current === currentId && container) {
+          if (isCurrent() && container) {
             let svgMarkup = result.svg
             // Sanitize empty width/height attributes generated by certain Mermaid diagram renders (e.g. width="")
             svgMarkup = svgMarkup.replace(/\b(width|height)=""/g, '')
             container.innerHTML = svgMarkup
+            setRenderedVersion(currentId)
 
             const newPositions: Record<string, { x: number, y: number }> = {}
             const nodes = container.querySelectorAll('.node')
@@ -207,7 +185,7 @@ export default function Preview({
               const fullId = node.id || ''
               let nodeId = ''
               if (fullId.startsWith('flowchart-')) {
-                nodeId = fullId.split('-')[1]
+                nodeId = fullId.replace(/^flowchart-/, '').replace(/-\d+$/, '')
               } else if (fullId.includes('-')) {
                 nodeId = fullId.split('-')[0]
               } else {
@@ -242,7 +220,7 @@ export default function Preview({
                 const fullId = node.id || ''
                 let nodeId = ''
                 if (fullId.startsWith('flowchart-')) {
-                  nodeId = fullId.split('-')[1]
+                  nodeId = fullId.replace(/^flowchart-/, '').replace(/-\d+$/, '')
                 } else if (fullId.includes('-')) {
                   nodeId = fullId.split('-')[0]
                 } else {
@@ -251,9 +229,7 @@ export default function Preview({
                 if (!nodeId || nodeId === 'node' || nodeId === 'flowchart') {
                   nodeId = node.textContent?.trim() || ''
                 }
-                if (nodeId && onNodeClick) {
-                  onNodeClick(nodeId)
-                }
+                if (nodeId) onNodeClickRef.current?.(nodeId)
               })
             })
 
@@ -264,10 +240,18 @@ export default function Preview({
               const originalHeight = viewBox ? parseFloat(viewBox[3]) : 0
 
               if (originalWidth && originalHeight) {
+                followsFit.current = autoFit
+                if (autoFit) {
+                  const viewport = container.closest('.preview-container')?.querySelector('.preview-viewport')
+                  const width = Math.max(1, (viewport?.clientWidth || container.clientWidth) - 32)
+                  const height = Math.max(1, (viewport?.clientHeight || container.clientHeight) - 32)
+                  const fitted = Math.max(0.05, Math.min(1, width / originalWidth, height / originalHeight))
+                  zoomRef.current = fitted; setZoom(fitted); setPan({x:0,y:0})
+                }
                 svg.setAttribute('data-original-width', originalWidth.toString())
                 svg.setAttribute('data-original-height', originalHeight.toString())
-                svg.style.width = `${originalWidth * zoom}px`
-                svg.style.height = `${originalHeight * zoom}px`
+                svg.style.width = `${originalWidth * zoomRef.current}px`
+                svg.style.height = `${originalHeight * zoomRef.current}px`
               } else {
                 svg.style.width = '100%'
                 svg.style.height = 'auto'
@@ -296,6 +280,7 @@ export default function Preview({
             setError(null)
           }
         } finally {
+          document.getElementById(`d${id}`)?.remove()
           if (renderContainer.parentNode) {
             renderContainer.parentNode.removeChild(renderContainer)
           }
@@ -305,22 +290,37 @@ export default function Preview({
           }
         }
       } catch (err) {
+        if (!isCurrent()) return
         const errorMsg = err instanceof Error ? err.message : 'Ungültige Mermaid-Syntax'
         setError(errorMsg)
-        const errorDivs = document.querySelectorAll('[id^="dmermaid-"], #dmermaid');
-        errorDivs.forEach(div => div.remove());
-        if (renderIdRef.current === currentId && container) {
-          container.innerHTML = `<div class="error-preview">
-            <h3>Syntaxfehler im Diagramm</h3>
-            <p style="margin: 8px 0; font-size: 0.9em; color: var(--text-secondary, #888);">Tipp: Verwende die <strong>[AI Fix]</strong> Schaltfläche im Chat-Panel, um den Fehler automatisch beheben zu lassen.</p>
-            <pre>${errorMsg}</pre>
-          </div>`
-        }
+        container.innerHTML = '<div class="error-preview"><h3>Syntaxfehler im Diagramm</h3><p>Verwende AI Fix, um den Fehler beheben zu lassen.</p><pre></pre></div>'
+        container.querySelector('pre')!.textContent = errorMsg
       }
-    }, 500)
+      })
+    }, 150)
 
-    return () => clearTimeout(timer)
-  }, [code, setError, mermaidTheme, isVisualEditMode, canEdit, extractedCode, onNodeClick, textTransform])
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [setError, theme, mermaidTheme, isVisualEditMode, canEdit, extractedCode, textTransform, autoFit])
+
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!autoFit || !viewport || isVisualEditMode) return
+    const observer = new ResizeObserver(() => {
+      if (!followsFit.current) return
+      const svg = mermaidContainerRef.current?.querySelector('svg')
+      const width = Number(svg?.getAttribute('data-original-width'))
+      const height = Number(svg?.getAttribute('data-original-height'))
+      if (!width || !height) return
+      const fitted = Math.max(0.05, Math.min(1, Math.max(1, viewport.clientWidth - 32) / width, Math.max(1, viewport.clientHeight - 32) / height))
+      zoomRef.current = fitted
+      setZoom(fitted)
+    })
+    observer.observe(viewport)
+    return () => observer.disconnect()
+  }, [autoFit, renderedVersion, isVisualEditMode, viewportRef])
 
   useEffect(() => {
     if (!mermaidContainerRef.current) return
@@ -409,8 +409,8 @@ export default function Preview({
       </div>
       <div
         className="preview-viewport"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
+        ref={viewportRef}
+        {...gestureHandlers}
         style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       >
         <div
@@ -418,7 +418,7 @@ export default function Preview({
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px)`,
             transformOrigin: 'center center',
-            transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+            transition: 'none'
           }}
         >
           <div

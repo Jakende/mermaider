@@ -52,15 +52,17 @@ debug-*.ts
 *.test.local.*
 *.debug.*
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
 
-.env
+# Browser verification output
+/test-results/
+/playwright-report/
+
+# Historical build copies are not project sources
+/.test-compile/
+
+# Live verification reports are CI artifacts.
+ai-gateway-verification.json
+
+# Python publication tooling cache
+__pycache__/

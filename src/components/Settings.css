@@ -418,3 +418,35 @@ body.theme-invert .device-code-display {
   margin-left: 2px;
   margin-bottom: var(--space-3);
 }
+.settings-modal { width:min(94vw,760px); max-height:min(92dvh,860px); color:var(--ink); }
+.settings-header { gap:12px; flex-shrink:0; }
+.settings-header h2 { margin:0; }
+.settings-navigation { display:flex; flex-shrink:0; padding:0 16px; gap:16px; border-bottom:1px solid var(--border); overflow-x:auto; }
+.settings-navigation button { background:transparent; color:var(--muted); border:0; border-bottom:2px solid transparent; padding:12px 0; min-height:44px; font-size:11px; white-space:nowrap; }
+.settings-navigation button[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--ink); }
+.settings-content { min-height:0; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.settings-content [hidden] { display:none; }
+.settings-section { background:transparent; padding:16px; }
+.settings-description { font-size:12px; line-height:1.65; }
+.settings-field:last-child { margin-bottom:0; }
+.settings-toggle { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.settings-toggle input[type="checkbox"] { flex:none; }
+.settings-toggle label { margin-bottom:0; }
+.settings-field input[type="number"] { width:100%; height:36px; background:var(--surface); color:var(--ink); border:1px solid var(--border); padding:8px 10px; font:inherit; }
+.api-key-input-wrapper input { padding-right:70px; min-width:0; }
+.input-with-button input { min-width:0; }
+.settings-modal .provider-tab.active,.settings-modal .auth-tab.active { background:var(--control-bg); color:var(--control-ink); border-color:var(--control-border); }
+.settings-modal code { display:block; white-space:pre-wrap; overflow-wrap:anywhere; font-size:11px; padding:8px 0; }
+.settings-footer { flex-shrink:0; }
+.settings-profile { display:flex; gap:20px; align-items:center; margin-top:24px; border-top:1px solid var(--border); padding-top:16px; }
+@media(max-width:560px) {
+  .settings-navigation { padding:0 12px; gap:12px; }
+  .settings-navigation button { font-size:10px; }
+  .settings-footer { flex-direction:row; flex-wrap:wrap; gap:8px; padding:12px; }
+  .settings-footer>div { margin-left:auto; gap:8px; }
+  .settings-footer button { font-size:11px; padding:0 9px; }
+}
+@media(max-width:360px) {
+  .settings-navigation { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 12px; }
+  .settings-navigation button { min-height:36px; padding:8px 0; }
+}

@@ -1,0 +1,103 @@
+{
+  "format": "mermaider-decision",
+  "version": 2,
+  "session": {
+    "version": 1,
+    "id": "session_abnahme_de",
+    "goal": "Eine Release-Freigabe anhand ausdrücklich genannter Fakten bewerten. Fehlende oder widersprüchliche Angaben nicht als Freigabe erfinden.",
+    "context": "Das Budget ist freigegeben. Alle Tests sind bestanden. Die verantwortliche Person hat die Veröffentlichung ausdrücklich freigegeben.",
+    "plan": {
+      "title": "Deutsche Entscheidungsabnahme",
+      "startId": "budget",
+      "questions": [
+        {
+          "id": "budget",
+          "text": "Welcher Budgetzustand wird ausdrücklich beschrieben?",
+          "options": [
+            {
+              "id": "ja",
+              "label": "Budget ausdrücklich freigegeben",
+              "nextId": "stufe"
+            },
+            {
+              "id": "nein",
+              "label": "Budget ausdrücklich abgelehnt",
+              "nextId": "stufe"
+            },
+            {
+              "id": "unklar",
+              "label": "Budget offen oder widersprüchlich",
+              "nextId": "stufe"
+            }
+          ],
+          "evaluation": {
+            "type": "choice"
+          }
+        },
+        {
+          "id": "stufe",
+          "text": "Welche Freigabestufe ist durch die aktuellen Fakten belegt?",
+          "options": [
+            {
+              "id": "ja",
+              "label": "Freigegeben",
+              "nextId": "aussage"
+            },
+            {
+              "id": "nein",
+              "label": "Blockiert",
+              "nextId": "aussage"
+            },
+            {
+              "id": "unklar",
+              "label": "Unklar / prüfen",
+              "nextId": "aussage"
+            }
+          ],
+          "evaluation": {
+            "type": "score",
+            "low": 0.5,
+            "high": 1.5,
+            "lowId": "nein",
+            "highId": "ja",
+            "uncertainId": "unklar",
+            "rubric": [
+              "Mindestens ein Test ist fehlgeschlagen oder die Veröffentlichung wurde ausdrücklich abgelehnt.",
+              "Alle Tests sind bestanden, aber die ausdrückliche Veröffentlichungsfreigabe steht noch aus oder ist widersprüchlich.",
+              "Alle Tests sind bestanden und die verantwortliche Person hat die Veröffentlichung ausdrücklich freigegeben."
+            ]
+          }
+        },
+        {
+          "id": "aussage",
+          "text": "Alle Tests sind bestanden und die verantwortliche Person hat die Veröffentlichung ausdrücklich freigegeben.",
+          "options": [
+            {
+              "id": "ja",
+              "label": "Freigegeben"
+            },
+            {
+              "id": "nein",
+              "label": "Blockiert"
+            },
+            {
+              "id": "unklar",
+              "label": "Unklar / prüfen"
+            }
+          ],
+          "evaluation": {
+            "type": "noul",
+            "low": 0.2,
+            "high": 0.8,
+            "lowId": "nein",
+            "highId": "ja",
+            "uncertainId": "unklar"
+          }
+        }
+      ]
+    },
+    "selections": {},
+    "revision": 0,
+    "linked": true
+  }
+}

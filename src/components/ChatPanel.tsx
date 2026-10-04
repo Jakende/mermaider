@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useFloatingPanel } from '../hooks/useFloatingPanel'
+import UserBlob from './UserBlob'
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { editCodeWithAI, askAboutCodeWithAI, getStoredConfig, getStoredConfigWithSecrets, storeConfig, cleanCode, generateEmbedding } from '../utils/aiService'
 import { searchSimilar } from '../utils/vectorStore'
 import './ChatPanel.css'
@@ -53,13 +55,9 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
     const [isOpenAIProvider, setIsOpenAIProvider] = useState(() => getStoredConfig().provider === 'openai')
     const [useWebSearch, setUseWebSearch] = useState(() => getStoredConfig().openaiWebSearch ?? false)
 
-    // Pop-out state
-    const [position, setPosition] = useState({ x: 20, y: 50 })
-    const [isDragging, setIsDragging] = useState(false)
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const { panelRef, position, headerProps } = useFloatingPanel(isPoppedOut && isOpen)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
-    const panelRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLTextAreaElement>(null)
 
     const toggleMode = () => {
@@ -240,48 +238,6 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
         })
     }
 
-    // Dragging logic for pop-out
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (!isPoppedOut) return
-
-        // Only trigger drag if clicking the header or specific non-interactive parts
-        // Best practice: Only drag via the header
-        if (!(e.target as HTMLElement).closest('.chat-header')) return
-        if ((e.target as HTMLElement).closest('.chat-header-actions')) return
-
-        setIsDragging(true)
-        setDragOffset({
-            x: e.clientX - position.x,
-            y: e.clientY - position.y
-        })
-    }
-
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-        if (!isDragging) return
-        setPosition({
-            x: e.clientX - dragOffset.x,
-            y: e.clientY - dragOffset.y
-        })
-    }, [isDragging, dragOffset])
-
-    const handleMouseUp = useCallback(() => {
-        setIsDragging(false)
-    }, [])
-
-    useEffect(() => {
-        if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove)
-            window.addEventListener('mouseup', handleMouseUp)
-        } else {
-            window.removeEventListener('mousemove', handleMouseMove)
-            window.removeEventListener('mouseup', handleMouseUp)
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove)
-            window.removeEventListener('mouseup', handleMouseUp)
-        }
-    }, [isDragging, handleMouseMove, handleMouseUp])
-
     if (!isOpen) return null
 
     return (
@@ -293,13 +249,13 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                 top: position.y,
             } : undefined}
         >
-            <div className="chat-header" onMouseDown={handleMouseDown}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="chat-header" {...headerProps} aria-label={isPoppedOut ? "Move chat window (arrow keys or drag)" : undefined}>
+                <div className="chat-heading"><UserBlob size={28} busy={isLoading}/><div>
                     <h3>AI Assistant</h3>
                     <span style={{ fontSize: '10px', color: 'var(--muted)' }}>
                         Est. Tokens: {Math.round(totalTokens)}
                     </span>
-                </div>
+                </div></div>
                 <div className="chat-header-actions">
                     <button
                         className="chat-action-btn"
@@ -357,6 +313,7 @@ const ChatPanel = forwardRef<ChatPanelRef, ChatPanelProps>((props, ref) => {
                             <div key={index} className={`chat-message ${msg.role}`}>
                                 <div className="message-wrapper">
                                     <div className="message-header-actions">
+                                        {msg.role === 'user' && <UserBlob size={24} />}
                                         {msg.role === 'user' && editingIndex !== index && (
                                             <button
                                                 className="edit-btn"

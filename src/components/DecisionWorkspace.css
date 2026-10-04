@@ -1,0 +1,74 @@
+.decision-workspace { position:relative; flex:none; box-sizing:border-box; height:100%; display:flex; flex-direction:column; border-left:1px solid var(--border); background:var(--surface); color:var(--ink); font:inherit; }
+.decision-workspace header { display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--border); }
+.decision-workspace header>button { margin-left:auto; }
+.decision-scroll { padding:12px; overflow:auto; flex:1; min-height:0; }
+.decision-workspace label { display:block; margin:12px 0 5px; font-size:12px; }
+.decision-workspace input:not([type=checkbox]),.decision-workspace textarea,.decision-workspace select { width:100%; box-sizing:border-box; background:var(--surface); color:var(--ink); border:1px solid var(--border); padding:8px; font:inherit; }
+.decision-workspace textarea { resize:vertical; }
+.flow-actions { display:flex; flex-wrap:wrap; gap:5px; margin:8px 0; }
+.flow-actions button,.decision-workspace button { font-size:11px; min-width:28px; }
+.flow-toggle { display:flex!important; align-items:center; gap:6px; }
+.flow-settings,.flow-question details { margin:12px 0; font-size:12px; }
+.flow-hint,.flow-settings p { font-size:12px; color:var(--muted); line-height:1.5; }
+.flow-question { border:1px solid var(--border); padding:10px; margin:12px 0; }
+.flow-question.current,.flow-question.focused { border-color:var(--ink); }
+.flow-question-heading { display:flex; gap:5px; align-items:center; font-size:10px; margin-bottom:8px; }
+.flow-question-heading span { margin-right:auto; color:var(--muted); }
+.flow-option { display:flex; gap:4px; align-items:center; margin:6px 0; }
+.flow-option.chosen { border-left:3px solid var(--ink); padding-left:4px; }
+.flow-option>input { min-width:0; }
+.flow-draft,.flow-suggestion { border-left:3px solid var(--ink); padding:8px; margin:12px 0; font-size:12px; }
+.flow-draft ul { padding-left:16px; max-height:220px; overflow:auto; }
+.flow-draft small,.flow-suggestion small { display:block; color:var(--muted); margin:4px 0; }
+.decision-workspace [role=alert] { border-left:3px solid var(--ink); padding:8px; font-size:12px; }
+@media(max-width:800px) { .decision-workspace { position:absolute; right:0; top:0; bottom:0; z-index:15; } }
+
+.decision-resize-handle { position:absolute; left:-4px; top:0; bottom:0; width:8px; z-index:20; cursor:col-resize; touch-action:none; }
+.decision-resize-handle::after { content:''; position:absolute; left:3px; top:0; bottom:0; width:2px; background:var(--border); }
+.decision-resize-handle:hover::after,.decision-resize-handle:focus-visible::after { background:var(--ink); }
+.decision-resize-handle:focus-visible { outline:1px solid var(--ink); outline-offset:1px; }
+
+.flow-rule-bounds { display:flex; gap:8px; }
+.flow-rule-bounds label { flex:1; min-width:0; }
+.flow-rule-editor { border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px; }
+.flow-history { margin:16px 0; font-size:12px; }
+.flow-history ol { padding-left:18px; }
+.flow-history li { margin:10px 0; overflow-wrap:anywhere; }
+.flow-history small { display:block; color:var(--muted); }
+.flow-event-context { white-space:pre-wrap; color:var(--muted); }
+
+.flow-navigator { position:sticky; top:-12px; z-index:2; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 0; margin-bottom:14px; }
+.flow-view-switch { display:flex; gap:4px; }
+.flow-view-switch button { flex:1; min-height:40px; }
+.flow-view-switch button[aria-pressed=true] { background:var(--ink); color:var(--surface); }
+.flow-progress { display:flex; flex-direction:column; gap:3px; margin:10px 0; font-size:12px; }
+.flow-progress span { color:var(--muted); }
+.flow-path { display:flex; gap:5px; overflow-x:auto; padding-bottom:6px; max-width:100%; }
+.flow-path button { flex:none; max-width:220px; min-height:38px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.flow-path button[aria-current=step] { border-color:var(--ink); }
+.flow-jump { width:100%; margin-top:6px; }
+.flow-start { border:1px solid var(--border); padding:12px; margin-bottom:16px; font-size:12px; }
+.flow-start p { color:var(--muted); line-height:1.5; }
+.flow-question-title { font-size:15px; font-weight:600; line-height:1.5; margin:8px 0; overflow-wrap:anywhere; }
+.flow-question:focus { outline:2px solid var(--ink); outline-offset:2px; }
+.flow-answer-cards { display:flex; flex-direction:column; gap:8px; }
+.decision-workspace .flow-answer-cards button { width:100%; min-height:48px; display:flex; gap:10px; padding:10px; text-align:left; justify-content:flex-start; font-size:13px; }
+.decision-workspace .flow-answer-cards button>span:nth-child(2) { flex:1; min-width:0; overflow-wrap:anywhere; }
+.decision-workspace .flow-answer-cards button>small { flex:none; color:var(--muted); font-weight:normal; font-size:10px; }
+.decision-workspace .flow-answer-cards button.chosen { border:2px solid var(--ink); }
+.flow-selection-summary { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; font-size:12px; overflow-wrap:anywhere; }
+.flow-selection-summary>span { width:100%; }
+.flow-draft-editor { margin:10px 0; }
+.decision-workspace summary { cursor:pointer; min-height:32px; }
+.decision-workspace button:focus-visible,.decision-workspace summary:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+@media(max-width:800px) { .decision-workspace .flow-answer-cards button { min-height:52px; font-size:14px; } .decision-workspace .flow-answer-cards button>small { max-width:72px; white-space:normal; } }
+.flow-preview-label { font-size:10px; color:var(--muted); }
+
+.flow-feedback { flex:none; max-height:25%; overflow:auto; padding:8px 12px; border-bottom:1px solid var(--border); font-size:12px; overflow-wrap:anywhere; }
+.flow-feedback [role=alert] { margin:0; }
+@media(max-width:800px) { .decision-workspace:has(input:focus,textarea:focus,select:focus) .flow-navigator { position:relative; top:auto; } }
+
+.flow-review-notice,.flow-draft-impact { border:1px solid var(--border); padding:10px; margin:12px 0; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.flow-review-notice p { color:var(--muted); margin-bottom:0; }
+.decision-workspace .flow-answer-cards button { flex-wrap:wrap; }
+.flow-answer-next { display:block; flex-basis:100%; color:var(--muted); font-weight:normal; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
