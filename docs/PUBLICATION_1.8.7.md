@@ -1,18 +1,41 @@
 # Veröffentlichung von Mermaider 1.8.7
 
-Stand: 04.10.2026. Der Nutzer hat beide aktuellen Installer auf Windows und macOS
+Stand: 05.10.2026. Der Nutzer hat beide aktuellen Installer auf Windows und macOS
 abgenommen und die öffentliche Veröffentlichung von Repository und Installern
 ausdrücklich autorisiert. MIT und bestehende Fremdhinweise bleiben erhalten.
 
 Übergabe für neue Arbeitsumgebungen, einschließlich Wiederherstellung fehlender
 lokaler Artefakte: [NEXT_SESSION_1.8.7.md](NEXT_SESSION_1.8.7.md).
 
-Die öffentliche Freigabe und das neue Webdeployment sind noch nicht ausgeführt:
-Die Arbeitsumgebung meldet keine konfigurierten Secrets und erlaubt die benötigten
-API-Hosts derzeit nicht. Die schon bereitgestellte App und Website bleiben unter
-https://mermaider.appwrite.network/ und `/website/` erreichbar. Der lokale neue
-Webbuild verschiebt die Diagrammbibliothek in die obere Toolbar. Diese Änderung
-gehört nicht zu den bereits abgenommenen Desktop-Dateien.
+Das neue Webdeployment ist abgeschlossen: App und Website sind unter
+https://mermaider.appwrite.network/ und https://mermaider.appwrite.network/website/
+aktiv. Deployment-ID: `6ac2d3ebaf5eed9a7bec`. HTML und referenzierte JS-/CSS-Dateien
+wurden anonym bytegenau gegen den lokalen Node-20-Build geprüft. Die Diagrammbibliothek
+sitzt im Web in der oberen Toolbar; die Desktop-Dateien bleiben unverändert.
+
+Die GitHub-Veröffentlichung ist **nicht abgeschlossen**. Repository weiterhin privat,
+Release `403236834` für `v1.8.7` weiterhin Draft ohne Assets; Tag noch nicht angelegt.
+Die vorhandene Integration kann trotz gemeldeter Adminberechtigung die Sichtbarkeit
+nicht ändern: HTTP 403 `Resource not accessible by integration`. Uploads über
+`uploads.github.com` scheitern mit HTTP 400 `Bad Content-Length`, reproduzierbar
+mit Python und curl sowie einer kleinen Textdatei ohne Credentials. Die Ursache
+im HTTP-Transport muss behoben werden; es wurden keine Schutzmechanismen umgangen.
+Die Downloadlinks bleiben folgerichtig deaktiviert (`published: false`).
+
+Beide Installer wurden über die dokumentierten Artefakt-IDs wiederhergestellt;
+Dateigrößen und SHA-256 stimmen exakt. Releasechecks, ESLint, TypeScript/Vite,
+54 Logiktests und vier Offline-Veröffentlichungstests bestehen.
+Sieben Repository-Workflows sind pausiert, kein neuer Actions-Build wurde gestartet.
+Die GitHub-verwalteten Copilot-Einträge sind vom Pausieren ausgenommen: Die API
+verweigert ihre Deaktivierung mit HTTP 422; sie sind keine Push-/Tag-Releasebuilds.
+
+Pausierte IDs: `371965644`, `371965645`, `373058894`, `229726543`, `373053762`,
+`229726544`, `372034029`. Das Paket und `publication-state.json` liegen in dieser
+Umgebung unter `/workspace/mermaider-artifacts/Mermaider_1.8.7_publication/`.
+`completed` bleibt `false`. Nach Behebung der Zugriffs-/Uploadprobleme kann der
+bestehende Draft mit demselben geprüften Paket fortgesetzt werden. Änderungen
+an Main sind vor Aktualisierung von `repositoryCommit` zu prüfen; der tatsächlich
+gebaute `webSourceCommit` bleibt `a362a57654c1817e76e2772907554787fe2718e5`.
 
 ## Fertiges Veröffentlichungspaket
 

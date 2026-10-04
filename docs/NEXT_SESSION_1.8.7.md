@@ -130,3 +130,17 @@ neue Main-SHA in ein fremdes/älteres Paket schreiben. Reine Dokumentations-
 
 Weitere Details: [Veröffentlichungsablauf](PUBLICATION_1.8.7.md),
 [Abschlussnachweise](RELEASE_CLOSEOUT_1.8.7.md), [Roadmap](ROADMAP.md).
+
+## Neuester Fortsetzungsstand (05.10.2026)
+
+Webdeployment `6ac2d3ebaf5eed9a7bec` ist aktiv und bytegenau geprüft. Installer sind
+in dieser Umgebung wiederhergestellt und SHA-256-geprüft. Sieben Repository-Workflows
+wurden pausiert; keine neuen Actions-Builds. Das Veröffentlichungsskript berücksichtigt
+jetzt die zwei nicht deaktivierbaren GitHub-verwalteten Copilot-Workflows.
+
+GitHub ist weiterhin blockiert: Draft `403236834` für `v1.8.7` ohne Assets;
+Uploads liefern HTTP 400 `Bad Content-Length`, Sichtbarkeitsänderung HTTP 403
+`Resource not accessible by integration`. Repository privat, Downloadmanifest unveröffentlicht,
+`completed: false`. Zugang für Sichtbarkeit und HTTP-Uploadweg korrigieren, dann mit
+geprüftem Paket fortsetzen. Details und pausierte Workflow-IDs stehen in
+[PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md). Keine erneute Veröffentlichungsfreigabe nötig.

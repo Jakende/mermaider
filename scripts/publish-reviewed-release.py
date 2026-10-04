@@ -142,6 +142,13 @@ def publish(folder):
 
     workflows = gh('/actions/workflows?per_page=100')['workflows']
     for workflow in workflows:
+        # GitHub-managed Copilot workflows cannot be disabled with this API
+        # (HTTP 422) and do not build on repository pushes/tags/releases.
+        if workflow['path'] in (
+            'dynamic/copilot-pull-request-reviewer/copilot-pull-request-reviewer',
+            'dynamic/copilot-swe-agent/copilot',
+        ):
+            continue
         if workflow['state'] == 'active':
             entry = {'id': workflow['id'], 'name': workflow['name']}
             if not any(item['id'] == entry['id'] for item in state['pausedWorkflows']):

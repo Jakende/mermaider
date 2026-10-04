@@ -1,6 +1,6 @@
 # Abschlussstand Mermaider 1.8.7
 
-Stand: 04.10.2026. Die Webversion und die Produktwebsite sind bereitgestellt;
+Stand: 05.10.2026. Die Webversion und die Produktwebsite sind bereitgestellt;
 der vereinbarte Web-Abschluss ist erfolgt. Beide aktuellen Desktop-Installer
 sind vom Nutzer praktisch abgenommen und zur unsignierten öffentlichen
 Veröffentlichung freigegeben. Uploadstand: [Veröffentlichung](PUBLICATION_1.8.7.md).
@@ -94,3 +94,16 @@ Lokales Laya/CORS, weitere Modellfälle, Kalibrierung, Signierung und zusätzlic
 Plattformen stehen in der [Roadmap](ROADMAP.md). Tatsächliche externe
 Upload-/Sichtbarkeitsaktionen und die budgetfreie Übergabe:
 [Veröffentlichung](PUBLICATION_1.8.7.md).
+
+## Fortsetzung am 05.10.2026
+
+Das lokale Webdeployment `6ac2d3ebaf5eed9a7bec` ist bereit und aktiv; App-/Website-HTML
+und referenzierte JS-/CSS-Dateien stimmen anonym mit dem geprüften Build überein.
+Beide abgenommenen Installer wurden aus Actions-Artefakten wiederhergestellt und
+anhand der obigen Größen und SHA-256 geprüft. Kein neuer Actions-Build wurde gestartet.
+Lokale Releasechecks, Lint, Build, 54 Logiktests und vier Veröffentlichungstests bestehen.
+
+GitHub bleibt unvollständig: Draft-Release `403236834` ohne Assets, Repository privat,
+Downloads deaktiviert. Upload: HTTP 400 `Bad Content-Length`; Sichtbarkeitsänderung:
+HTTP 403 `Resource not accessible by integration`. Sieben Repository-Workflows sind
+pausiert. Konkrete Wiederaufnahmehinweise: [Veröffentlichung](PUBLICATION_1.8.7.md).
