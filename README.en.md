@@ -1,6 +1,6 @@
-# Mermaider
+# Mermaider — English README
 
-[English README](README.en.md) · [English website](https://mermaider.appwrite.network/website/en/) · [Deutsche Website](https://mermaider.appwrite.network/website/)
+[Project README](README.md) · [English website](https://mermaider.appwrite.network/website/en/) · [Deutsche Website](https://mermaider.appwrite.network/website/)
 
 Mermaider is a live Mermaid editor with local Ollama and hosted OpenAI assistance. Create and edit diagrams from code or natural-language descriptions, preview changes, and export the result.
 
@@ -159,6 +159,8 @@ With Node 20: `npm ci`, `npm run check:release`, `npm run lint`, `npm test`,
 Historical stabilization notes: [Release stabilization](docs/RELEASE_STABILIZATION.md).
 
 Accepted release: [1.8.7 deployment and acceptance checklist](docs/RELEASE_1.8.7.md).
+
+The product website is available in [English](https://mermaider.appwrite.network/website/en/) and [German](https://mermaider.appwrite.network/website/). Use the language switcher in its navigation; it remembers your choice. Supporting documentation linked below is currently in German.
 
 Product website and reviewed download configuration: [Website guide](docs/WEBSITE.md).
 

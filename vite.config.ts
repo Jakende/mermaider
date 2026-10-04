@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/', // Use absolute path for Appwrite Sites deployment
   build: {
     rollupOptions: {
-      input: { app: 'index.html', website: 'website/index.html' },
+      input: { app: 'index.html', website: 'website/index.html', websiteEn: 'website/en/index.html' },
     },
     outDir: 'dist',
     emptyOutDir: true,

@@ -2,12 +2,25 @@ import '../assets/design-tokens.css'
 import '../assets/components.css'
 import './style.css'
 
+const english = document.documentElement.lang === 'en'
+const languageLink = document.querySelector<HTMLAnchorElement>('[data-language]')!
+try {
+  if (!english && localStorage.getItem('mermaider-website-language') === 'en') {
+    window.location.replace('/website/en/' + window.location.hash)
+  }
+} catch { /* Both language links work without storage. */ }
+languageLink.addEventListener('click', () => {
+  try { localStorage.setItem('mermaider-website-language', languageLink.dataset.language!) } catch { /* Optional persistence. */ }
+})
+
 // Share the application's theme preference; tolerate unavailable browser storage.
 const themeButton = document.querySelector<HTMLButtonElement>('#theme-toggle')!
 function applyTheme(light: boolean) {
   document.body.classList.toggle('theme-invert', light)
-  themeButton.textContent = light ? 'Dunkel' : 'Hell'
-  themeButton.setAttribute('aria-label', light ? 'Dunkles Design aktivieren' : 'Helles Design aktivieren')
+  themeButton.textContent = english ? (light ? 'Dark' : 'Light') : (light ? 'Dunkel' : 'Hell')
+  themeButton.setAttribute('aria-label', english
+    ? (light ? 'Switch to dark theme' : 'Switch to light theme')
+    : (light ? 'Dunkles Design aktivieren' : 'Helles Design aktivieren'))
   document.querySelector('meta[name="theme-color"]')!.setAttribute('content', light ? '#ffffff' : '#000000')
 }
 try { applyTheme(localStorage.getItem('mermaider-theme') === 'light') } catch { applyTheme(false) }
@@ -31,8 +44,11 @@ const examples = {
 const diagram = document.querySelector<HTMLElement>('#diagram')!
 const code = document.querySelector<HTMLElement>('#example-code')!
 function showExample(name: keyof typeof examples) {
-  diagram.innerHTML = examples[name].diagram // Trusted literals only, never external input.
-  code.textContent = examples[name].code
+  const translate = (text: string) => english ? text.replace(/Ablauf|Entscheidung|Bereit\?|Überarbeiten|Diagramm|Teilen|Idee|Bei Ja teilen, bei Nein überarbeiten|Ja|Nein/g,
+    word => ({ Ablauf: 'Workflow', Entscheidung: 'Decision', 'Bereit?': 'Ready?', Überarbeiten: 'Revise', Diagramm: 'Diagram', Teilen: 'Share', Idee: 'Idea', 'Bei Ja teilen, bei Nein überarbeiten': 'If yes, share; if no, revise', Ja: 'Yes', Nein: 'No' }[word]!))
+    .replace('führt zu', 'leads to').replace('führt zu', 'leads to') : text
+  diagram.innerHTML = translate(examples[name].diagram) // Trusted authored literals only.
+  code.textContent = translate(examples[name].code)
   document.querySelectorAll<HTMLButtonElement>('[data-example]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.example === name))
   })
@@ -51,7 +67,7 @@ function safeHttps(value: string): string | null {
 }
 async function loadRelease() {
   try {
-    const response = await fetch('./release.json', { cache: 'no-cache' })
+    const response = await fetch('/website/release.json', { cache: 'no-cache' })
     if (!response.ok) return
     const release: Release = await response.json()
     if (release.published !== true || !/^\d+\.\d+\.\d+$/.test(release.version)) return
@@ -68,7 +84,11 @@ async function loadRelease() {
       link.hidden = false
       const card = link.closest('article')!
       card.querySelector('p')!.textContent = `Version ${release.version} · ${platform === 'macos' ? 'DMG' : 'Installer'}`
-      document.querySelector(`#status-${platform}`)!.textContent = download.signed
+      document.querySelector(`#status-${platform}`)!.textContent = english
+        ? (download.signed
+          ? 'Signed installer. See the release notes for details and checksums.'
+          : 'Unsigned installer. Read the installation instructions in the release notes.')
+        : download.signed
         ? 'Signierter Installer. Details und Prüfsummen in den Release Notes.'
         : 'Unsignierter Installer. Beachte die Installationshinweise in den Release Notes.'
       available++
@@ -77,7 +97,7 @@ async function loadRelease() {
       const link = document.querySelector<HTMLAnchorElement>('#release-notes')!
       link.href = notes
       link.hidden = false
-      document.querySelector('#release-status')!.textContent = `Version ${release.version} verfügbar.`
+      document.querySelector('#release-status')!.textContent = english ? `Version ${release.version} available.` : `Version ${release.version} verfügbar.`
     }
   } catch { /* Offline or unavailable config: keep the useful, truthful default. */ }
 }

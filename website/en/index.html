@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Mermaider turns text into clear diagrams. Edit Mermaid with a live preview, work with Ollama or OpenAI, and share SVG, PNG or PDF exports.">
+  <meta name="author" content="Jakob Endemann">
+  <meta name="theme-color" content="#000000">
+  <link rel="alternate" hreflang="de" href="https://mermaider.appwrite.network/website/">
+  <link rel="alternate" hreflang="en" href="https://mermaider.appwrite.network/website/en/">
+  <title>Mermaider — Turn thoughts into diagrams</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+</head>
+<body>
+  <a class="skip-link" href="#inhalt">Skip to content</a>
+  <header class="site-header wrap">
+    <a class="brand" href="/website/en/" aria-label="Mermaider home"><img src="/icon.svg" alt="" width="32" height="32">Mermaider</a>
+    <nav aria-label="Main navigation"><a href="#download">Desktop</a><a href="https://github.com/Jakende/mermaider">GitHub</a><button id="theme-toggle" type="button" aria-label="Switch to light theme">Light</button><a class="language-switch" href="/website/" lang="de" hreflang="de" data-language="de" aria-label="Zu Deutsch wechseln">Deutsch</a><a class="nav-app" href="/">Open web app</a></nav>
+  </header>
+  <main id="inhalt">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">MERMAID. WITH LESS FRICTION.</p>
+        <h1 id="hero-title">Turn thoughts into<br><span>diagrams.</span></h1>
+        <p class="intro">Make ideas and workflows easy to understand. Write Mermaid, preview changes live, and share the result with your team.</p>
+        <div class="actions"><a class="button button-primary primary" href="/">Open in browser</a><a class="button secondary" href="#download">Desktop version</a></div>
+        <p class="hero-note">Web app 1.8.7 available · No account needed</p>
+      </div>
+      <div class="demo" aria-label="Example diagram with Mermaid code">
+        <div class="demo-bar"><span class="demo-title">One idea. One clear flow.</span><span class="file-label">idea.mmd</span></div>
+        <div class="demo-preview" id="diagram" aria-live="polite"></div>
+        <div class="demo-bottom">
+          <div class="example-picker" role="group" aria-label="Choose an example diagram"><button type="button" data-example="flow" aria-pressed="true">Workflow</button><button type="button" data-example="decision" aria-pressed="false">Decision</button></div>
+          <pre aria-label="Mermaid code for this example"><code id="example-code"></code></pre>
+        </div>
+      </div>
+    </section>
+    <section class="features wrap" aria-label="What Mermaider can do">
+      <article><span class="feature-number">01</span><h2>Text in. Clarity out.</h2><p>Edit Mermaid code with a live preview. Use visual editing for supported flowcharts.</p></article>
+      <article><span class="feature-number">02</span><h2>Your AI. Your way.</h2><p>Use local Ollama or hosted OpenAI to turn a description into diagram code.</p></article>
+      <article><span class="feature-number">03</span><h2>Ready to share.</h2><p>Export as SVG, PNG or PDF. For documentation, presentations, and your next conversation.</p></article>
+    </section>
+    <section class="download-section" id="download" aria-labelledby="download-title">
+      <div class="wrap download-layout">
+        <div><p class="eyebrow">ON YOUR DESKTOP, TOO</p><h2 id="download-title">One tool.<br>Your workspace.</h2><p class="download-intro">Start in your browser or use the reviewed desktop release.</p><p class="release-status" id="release-status" role="status">Desktop release 1.8.7 is being prepared.</p></div>
+        <div class="platforms">
+          <article class="platform"><div class="platform-heading"><h3>macOS</h3><span>Apple Silicon</span></div><p>Version 1.8.7 · DMG</p><a class="button secondary download-link" id="download-macos" hidden>Download for macOS</a><p class="availability" id="status-macos">Tested and accepted on macOS. Unsigned; check the installation instructions before opening.</p></article>
+          <article class="platform"><div class="platform-heading"><h3>Windows</h3><span>x64</span></div><p>Version 1.8.7 · Installer</p><a class="button secondary download-link" id="download-windows" hidden>Download for Windows</a><p class="availability" id="status-windows">Tested and accepted on Windows. Unsigned; check the installation instructions before opening.</p></article>
+          <a id="release-notes" hidden>Release notes and checksums</a>
+        </div>
+      </div>
+    </section>
+    <section class="outlook wrap" aria-labelledby="outlook-title"><p class="eyebrow">INTERACTIVE PREVIEW</p><div><h2 id="outlook-title">Make decisions visible.</h2><p>Interactive preview: edit questions and answers, get suggestions for next steps, and follow decisions directly in the diagram. With hosted Jev or local Laya.</p><span class="planned-label">Preview · Interactive decision flows</span></div></section>
+  </main>
+  <footer class="wrap"><a class="brand" href="/website/en/">Mermaider</a><p>Diagrams for shared understanding.</p><div><a href="https://github.com/Jakende/mermaider">GitHub</a><a href="/website/credits.txt">License &amp; attribution</a></div></footer>
+  <script type="module" src="/src/website/main.ts"></script>
+</body>
+</html>

@@ -1,11 +1,17 @@
 # Produktwebsite
 
-Die Produktseite liegt unter `/website/`, der Editor bleibt unter `/`.
+Die deutsche Produktseite liegt unter `/website/`, die englische unter `/website/en/`;
+der Editor bleibt unter `/`. Beide Seiten haben einen Language Switcher mit
+Deutsch/English als ausgeschriebenen Sprachnamen. Die Wahl wird unter
+`mermaider-website-language` gespeichert; bei erneuter Navigation auf `/website/`
+wird eine gespeicherte englische Wahl wiederhergestellt. Ohne Browser-Speicher
+funktionieren die direkten Sprachlinks weiterhin. Demos, Theme-Buttons,
+Downloadstatus, Metadaten und Screenreader-Texte sind ebenfalls übersetzt.
 Die Website verwendet direkt die Design-Tokens und Basis-Komponenten der App:
 Monospace-Schrift, Schwarz/Weiß, eckige Konturen und schlichte Buttons. Hell/Dunkel
 nutzt dieselbe gespeicherte `mermaider-theme`-Einstellung wie der Editor.
 
-Beide HTML-Einstiegspunkte werden gemeinsam mit `npm run build` gebaut und
+Alle drei HTML-Einstiegspunkte werden gemeinsam mit `npm run build` gebaut und
 über den bestehenden Appwrite-Workflow ausgeliefert. Keine Migration von
 Bookmarks oder Browser-Speicherdaten erforderlich. Die Website lädt weder
 Monaco noch Mermaid, React oder einen KI-Anbieter. Zwei feste Diagrammbeispiele
@@ -65,3 +71,12 @@ unbelegte Bewertungen aus dem App-HTML entfernt; Contribution-Lizenz auf MIT
 abgestimmt. Dies ersetzt keine Herkunfts- oder Historienprüfung des Repositorys.
 
 Aktueller Release- und Downloadstatus: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
+
+## Zweisprachige Website (05.10.2026)
+
+Die englische Website und der Deutsch/English-Switcher bestehen ESLint,
+TypeScript/Vite und alle vier Chromium-Websitefälle. Geprüft sind übersetzte
+Demos, Theme-Labels und Downloadhinweise, persistierte Sprachwahl, direkter
+Sprachwechsel ohne Browser-Speicher sowie 1440/390/320 Pixel und 200 % Schrift.
+Der lokale Webbuild wird direkt an Appwrite geliefert; keine Actions-Builds und
+keine neuen Desktop-Installer. Die englische README liegt in `README.en.md`.
