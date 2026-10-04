@@ -33,3 +33,13 @@ test('the German acceptance fixture imports all three question types with review
   assert.equal(session.goal.includes('Fakten'),true)
   assert.equal(JSON.parse(exportFlow(session)).version,2)
 })
+
+test('review flags survive portable files and require a version older clients reject',()=>{
+  const updated=changeFlow(session(),{context:'Checks changed'},'Updated state')
+  const text=exportFlow(updated);const file=JSON.parse(text)
+  assert.equal(file.version,3)
+  assert.equal(importFlow(text).selections.ready.needsReview,true)
+  file.version=2;assert.throws(()=>importFlow(JSON.stringify(file)),/file version 3/)
+  file.version=3;file.session.selections.ready.needsReview='yes'
+  assert.throws(()=>importFlow(JSON.stringify(file)),/invalid decision/)
+})

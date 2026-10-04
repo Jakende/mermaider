@@ -61,7 +61,7 @@ Provider-Einstellungen, Avatar, Ereignisprotokoll und Undo/Redo-Inhalte sind nic
 Übernommene Modellantworten enthalten ihre Auswertungsmetadaten.
 Das Format trägt `format: mermaider-decision`: Choice-Dateien bleiben Version 1;
 Dateien mit Score-/Noul-Regeln verwenden Version 2. Ältere Apps lehnen sie ab,
-anstatt numerische Regeln als Choice zu interpretieren. Beide Versionen sind importierbar.
+anstatt numerische Regeln als Choice zu interpretieren. Dateien mit Antworten zur erneuten Prüfung verwenden Version 3, damit ältere Apps diese nicht als aktuelle Entscheidungen behandeln. Alle drei Versionen sind importierbar.
 
 Import öffnet einen neuen Tab mit neuer Sitzungs-ID und deaktivierter Automatik.
 Ungültige JSON-Dateien, fremde Versionen, Dateien über 1 MB, beschädigte Graphen
@@ -191,3 +191,21 @@ Modellvorschläge können übernommen oder verworfen werden. „Pause automation
 laufende Anfragen und automatische Anpassungen. KI-Entwürfe lassen sich vor der Übernahme
 sprachlich bearbeiten; leere Fragen oder Antworten verhindern die Übernahme.
 Diese Bedienhilfen ersetzen nicht die fachliche Prüfung der Modellantworten.
+
+## Geänderte Entscheidungsgrundlagen
+
+Änderungen an Ziel oder Zustand markieren erhaltene manuelle Antworten als „Review“.
+Dasselbe gilt für einen geänderten vorherigen Antwortpfad bei zusammenlaufenden Zweigen.
+Modellantworten werden weiterhin verworfen. Manuelle Antworten bleiben als Referenz
+erhalten und müssen in Pfadreihenfolge bestätigt oder geändert werden. Bis dahin
+pausiert die Automatik; nachfolgende Modellanfragen verwenden keine ungeprüften Antworten.
+Die Prüfung markiert eine geänderte Grundlage, sie beurteilt keine Widersprüche semantisch.
+
+Der Antwortpfad zeigt die Anzahl noch zu prüfender Antworten. Im Diagramm sind die
+betroffenen Knoten und Verbindungen gestrichelt; dazu ist kein neues Mermaid-Layout nötig.
+Prüfstatus bleibt bei Reload, Undo/Redo und Export/Import erhalten.
+
+Antwortkarten nennen die nächste Frage oder das Ende des Zweigs. KI-Entwürfe zeigen
+hinzugefügte, geänderte und entfernte Fragen sowie einen geänderten Startpunkt vor
+der Übernahme. Modellvorschläge erläutern die verwendete Routing-Regel und zeigen
+Provider, Modell, Zeitpunkt und Dauer. Das ist kein fachlicher Nachweis der Antwort.

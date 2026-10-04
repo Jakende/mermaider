@@ -8,7 +8,7 @@ const optionSchema = z.object({ id, label: z.string().max(300), nextId: id.nulli
 export const flowSchema = z.object({ title: z.string().max(200), startId: id, questions: z.array(z.object({ id, text: z.string().max(1000), options: z.array(optionSchema).min(2).max(12), evaluation:evaluationSchema.optional() })).min(1).max(20) })
 export type FlowPlan = z.infer<typeof flowSchema>
 export type FlowQuestion = FlowPlan['questions'][number]
-export interface FlowSelection { optionId: string; source: 'manual' | 'model'; probability?: number; evidence?:FlowEvidence }
+export interface FlowSelection { optionId: string; source: 'manual' | 'model'; probability?: number; evidence?:FlowEvidence; needsReview?:boolean }
 export interface FlowSuggestion { optionId: string; probability?: number; revision: number; provider: string; model: string; autoEligible?:boolean; evidence?:FlowEvidence }
 export interface FlowSnapshot { plan: FlowPlan | null; goal: string; context: string; selections: Record<string, FlowSelection>; note: string }
 export interface FlowEvent {
@@ -65,11 +65,13 @@ export function flowPath(session: Pick<FlowSession,'plan'|'selections'>) {
     current = option.nextId
   }
   const pending = questions.find(questionId => !session.selections[questionId])
-  return { questions, options, edges, pending }
+  const review=questions.filter(id=>session.selections[id]?.needsReview)
+  return { questions, options, edges, pending, review }
 }
 export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession,'plan'|'context'|'goal'|'selections'|'linked'>>, note: string, detail:Partial<Pick<FlowEvent,'question'|'answer'|'source'|'evidence'|'rule'>>={}): FlowSession {
   const plan = patch.plan === undefined ? session.plan : patch.plan ? validateFlow(patch.plan) : null
   const context = patch.context ?? session.context
+  const factsChanged=context!==session.context || patch.goal!==undefined&&patch.goal!==session.goal
   const selections = { ...(patch.selections ?? session.selections) }
   for (const [questionId, selection] of Object.entries(selections)) {
     const before = session.plan?.questions.find(question => question.id === questionId)
@@ -83,7 +85,9 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
     return path.slice(0,path.indexOf(target)).map(id=>[id,currentSelections[id]?.optionId])
   }
   for (const [questionId, selection] of Object.entries(selections)) {
-    if (selection.source==='model' && JSON.stringify(priorPath(session.plan,session.selections,questionId))!==JSON.stringify(priorPath(plan,selections,questionId))) delete selections[questionId]
+    const pathChanged=JSON.stringify(priorPath(session.plan,session.selections,questionId))!==JSON.stringify(priorPath(plan,selections,questionId))
+    if(selection.source==='model'&&pathChanged)delete selections[questionId]
+    else if(selection.source==='manual'&&(factsChanged||pathChanged))selections[questionId]={...selection,needsReview:true}
   }
   const visible = flowPath({ plan, selections }).questions
   for (const questionId of Object.keys(selections)) if (!visible.includes(questionId)) delete selections[questionId]
@@ -94,6 +98,8 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
 }
 export function chooseFlow(session: FlowSession, questionId: string, optionId: string, source: FlowSelection['source'] = 'manual', probability?: number, evidence?:FlowEvidence) {
   if (!flowPath(session).questions.includes(questionId) || !session.plan?.questions.find(question => question.id === questionId)?.options.some(option => option.id === optionId)) throw new Error('Only a reachable, defined answer can select the path.')
+  const preceding=flowPath(session).questions.slice(0,flowPath(session).questions.indexOf(questionId))
+  if(preceding.some(id=>session.selections[id]?.needsReview))throw new Error('Review preceding answers before continuing.')
   const next=changeFlow(session, { selections:{ ...session.selections, [questionId]:{ optionId, source, probability, evidence } } }, 'Selected answer')
   const event=next.events[next.events.length-1]
   const question=session.plan!.questions.find(item=>item.id===questionId)!
@@ -122,7 +128,7 @@ export function recordFlowEvent(session:FlowSession,note:string,detail:Partial<P
 const eventSchema=z.object({id,timestamp:z.number().nonnegative(),revision:z.number().int().nonnegative(),note:z.string().max(100),context:z.string().max(1000),goal:z.string().max(1000).optional(),rule:z.string().max(2000).optional(),question:z.string().max(1000).optional(),answer:z.string().max(300).optional(),source:z.enum(['manual','model']).optional(),evidence:evidenceSchema.optional()})
 export function restoreFlow(value: unknown): FlowSession | undefined {
   try {
-    const parsed = z.object({ version:z.literal(1), id, revision:z.number().int().nonnegative(), goal:z.string().max(12000), context:z.string().max(12000), plan:flowSchema.nullable(), selections:z.record(z.string(),z.object({ optionId:id, source:z.enum(['manual','model']), probability:z.number().min(0).max(1).optional(), evidence:evidenceSchema.optional() })), linked:z.boolean() }).parse(value)
+    const parsed = z.object({ version:z.literal(1), id, revision:z.number().int().nonnegative(), goal:z.string().max(12000), context:z.string().max(12000), plan:flowSchema.nullable(), selections:z.record(z.string(),z.object({ optionId:id, source:z.enum(['manual','model']), probability:z.number().min(0).max(1).optional(), evidence:evidenceSchema.optional(), needsReview:z.boolean().optional() })), linked:z.boolean() }).parse(value)
     const plan = parsed.plan ? validateFlow(parsed.plan) : null
     const selections = Object.fromEntries(Object.entries(parsed.selections).filter(([questionId, selection]) => plan?.questions.find(question=>question.id===questionId)?.options.some(option=>option.id===selection.optionId)))
     const reachable = flowPath({plan,selections}).questions
@@ -144,6 +150,7 @@ export function flowRequest(session: FlowSession, questionId: string): DecisionR
   const definition = !rule||rule.type==='choice'?{type:'choice' as const,instructions:question.text,criteria:Object.fromEntries(question.options.map(option=>[option.id,option.label]))}:rule.type==='score'?{type:'score' as const,instructions:question.text,criteria:rule.rubric}:{type:'noul' as const,instructions:question.text}
   const path=flowPath(session).questions
   if(!path.includes(questionId))throw new Error('Only a reachable question can be evaluated.')
+  if(path.slice(0,path.indexOf(questionId)).some(id=>session.selections[id]?.needsReview))throw new Error('Review preceding answers before evaluating this question.')
   // Re-evaluation must not feed the target's previous answer (or later answers)
   // back to the model as supporting facts.
   return { state:{ goal:session.goal, update:session.context, path:path.slice(0,path.indexOf(questionId)).flatMap(id => {

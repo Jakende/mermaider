@@ -1,6 +1,6 @@
 # Abnahme der Entscheidungs-Engine
 
-Stand: 02.10.2026. Automatisierte Ablaufprüfung und echte Modellqualität sind
+Stand: 04.10.2026. Automatisierte Ablaufprüfung und echte Modellqualität sind
 getrennte Ergebnisse. Die Tests verwenden kontrollierte Providerantworten;
 sie messen keine Jev-/Laya-Genauigkeit. Persönliche Schlüssel sind in der
 Arbeitsumgebung nicht verfügbar. Die echte Qualitätsabnahme bleibt offen.
@@ -35,8 +35,9 @@ bereits bestätigte Fähigkeit.
 
 Zum Schluss Fall A → B → A im selben Tab durchführen. Modellentscheidungen
 müssen bei jedem Zustandswechsel verworfen und neu bewertet werden. Manuelle
-Entscheidungen bleiben bewusst erhalten; bei der Qualitätsabnahme jeweils erneut
-prüfen. Danach eine Antwort ändern, Undo/Redo ausführen und die Datei exportieren,
+Entscheidungen bleiben als Referenz erhalten und werden zur erneuten Prüfung markiert.
+Fragen in Pfadreihenfolge auswerten und die passende Antwort übernehmen; keine alte
+Antwort bestätigen, ohne sie gegen den neuen Zustand zu prüfen. Danach eine Antwort ändern, Undo/Redo ausführen und die Datei exportieren,
 neu importieren und auf identische Regeln prüfen.
 
 Ergebnisprotokoll je Provider/Modell:
@@ -63,6 +64,19 @@ Ergebnisprotokoll je Provider/Modell:
   fremde Optionen, fehlende Antworten und ungültige Modellmetadaten werden abgelehnt.
 - Zustandsänderung und Abbruch verhindern die Übernahme später Modellantworten.
   Auswahl verändert das SVG-Overlay ohne erneutes Mermaid-Layout.
+
+## Verbesserungen aus technisch belegbaren Schwächen
+
+Die Arbeitsumgebung besitzt weiterhin keine persönlichen Modellzugänge; echte Ergebnisse
+für A–F sind vom Nutzer angefragt. Es wurden keine realen Modellantworten simuliert oder
+als Qualitätsnachweis ausgegeben. Unabhängig davon werden erhaltene manuelle Antworten
+nach Ziel-/Zustands- oder vorherigen Pfadänderungen sichtbar zur Prüfung markiert.
+Nachfolgende Bewertungen und automatische Übernahmen warten auf diese Prüfung.
+Prüfstatus überlebt lokale Wiederherstellung und portable Version-3-Dateien; ältere
+Dateiversionen bleiben für Abläufe ohne Prüfmarkierungen verfügbar. Entwürfe zeigen
+Strukturänderungen vor der Übernahme; Antwortkarten zeigen ihre Folgefrage.
+Die Planungsvorgaben verlangen konkrete Klärungsfragen bei fehlenden oder widersprüchlichen
+Fakten. Ob die realen Modelle diesen Vorgaben zuverlässig folgen, bleibt Teil von A–F.
 
 ## Noch offen
 

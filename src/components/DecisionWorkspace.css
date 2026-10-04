@@ -67,3 +67,8 @@
 .flow-feedback { flex:none; max-height:25%; overflow:auto; padding:8px 12px; border-bottom:1px solid var(--border); font-size:12px; overflow-wrap:anywhere; }
 .flow-feedback [role=alert] { margin:0; }
 @media(max-width:800px) { .decision-workspace:has(input:focus,textarea:focus,select:focus) .flow-navigator { position:relative; top:auto; } }
+
+.flow-review-notice,.flow-draft-impact { border:1px solid var(--border); padding:10px; margin:12px 0; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.flow-review-notice p { color:var(--muted); margin-bottom:0; }
+.decision-workspace .flow-answer-cards button { flex-wrap:wrap; }
+.flow-answer-next { display:block; flex-basis:100%; color:var(--muted); font-weight:normal; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
