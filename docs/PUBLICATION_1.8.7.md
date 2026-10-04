@@ -4,6 +4,9 @@ Stand: 04.10.2026. Der Nutzer hat beide aktuellen Installer auf Windows und macO
 abgenommen und die öffentliche Veröffentlichung von Repository und Installern
 ausdrücklich autorisiert. MIT und bestehende Fremdhinweise bleiben erhalten.
 
+Übergabe für neue Arbeitsumgebungen, einschließlich Wiederherstellung fehlender
+lokaler Artefakte: [NEXT_SESSION_1.8.7.md](NEXT_SESSION_1.8.7.md).
+
 Die öffentliche Freigabe und das neue Webdeployment sind noch nicht ausgeführt:
 Die Arbeitsumgebung meldet keine konfigurierten Secrets und erlaubt die benötigten
 API-Hosts derzeit nicht. Die schon bereitgestellte App und Website bleiben unter
