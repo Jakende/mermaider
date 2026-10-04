@@ -1,5 +1,13 @@
 {
   "version": "1.8.7",
-  "published": false,
-  "notesUrl": ""
+  "published": true,
+  "notesUrl": "https://github.com/Jakende/mermaider/releases/tag/v1.8.7",
+  "macos": {
+    "url": "https://github.com/Jakende/mermaider/releases/download/v1.8.7/Mermaider_1.8.7_aarch64.dmg",
+    "signed": false
+  },
+  "windows": {
+    "url": "https://github.com/Jakende/mermaider/releases/download/v1.8.7/Mermaider_1.8.7_x64-setup.exe",
+    "signed": false
+  }
 }
