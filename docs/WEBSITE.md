@@ -80,3 +80,16 @@ Demos, Theme-Labels und Downloadhinweise, persistierte Sprachwahl, direkter
 Sprachwechsel ohne Browser-Speicher sowie 1440/390/320 Pixel und 200 % Schrift.
 Der lokale Webbuild wird direkt an Appwrite geliefert; keine Actions-Builds und
 keine neuen Desktop-Installer. Die englische README liegt in `README.en.md`.
+
+Das direkte Appwrite-Deployment `6ac2d918dbe9136a38ac` ist bereit und aktiv.
+Quellstand: `572a1a43e871d36d4c38cc818f9482a460b740ac`. App, deutsche und englische Website sowie
+referenzierte JS-/CSS-Dateien wurden anonym bytegenau gegen den lokalen Build
+geprüft; das veröffentlichte Downloadmanifest bleibt unverändert.
+Die vier Browsertests wurden lokal gegen diesen Build ausgeführt. Ein zusätzlicher
+Chromium-Aufruf der Live-URL scheiterte vor dem Seitenladen an der CA-Vertrauens-
+konfiguration der Arbeitsumgebung; die Live-HTTP-Prüfung mit aktivierter TLS-Prüfung
+besteht.
+
+- Deutsch: https://mermaider.appwrite.network/website/
+- English: https://mermaider.appwrite.network/website/en/
+- English README: https://github.com/Jakende/mermaider/blob/main/README.en.md
