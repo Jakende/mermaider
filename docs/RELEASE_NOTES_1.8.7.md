@@ -1,6 +1,7 @@
 # Mermaider 1.8.7
 
-Releasekandidat für macOS Apple Silicon und Windows x64. Die Web-App ist unter
+Abgeschlossene Webversion mit privaten Desktop-Kandidaten für macOS Apple Silicon
+und Windows x64. Die Web-App ist unter
 https://mermaider.appwrite.network/ verfügbar; die Produktwebsite liegt unter
 https://mermaider.appwrite.network/website/.
 
@@ -12,6 +13,8 @@ https://mermaider.appwrite.network/website/.
   bleiben überprüfbar; manuelle Auswahl, Live-Vorschläge und optionales Auto-Follow sind verfügbar.
 - Choice, Score und Noul mit expliziten Regeln, Unsicherheitsbereich, Verlauf,
   Undo/Redo und versioniertem JSON-Import/-Export. Score erfordert immer Übernahme.
+- Kurze, wiederverwendbare Planungsfragen und separate Vereinfachung von Entwürfen.
+  Struktur und Bewertungsregeln bleiben bei „Simplify wording“ erhalten; Übernahme erfolgt separat.
 - Konsistente Entscheidungen bei geänderten Zuständen und zusammenlaufenden Zweigen.
   Providerwechsel, Fehler und Abbruch können keine veralteten Vorschläge übernehmen.
 - OpenAI und Jev über den gehosteten Appwrite-Transport; lokale Ollama-/Laya-Verbindungen
@@ -46,8 +49,10 @@ und Prüfung der jeweiligen Signierung bereitgestellt.
 
 Die Bedienung, Providerzugänge OpenAI/Jev/Embeddings, mobile iPhone-Bedienung und
 Entscheidungsdatei-Import wurden vom Nutzer bestätigt. Automatisierte Ablaufprüfungen
-verwenden kontrollierte Modellantworten. Die fachliche Qualität der sechs deutschen
-Jev-/Laya-Abnahmefälle ist noch nicht separat bestätigt. Die 80-%-Grenze ist eine
+verwenden kontrollierte Modellantworten. Der Nutzer bestätigt wiederholte Jev-Fälle
+A–F und gibt nach der Überarbeitung der OpenAI-Planung positive Rückmeldung.
+Dies ist eine qualitative Abnahme; Laya und statistische Modellgüte sind damit
+nicht nachgewiesen. Die Entscheidungs-Engine bleibt Preview. Die 80-%-Grenze ist eine
 Produktregel und keine gemessene Zuverlässigkeitsgarantie. Automatik startet deaktiviert.
 
 Lokales Laya und dessen Browser-CORS bleiben separat abzunehmen. Auch Ollama benötigt
@@ -56,5 +61,6 @@ ist im Web durch OpenAI-API-Zugang ersetzt; die native Anmeldung bleibt vorhande
 Der gehostete Transport puffert SSE, begrenzt Anfragen auf 50 Sekunden und 512 KB.
 
 Windows-Praxistest, Developer-ID-Signierung/Notarisierung und öffentliche
-Repository-/Downloadfreigabe stehen noch aus. Dieser Stand ist ein privates
-Prüfpaket und kein veröffentlichter signierter Release.
+Repository-/Downloadfreigabe stehen noch aus. Die Desktop-Dateien bleiben ein privates
+Prüfpaket. Die Web-App ist verfügbar. Aktuelle Nachweise und Prüfsummen:
+[Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).

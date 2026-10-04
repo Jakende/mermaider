@@ -39,8 +39,9 @@ Startpunkt, Verbindungen, Bewertungsarten, Rubriken und Grenzen werden geprüft;
 und sprachliche Qualität müssen weiterhin vom Nutzer beurteilt werden. Der aktive
 Ablauf ändert sich erst nach „Apply draft“. Abbruch verwirft späte Antworten.
 
-## Gezielte erneute Abnahme
+## Vorgesehene Nachprüfung nach der Überarbeitung
 
+Zum Zeitpunkt der Überarbeitung wurde folgende Nachprüfung vorgesehen:
 Die drei berichteten Planungsfälle mit demselben Chat-Modell wiederholen:
 Fragen sollen kurz sein, keine Fakten als Vorspann enthalten und unabhängig
 klärbare Entscheidungen trennen. Bei bereits bekannten Fakten soll keine
@@ -48,3 +49,12 @@ unnötige Frage entstehen. Einen Entwurf anschließend über „Simplify wording
 vereinfachen und die Bedeutung prüfen. Eine Qualitätsverbesserung des echten
 Modells wird erst nach dieser Rückmeldung bestätigt; technische Tests verwenden
 kontrollierte Antworten und messen keine sprachliche Modellqualität.
+
+## Spätere Nutzerbestätigung
+
+Nach der beschriebenen Überarbeitung antwortet der Nutzer: „das sieht gut aus.“
+Diese Rückmeldung wird als positive qualitative Abnahme der überarbeiteten
+Planung dokumentiert. Eine neue Ergebnistabelle, Einzelwerte oder Bestätigung
+jedes oben genannten Nachprüfschritts liegen nicht vor; solche Details werden
+nicht daraus abgeleitet. Die vorherige pauschale Wiedervorlage zur Formulierung
+ist damit abgeschlossen. Zusätzliche Anwendungsfälle bleiben sinnvoll.

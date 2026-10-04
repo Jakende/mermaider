@@ -1,11 +1,12 @@
 # Mermaider 1.8.7 – Releasekandidat
 
 Aktueller konsolidierter Stand: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
-App/Website, 47 Logiktests, 30 Live-Browserfälle und beide nativen Kandidaten sind
-geprüft. Der Nutzer bestätigt zusätzlich iPhone-Bedienung und Entscheidungsdatei-Import.
-Windows-Praxisabnahme, echte Modellqualität, Signierung und öffentliche Distribution
-bleiben offen. Die folgenden Abschnitte enthalten historische Prüfschritte;
-der Abschlussbericht ist die aktuelle Statusquelle.
+App/Website, 54 Logiktests, 43 Live-Browserfälle (2 WebKit-Protokoll-Skips) und
+beide nativen Builds sind geprüft. Der Nutzer bestätigt iPhone-Bedienung,
+Entscheidungsdatei-Import, wiederholte Jev-Fälle A–F und die überarbeitete Planung
+qualitativ. Aktuelle native Praxisabnahme, Signierung und öffentliche Desktop-
+Distribution bleiben offen. Die folgenden Abschnitte enthalten historische
+Prüfschritte; der Abschlussbericht ist die aktuelle Statusquelle.
 
 ## Vorgesehene Release Notes
 
@@ -120,8 +121,8 @@ Auto-Follow. Sitzungen und Undo sind lokal pro Tab persistent. Auswahl wird per
 SVG-Overlay ohne neues Mermaid-Layout dargestellt. Ein lokaler Blobatar-Avatar
 bleibt pro Browserprofil stabil. Details: [DYNAMIC_DECISIONS.md](DYNAMIC_DECISIONS.md).
 
-OpenAI-, Jev- und Embedding-Zugriff sind vom Nutzer bestätigt. Qualität der neuen
-Planung und Laya-Web-CORS sind keine erledigten Release-Abnahmen. Tests und
+OpenAI-, Jev- und Embedding-Zugriff sind vom Nutzer bestätigt. Die überarbeitete
+Planung ist qualitativ bestätigt; Laya-Web-CORS bleibt separat offen. Tests und
 Live-Befunde werden im PR mit der geprüften Commit-ID dokumentiert.
 Betriebs-/Streaminggrenzen: [BROWSER_AI.md](BROWSER_AI.md).
 

@@ -8,7 +8,8 @@ mit sechs Fällen und jeweils drei Fragen berichtet: [Ergebnisse vom 04.10.2026]
 Der zuletzt bestätigte F/2-Wert 0,04 ist P(true) aus Noul und führt konsistent zu
 „Blockiert“ mit 96 % Optionswahrscheinlichkeit. Ein eindeutig bestätigter Score
 für F war zunächst offen. Inzwischen bestätigt der Nutzer erfolgreiche Wiederholungen
-von A–F. Die OpenAI-Planungsprüfung zeigt Verbesserungsbedarf bei Formulierungen:
+von A–F. Die zunächst beanstandeten OpenAI-Formulierungen wurden überarbeitet und
+vom Nutzer anschließend positiv beurteilt:
 [Planungsrückmeldung](PLANNING_ACCEPTANCE_RESULTS_2026-10-04.md).
 
 ## Echte deutsche Modellabnahme
@@ -89,7 +90,7 @@ Fakten. Ob die realen Modelle diesen Vorgaben zuverlässig folgen, bleibt Teil v
 
 ## Noch offen
 
-Gezielte erneute OpenAI-Planungsprüfung, Laya-Modellqualität, Modellkalibrierung, repräsentative individuelle
+Laya-Modellqualität, Modellkalibrierung, repräsentative individuelle
 Anwendungsfälle und Laya-Browser-CORS bleiben separat abzunehmen. Automatische
 Übernahme ist opt-in und startet nach Öffnen einer Sitzung deaktiviert. Das
 Prüfpaket ist ein erster Release-Abnahmesatz, kein statistischer Qualitätsnachweis.

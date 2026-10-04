@@ -83,8 +83,10 @@ lang und bündelt mehrere Voraussetzungen in einer Frage. Die konkrete
 Die zusätzlichen Rohwerte und genaue Anzahl der nun bestätigten Wiederholungen,
 Feldbezeichnung bzw. Verteilung der Choice-Ergebnisse, Laufzeiten und vollständige
 Anfrage-/Antwort-Zuordnung sind nicht dokumentiert. Eine Zustandsfolge A → B → A im selben Tab ist
-noch nicht bestätigt. Die erneute Prüfung der verbesserten OpenAI-Formulierungen, Laya, weitere individuelle
-Anwendungsfälle und statistische Modellkalibrierung bleiben separat offen.
+noch nicht einzeln bestätigt. Die verbesserten OpenAI-Formulierungen erhielten
+anschließend positive qualitative Nutzer-Rückmeldung; eine neue Rohdatentabelle
+liegt nicht vor. Laya, weitere individuelle Anwendungsfälle und statistische
+Modellkalibrierung bleiben separat offen.
 
 Diese Prüfung schließt die erste qualitative Rückmeldung zu Jev, nicht die komplette
 fachliche Release-Abnahme. Die [Abnahmeanleitung](DECISION_ACCEPTANCE.md) bleibt maßgeblich.

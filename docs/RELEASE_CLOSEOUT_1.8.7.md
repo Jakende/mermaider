@@ -1,66 +1,64 @@
 # Abschlussstand Mermaider 1.8.7
 
-Stand: 02.10.2026 (Europe/Berlin). App und Website sind bereitgestellt.
-Geprüfter Anwendungscode: `446cabe769169f4f261501bdceff03be06d45141`.
-Der native PR-Build verwendete `dd5fef90bb671f52c55e913c3bc0bca504c5dea3`;
-der Dateibaum ist mit dem geprüften Anwendungscode identisch (`git diff` leer).
+Stand: 04.10.2026. Die Webversion und die Produktwebsite sind bereitgestellt;
+der vereinbarte Web-Abschluss ist erfolgt. Desktop bleibt ein privater Kandidat.
+
+- App: https://mermaider.appwrite.network/
+- Website: https://mermaider.appwrite.network/website/
+- Geprüfter Anwendungscode: `a5f92fb78129a518c241098b1d3429db1cce264e`.
+- Web-/Desktop-Artefaktquelle: PR-Merge `badc326bbb0abcfd67289d88768c8f9064ce7902`.
+- Beide Commits besitzen denselben Git-Dateibaum: `1a74607a9ae4ce453305bfda49badd3faaa04e5f`.
+  Die Zuordnung wurde über die GitHub-Commit- und Vergleichs-APIs geprüft.
+  Spätere reine Dokumentationsänderungen ändern diesen Anwendungsstand nicht.
 
 ## Abgeschlossen
 
 | Prüfung | Nachweis |
 | --- | --- |
-| Releaseversion, Lint, TypeScript/Vite | Web CI `37063774853` erfolgreich |
-| Logiktests | 47 erfolgreich |
-| Chromium / mobiles WebKit | 29 erfolgreich, 3 explizite lokale Skips |
-| Bereitgestellte App | 30 Live-Fälle erfolgreich, 2 WebKit-Protokoll-Skips; CI `37063770321` |
-| macOS ARM64 und Windows x64 gebaut | Beide Jobs in CI `37063775047` erfolgreich |
-| Installer-Prüfsummen | Beide heruntergeladenen Dateien entsprechen den CI-Prüfsummen |
-| Appwrite Site | `6ac01d7fab398d4ddad3` bereit und aktiv |
-| Appwrite AI-Gateway | `6ac01d7073ce30a8d6f9`: Health 200, Loopback-Ziel 403 |
-| OpenAI, Jev, Embeddings | Nutzer bestätigt funktionierende Zugänge |
-| macOS-Praxisrückmeldung | Nutzer bestätigt früheren Kandidaten; keine neue Installationsabnahme behauptet |
-| iPhone 16 Pro | Nutzer bestätigt behobene Bedienungsprobleme |
-| Entscheidungsdatei | Nutzer bestätigt Import und funktionierende Bedienung |
+| Releaseversion, Lint, TypeScript/Vite | Web CI `37198389213` erfolgreich |
+| Logiktests | 54 erfolgreich |
+| Browser-CI | 42 erfolgreich, 3 explizite Skips |
+| Bereitgestellte App | 43 Live-Fälle erfolgreich, 2 WebKit-Protokoll-Skips; CI `37198387877` |
+| macOS ARM64 / Windows x64 | Beide Builds in CI `37198389214` erfolgreich |
+| Installer-Prüfsummen | Neu heruntergeladen; beide SHA-256 entsprechen den CI-Manifesten |
+| Appwrite Site | `6ac237cf27a3d079b3f2` bereit und aktiv |
+| Appwrite AI-Gateway | `6ac237b7dc5f48365d60`: Health 200, gesperrtes Ziel 403 |
+| OpenAI, Jev, Embeddings | Funktionierende Zugänge vom Nutzer bestätigt |
+| Jev `jev-1.13.0`, A–F | Wiederholungen qualitativ vom Nutzer bestätigt; Rohdaten und Grenzen separat dokumentiert |
+| OpenAI `openai/gpt-6-luna` | Überarbeitung/Zustandsübernahme bestätigt; nach Kürzung der Planung positive Rückmeldung „das sieht gut aus“ |
+| iPhone 16 Pro / Entscheidungsdatei | Mobile Bedienung und Import vom Nutzer bestätigt |
 | Lizenz / Attribution | MIT festgelegt, Dario-Freigabe bestätigt; Fremdhinweise erhalten |
 
-## Geprüfte Installationsdateien
+Die positive Planungsrückmeldung enthält keine neue vollständige Tabelle.
+Sie bestätigt die Überarbeitung qualitativ, keine statistische Modellgüte.
+Die Entscheidungs-Engine bleibt Preview; automatische Übernahme startet deaktiviert.
+
+## Aktuelles privates Prüfpaket
 
 | Datei | Bytes | SHA-256 |
 | --- | --- | --- |
-| `Mermaider_1.8.7_aarch64.dmg` | 6614712 | `d9758d20b6b2e21d0212b0c6af538b3db815f8352979e5b13c4b1c37a9e25330` |
-| `Mermaider_1.8.7_x64-setup.exe` | 4974159 | `168bf747a418dda04db8aec8ffdd5fea0504d22621394b8418dce56fe9adb0cc` |
+| `Mermaider_1.8.7_aarch64.dmg` | 6615540 | `176085b207d1f19d205935161e7415b3a68d60ec40e89691d1574191c448ea7d` |
+| `Mermaider_1.8.7_x64-setup.exe` | 4973838 | `c1058738d6f96e72772e02d89d103733c746264192195a0eec8e3998c787183f` |
 
-Die Dateien stammen aus dem privaten Kandidatenlauf. Die zukünftige Tag-Pipeline
-baut erneut; deren Dateien erhalten neue, erneut berechnete Prüfsummen. Es werden
-keine Prüfsummen eines früheren Builds als Nachweis für spätere Dateien verwendet.
+Artefakt-IDs: macOS `11301916703`, Windows `11301757190`, Web `11301722288`.
+Das datierte Prüfpaket enthält beide Installer, das gemeinsame Prüfsummenmanifest,
+Release Notes, Attribution und die Quellen-/CI-Zuordnung. Der Web-Build wird
+separat als ZIP bereitgestellt. Ältere Prüfpakete werden nicht überschrieben.
+Ein späterer Tag-Build erhält eigene Prüfsummen.
 
-## Tatsächlich verbleibend
+## Verbleibende externe Voraussetzungen
 
-1. Echte Modellqualität: Die Importbestätigung bestätigt nicht automatisch die
-   fachlichen Ergebnisse aller sechs Fälle. Prüfsatz: [Entscheidungsabnahme](DECISION_ACCEPTANCE.md).
-2. Windows-Praxisabnahme auf einem Windows-Gerät. Ein erfolgreicher CI-Build
-   ersetzt Installation, Start, Neustart und Provider-/Schlüsselspeicherprüfung nicht.
-3. Developer-ID-Signierung und Apple-Notarisierung, gegebenenfalls Windows-Signierung.
-   Ohne diese Einrichtung sind die aktuellen Artefakte nur unsignierte Kandidaten.
-4. Öffentliche Distribution: Die frühere Vorgabe verlangt bereinigten Code und
-   klare Herkunft. Beiträge anderer Autoren bleiben im Projekt; alleinige
-   Urheberschaft wird nicht behauptet. Repository und Downloads bleiben privat,
-   bis die Veröffentlichung mit erhaltener Attribution ausdrücklich geklärt ist.
-5. Lokales Laya/CORS: als Preview separat offen; nicht als geprüftes Feature bewerben.
+- Aktuelle native Kandidaten praktisch auf macOS und Windows prüfen. Die positive
+  Rückmeldung zum früheren Mac-Kandidaten ersetzt keine neue Installationsabnahme;
+  ein Windows-Test wurde bisher ausdrücklich verneint.
+- Developer-ID-Signierung und Apple-Notarisierung einrichten. Der Nutzer hat noch
+  keinen Apple-Developer-Zugang. Windows-Signierung ebenfalls vor öffentlicher
+  Distribution klären. Erfolgreiche Builds und Prüfsummen ersetzen diese Nachweise nicht.
+- Repository und öffentliche Desktop-Downloads bleiben privat/deaktiviert.
+  Herkunft und bestehende Attribution bleiben erhalten; alleinige Urheberschaft
+  wird nicht behauptet. Keine Tags, Zusammenführung oder Veröffentlichung erfolgen hier.
 
-## Vorbereiteter Abschluss
-
-[Release Notes](RELEASE_NOTES_1.8.7.md), gemeinsames Prüfsummenmanifest und
-privates Paket mit beiden Installern sind vorbereitet. Der Tag-Workflow hält
-seinen Release als Draft, prüft beide Installer, berechnet gemeinsame Prüfsummen
-und fügt sie mit den Release Notes hinzu. Es wurden keine alten Tags oder
-historischen Releases verändert. Öffentliche Downloadlinks bleiben deaktiviert.
-
-## Freigabeumfang nach Nutzerentscheidung
-
-Die Web-App ist die erste öffentlich verfügbare Version. Der Nutzer stimmte
-diesem Umfang zu. Desktop-Installer bleiben private Testkandidaten. Der Nutzer
-bestätigte, dass kein Windows-Praxistest und kein Apple-Developer-Zugang
-vorliegen. „Alles versucht“ bestätigt keine konkreten fachlichen Jev-Ergebnisse;
-die Entscheidungs-Engine bleibt deshalb ausdrücklich Preview. Diese Webfreigabe
-ändert die frühere Vorgabe zur Repository-Sichtbarkeit nicht.
+Konkrete Übergabe: [Desktop-Abschluss](DESKTOP_RELEASE_HANDOFF.md).
+Lokales Laya/CORS, zusätzliche Modellfälle und Kalibrierung bleiben separate
+Preview-Arbeit; sie blockieren nicht den vereinbarten gehosteten Web-Abschluss.
+[Modellabnahme](DECISION_ACCEPTANCE.md), [Release Notes](RELEASE_NOTES_1.8.7.md).
