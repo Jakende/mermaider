@@ -8,8 +8,11 @@ Providerantworten liegen der Arbeitsumgebung nicht vor.
 Die Bezeichnung A/1 bedeutet Frage 1 von Fall A. Frage 1 ist Choice,
 Frage 2 Score, Frage 3 Noul. Die Zahlen wurden im Nutzerprotokoll gemeinsam
 in der Spalte „P(true) / Route“ eingetragen; sie haben unterschiedliche Bedeutungen.
-Die Werte bei Frage 2 werden anhand des Prüfsatzes als Score, bei Frage 3 als
-P(true) eingeordnet. Welches Anzeigefeld die Zahlen bei Choice bezeichnen,
+Die ursprünglichen Werte bei Frage 2 wurden anhand des Prüfsatzes vorläufig als
+Score, bei Frage 3 als P(true) eingeordnet. Für den neuesten F/2-Bericht hat der
+Nutzer inzwischen ausdrücklich „Observed P(true): 0.04“ und „Suggested: Blockiert
+· 96% option probability“ bestätigt. Dieses Ergebnis ist Noul, kein Score.
+Welches Anzeigefeld die Zahlen bei Choice bezeichnen,
 ist nicht bestätigt; sie werden weder als Optionswahrscheinlichkeit noch als
 Konfidenz interpretiert.
 
@@ -18,7 +21,11 @@ Konfidenz interpretiert.
 Antworttexte sind zur Vergleichbarkeit verkürzt; alle Zahlen entsprechen dem
 Nutzerbericht. Die zuerst gemeldeten F-Werte waren laut Nutzer ein Versehen
 und wurden durch die folgenden Ergebnisse ersetzt. Daraus wird kein nachgewiesener
-Modell- oder Anzeigefehler abgeleitet.
+Modell- oder Anzeigefehler abgeleitet. Eine weitere Nutzerkorrektur ersetzt die
+Zahl bei F/2 von 0,92 durch 0,04. Anschließend wurde die aktuelle Anzeige als
+Noul-Bewertung mit „Blockiert · 96% option probability“ bestätigt. Die zuvor
+gemeldete F/2-Zuordnung „0,92 / Unklar, prüfen“ ist damit überholt.
+
 
 | Fall | Choice: gemeldete Antwort | Choice: Zahl, Feld unbekannt | Score / Route | P(true) / Route | Vergleich mit Prüfkriterium |
 | --- | --- | --- | --- | --- | --- |
@@ -27,16 +34,27 @@ Modell- oder Anzeigefehler abgeleitet.
 | C: offen | Budget offen oder widersprüchlich | 1 | 1 / Unklar, prüfen | 0,03 / Blockiert | Keine positive Freigabe; Score bleibt unklar |
 | D: Widerspruch | Budget offen oder widersprüchlich | 0,01 | 1 / Unklar, prüfen | 0,03 / Blockiert | Keine positive Freigabe; Widerspruch führt bei Choice/Score zu Unklar |
 | E: Negation | Budget ausdrücklich abgelehnt | 1 | 0 / Blockiert | 0,02 / Blockiert | Erwartete negative Routen bei Negation |
-| F: irrelevant, korrigiert | Budget offen oder widersprüchlich | 0,02 | 0,92 / Unklar, prüfen | 0,05 / Blockiert | Keine erfundene positive Freigabe |
+| F: irrelevant, korrigiert | Budget offen oder widersprüchlich | 0,02 | Kein eindeutig bestätigter Score; neuestes F/2 ist Noul | F/2: 0,04 / Blockiert, 96%; F/3: 0,05 / Blockiert | Keine positive Freigabe; Score-Frage F noch offen |
 
-Die Score-Grenzen im Prüfsatz sind 0,5 und 1,5. Score 0,92 liegt dazwischen
-und führt korrekt zu „Unklar / prüfen“. Noul verwendet 0,2 und 0,8; die gemeldeten
-Werte entsprechen den angezeigten Routen. Dies bestätigt die Plausibilität dieses
-berichteten Durchlaufs, keine allgemeine Genauigkeit oder Kalibrierung.
+Die Score-Grenzen im Prüfsatz sind 0,5 und 1,5; Noul verwendet 0,2 und 0,8.
+Der zuletzt bestätigte F/2-Wert gehört ausdrücklich zu Noul: P(true) = 0,04
+führt bei unveränderten Noul-Grenzen zu „Blockiert“ und zur Optionswahrscheinlichkeit
+1 − 0,04 = 0,96. Diese Anzeige ist intern konsistent und stellt keinen
+nachgewiesenen Routingfehler dar. Sie ersetzt jedoch keinen bestätigten Score
+für die vorgesehene Score-Frage in F. Die Fall-/Fragebezeichnung allein belegt
+nicht den tatsächlich verwendeten Bewertungstyp.
+
+Die weiteren gemeldeten Werte bleiben als Nutzerbericht dokumentiert. Eine
+vollständige fachliche Bestätigung aller Fragen aller sechs Fälle wird ohne
+das fehlende Score-Ergebnis für F nicht ausgesprochen. Genauigkeit oder
+Kalibrierung wurden nicht gemessen.
+
 
 ## Bedeutung für die Engine
 
-- Für diesen Durchlauf ist kein zusätzlicher Modell-Workaround aus Fall F begründet.
+- Der neueste F/2-Bericht bestätigt eine konsistente Noul-Anzeige. Ein
+  Modell- oder Routing-Workaround ist daraus nicht begründet; die Score-Abnahme
+  von Fall F muss separat ergänzt werden.
 - Die fachlichen Antwort-Routen des vorbereiteten Abnahmesatzes sind erstmals
   mit echten Nutzerzugängen nachvollziehbar berichtet worden.
 - Noul bewertet die Wahrheit einer Aussage. „Nicht ausreichend belegt“ und
@@ -50,7 +68,8 @@ berichteten Durchlaufs, keine allgemeine Genauigkeit oder Kalibrierung.
 
 ## Noch fehlende Nachweise
 
-Zwei weitere vollständige Wiederholungen pro Fall und Modell, genaue Feldbezeichnung
+Ein eindeutig zugeordnetes Score-Ergebnis für F, zwei weitere vollständige
+Wiederholungen pro Fall und Modell, genaue Feldbezeichnung
 bzw. Verteilung der Choice-Ergebnisse, Laufzeiten und vollständige Anfrage-/Antwort-
 Zuordnung sind nicht dokumentiert. Eine Zustandsfolge A → B → A im selben Tab ist
 noch nicht bestätigt. Die OpenAI-Planungsprüfung, Laya, weitere individuelle

@@ -5,8 +5,9 @@ getrennte Ergebnisse. Die Tests verwenden kontrollierte Providerantworten;
 sie messen keine Jev-/Laya-Genauigkeit. Persönliche Schlüssel sind in der
 Arbeitsumgebung nicht verfügbar. Der Nutzer hat einen ersten echten Jev-Durchlauf
 mit sechs Fällen und jeweils drei Fragen berichtet: [Ergebnisse vom 04.10.2026](DECISION_ACCEPTANCE_RESULTS_2026-10-04.md).
-Die korrigierten Antwort-Routen entsprechen dem Prüfsatz; Wiederholungen und weitere
-Anbieter-/Planungsprüfungen bleiben offen.
+Der zuletzt bestätigte F/2-Wert 0,04 ist P(true) aus Noul und führt konsistent zu
+„Blockiert“ mit 96 % Optionswahrscheinlichkeit. Ein eindeutig bestätigter Score
+für F sowie Wiederholungen und weitere Anbieter-/Planungsprüfungen bleiben offen.
 
 ## Echte deutsche Modellabnahme
 
