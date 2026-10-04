@@ -5,6 +5,8 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import io
+import tarfile
 import unittest
 from unittest.mock import patch
 from urllib.request import Request
@@ -39,6 +41,21 @@ class PublicationChecks(unittest.TestCase):
         with patch.object(publication, 'request') as network:
             publication.validate_bundle(self.folder)
         network.assert_not_called()
+
+    def test_macos_extraction_metadata_is_not_published(self):
+        web = self.folder / 'web'
+        for name in ('.DS_Store', 'website/._index.html', '__MACOSX/._index.html'):
+            path = web / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'extraction metadata')
+        publication.validate_bundle(self.folder)
+        with tarfile.open(fileobj=io.BytesIO(publication.make_archive(web)), mode='r:gz') as archive:
+            self.assertEqual(set(archive.getnames()), set(json.loads((self.folder / 'BUILD_PROVENANCE.json').read_text())['webFiles']))
+
+    def test_unexpected_web_file_is_reported_and_rejected(self):
+        (self.folder / 'web/unreviewed.js').write_text('unexpected')
+        with self.assertRaisesRegex(RuntimeError, "extra: .*unreviewed.js"):
+            publication.validate_bundle(self.folder)
 
     def test_changed_installer_or_web_build_stops_before_network(self):
         for name in ('reviewed.dmg', 'web/index.html'):

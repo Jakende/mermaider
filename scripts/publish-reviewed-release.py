@@ -59,6 +59,11 @@ def request(url, method='GET', value=None, headers=None, raw=None, missing=False
         raise RuntimeError(f'{method} {urllib.parse.urlparse(url).path}: HTTP {error.code}') from None
 
 
+def is_extraction_metadata(path, web):
+    relative = path.relative_to(web)
+    return '__MACOSX' in relative.parts or path.name == '.DS_Store' or path.name.startswith('._')
+
+
 def validate_bundle(folder):
     for name, expected in FILES.items():
         if hashlib.sha256((folder / name).read_bytes()).hexdigest() != expected:
@@ -76,8 +81,12 @@ def validate_bundle(folder):
         raise RuntimeError('Bundle must identify the finalized main commit')
     web = folder / 'web'
     expected_files = metadata['webFiles']
-    if set(expected_files) != {str(path.relative_to(web)) for path in web.rglob('*') if path.is_file()}:
-        raise RuntimeError('Web bundle file list differs from the reviewed build')
+    actual_files = {path.relative_to(web).as_posix() for path in web.rglob('*')
+                    if path.is_file() and not is_extraction_metadata(path, web)}
+    if set(expected_files) != actual_files:
+        missing = sorted(set(expected_files) - actual_files)
+        extra = sorted(actual_files - set(expected_files))
+        raise RuntimeError(f'Web bundle file list differs from the reviewed build; missing: {missing}; extra: {extra}')
     for name, digest in expected_files.items():
         path = web / name
         if path.is_symlink() or (name != 'website/release.json' and hashlib.sha256(path.read_bytes()).hexdigest() != digest):
@@ -90,6 +99,8 @@ def make_archive(web):
     archive = io.BytesIO()
     with tarfile.open(fileobj=archive, mode='w:gz') as tar:
         for path in sorted(web.rglob('*')):
+            if is_extraction_metadata(path, web):
+                continue
             if path.is_symlink():
                 raise RuntimeError('Unexpected symlink in web bundle')
             if path.is_file():
