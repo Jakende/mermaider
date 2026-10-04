@@ -39,3 +39,6 @@
   .toolbar-btn,.toolbar .text-btn { padding:0 9px; }
   .toolbar-files .action-menu-items { width:230px; }
 }
+
+/* Keep dropdowns above the editor, canvas and floating panels, including native webviews. */
+.toolbar { position:relative; z-index:1200; }

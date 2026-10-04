@@ -60,16 +60,18 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                                 <div className="shortcut-category">
                                     <h4>General</h4>
                                     <ul>
-                                        <li><span>New Tab</span> <kbd>⌘N</kbd></li>
+                                        <li><span>New diagram</span> <kbd>⌘N</kbd></li>
                                         <li><span>Import</span> <kbd>⌘O</kbd></li>
                                         <li><span>Export</span> <kbd>⌘S</kbd></li>
-                                        <li><span>Close Tab</span> <kbd>⌘W</kbd></li>
+                                        <li><span>Close diagram</span> <kbd>⌘W</kbd></li>
                                         <li><span>Settings</span> <kbd>⌘,</kbd></li>
                                     </ul>
                                 </div>
                                 <div className="shortcut-category">
                                     <h4>UI & Navigation</h4>
                                     <ul>
+                                        <li><span>Search diagrams & code</span> <kbd>⌘K</kbd></li>
+                                        <li><span>Exit fullscreen</span> <kbd>Esc</kbd></li>
                                         <li><span>Toggle Editor</span> <kbd>⌘B</kbd></li>
                                         <li><span>Toggle Chat</span> <kbd>⌘J</kbd></li>
                                         <li><span>Focus Chat</span> <kbd>⌘L</kbd></li>

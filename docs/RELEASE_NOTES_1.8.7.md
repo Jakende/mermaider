@@ -7,6 +7,12 @@ https://mermaider.appwrite.network/website/.
 
 ## Änderungen
 
+- Zuverlässige Untermenüaktionen per Maus, Tastatur und Touch.
+- Kompakte Diagrammübersicht mit Suche über Namen und Mermaid-Code, passenden
+  Codezeilen und Tastaturnavigation anstelle einer langen Tab-Leiste.
+- Vollbild-Arbeitsbereich mit schwebendem Chat und Decisions. Verschiebbare Fenster
+  unterstützen Touch und Pfeiltasten; Chat-Entwürfe bleiben beim Ansichtswechsel erhalten.
+
 - Schnellere Mermaid-Vorschau mit verworfenen überholten Renderaufträgen und
   direktem SVG-Pan/Zoom. Verbesserter Visual Editor erhält Inline-Knoten und parallele Kanten.
 - Dynamische Fragen, Antworten und Folgefragen neben dem Diagramm. KI-Strukturentwürfe

@@ -11,12 +11,12 @@ export default function ActionMenu({ label, actions, align = 'start' }: { label:
     const items = root.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')
     items?.[focusLast.current ? items.length - 1 : 0]?.focus()
     const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false) }
+    const focusOutside = (event: FocusEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false) }
     document.addEventListener('pointerdown', outside)
-    return () => document.removeEventListener('pointerdown', outside)
+    document.addEventListener('focusin', focusOutside)
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('focusin', focusOutside) }
   }, [open])
-  return <div className={`action-menu align-${align}`} ref={root} onBlur={event => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false)
-  }} onKeyDown={event => {
+  return <div className={`action-menu align-${align}`} ref={root} onKeyDown={event => {
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus() }
     if (!open) return
     const items = [...(root.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') || [])]

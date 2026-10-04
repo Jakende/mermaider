@@ -10,8 +10,10 @@ import DecisionRuleEditor from './DecisionRuleEditor'
 import {mapDecisionAnswer,ruleDescription} from '../decision/rules'
 import DecisionResizeHandle from './DecisionResizeHandle'
 import { exportFlow, importFlow, MAX_FLOW_FILE_BYTES } from '../decision/sessionFile'
+import { useFloatingPanel } from '../hooks/useFloatingPanel'
 import './DecisionWorkspace.css'
 interface Props {
+  floating?:boolean; onTogglePopout?:()=>void
   width:number; minWidth:number; maxWidth:number; onResize:(width:number)=>void
   session:FlowSession; focusedId:string|null; nodeProposal?:FlowQuestion; diagram:string; onChange:(session:FlowSession)=>void
   onApplyPlan:(session:FlowSession)=>void; onImportSession:(session:FlowSession)=>void; onFocus:(id:string)=>void; onClose:()=>void
@@ -21,7 +23,8 @@ const defaultConfig=()=>{
   try { const stored=JSON.parse(localStorage.getItem('mermaider-decision-config')||'null'); if(stored&&['jev','laya'].includes(stored.provider))return {...decisionDefaults(stored.provider),endpoint:typeof stored.endpoint==='string'?stored.endpoint:decisionDefaults(stored.provider).endpoint,model:typeof stored.model==='string'?stored.model:decisionDefaults(stored.provider).model} as DecisionConfig }catch{/* Default if unavailable. */}
   return decisionDefaults('jev')
 }
-export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,session,focusedId,nodeProposal,diagram,onChange,onApplyPlan,onImportSession,onFocus,onClose}:Props){
+export default function DecisionWorkspace({floating=false,onTogglePopout,width,minWidth,maxWidth,onResize,session,focusedId,nodeProposal,diagram,onChange,onApplyPlan,onImportSession,onFocus,onClose}:Props){
+  const { panelRef, position, headerProps } = useFloatingPanel<HTMLElement>(floating, { x: Math.max(0, window.innerWidth - width - 20), y: 64 })
   const [view,setView]=useState<'decide'|'edit'>(()=>{try{return localStorage.getItem('mermaider-decision-view')==='edit'?'edit':'decide'}catch{return 'decide'}})
   const scrollRef=useRef<HTMLDivElement>(null)
   const navigationRef=useRef(false)
@@ -182,9 +185,9 @@ export default function DecisionWorkspace({width,minWidth,maxWidth,onResize,sess
       if(token===operation.current){setMode('manual');setAutoAdapt(false);onImportSession(imported)}
     }catch(failure){if(token===operation.current)setError(failure instanceof Error?failure.message:'Could not import the flow')}
   }
-  return <aside id="decision-workspace" className="decision-workspace" aria-label="Decision workspace" style={{width}}>
+  return <aside ref={panelRef} id="decision-workspace" className={`decision-workspace ${floating ? 'floating' : ''}`} aria-label="Decision workspace" style={{width, ...(floating ? {left:position.x,top:position.y} : {})}}>
     <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>
-    <header><UserBlob busy={!!busy}/><strong>DECISIONS</strong><span className="flow-preview-label">Preview</span><button onClick={onClose} aria-label="Close decision workspace">×</button></header>
+    <header {...headerProps} aria-label={floating ? "Move decision window (arrow keys or drag)" : undefined}><UserBlob busy={!!busy}/><strong>DECISIONS</strong><span className="flow-preview-label">Preview</span><div className="decision-window-actions">{onTogglePopout&&<button onClick={onTogglePopout} aria-label={floating ? "Dock decisions" : "Pop out decisions"}>{floating ? '↙' : '↗'}</button>}<button onClick={onClose} aria-label="Close decision workspace">×</button></div></header>
     {(error||busy)&&<div className="flow-feedback">{error&&<p role="alert">{error}</p>}{busy&&<div role="status">{busy==='plan'?'Drafting questions…':busy==='simplify'?'Simplifying wording…':'Evaluating current state…'} <button onClick={cancel}>Cancel</button></div>}</div>}
     <div className="decision-scroll" ref={scrollRef}>
       {session.plan&&<nav className="flow-navigator" aria-label="Decision navigation">

@@ -78,3 +78,34 @@ Multi-Touch-Ereignisse; dieser Protokollfall und der native Wheel-Fall werden in
 WebKit mangels Ereignisinjektion ausdrücklich übersprungen. WebKit prüft die
 Formular-Scrollbarkeit und deren Touch-Regeln ohne simulierte Wischgeste. Bildschirmtastatur-Resizes werden kontrolliert simuliert. Das
 ersetzt keine Bedienungsabnahme mit einer echten iPhone-Bildschirmtastatur.
+
+## Diagrammübersicht und Vollbild
+
+Die horizontale Tab-Leiste ist durch eine kompakte Auswahl ersetzt. „Diagrams“
+oder Cmd/Ctrl+K öffnet die Übersicht; gesucht wird ohne Groß-/Kleinschreibung in
+Namen und aktuellem Mermaid-Code. Mehrere Suchwörter dürfen an verschiedenen
+Stellen vorkommen. Die passende Codezeile dient als Vorschau. Pfeiltasten wechseln
+zwischen Ergebnissen, Enter öffnet und Escape schließt die Suche. Diagramme lassen
+sich dort schließen oder neu erstellen. Bestehende Tabs, Chats, Entscheidungen
+und lokale Wiederherstellung bleiben erhalten.
+
+View → Fullscreen workspace blendet Werkzeugleisten, Editor und Preview-Kopf
+aus. Eine kleine schwebende Steuerung öffnet Diagramme, Chat oder Decisions und
+beendet den Modus. Desktop nutzt das native Tauri-Fenstervollbild. Im Web wird, wo unterstützt,
+zusätzlich Browser-Vollbild angefordert;
+auf iPhone und Webviews ohne diese API bleibt der reduzierte Arbeitsbereich
+innerhalb der App verfügbar. Escape und „Exit fullscreen“ stellen die vorherige
+Editor-/Panelansicht wieder her. Escape in der Diagrammsuche schließt zunächst
+nur den Dialog.
+
+Chat und Decisions schweben in dieser Ansicht über dem Diagramm. Beide Fenster
+sind an ihrer Kopfzeile per Maus, Touch oder Stift verschiebbar; bei fokussierter
+Kopfzeile auch mit Pfeiltasten. Positionsgrenzen und Größenbegrenzung halten sie
+bei Fenster- und Tastaturänderungen erreichbar. Decisions lässt sich zusätzlich
+im normalen Arbeitsbereich auskoppeln und wieder andocken. Chat-Entwürfe bleiben
+beim Andocken, Auskoppeln und Wechsel in den Vollbildmodus erhalten.
+
+Menüs schließen bei einem tatsächlichen Klick oder Fokus außerhalb. Ein kurzzeitig
+fehlendes Fokusziel beim Anklicken einer Aktion entfernt diese nicht vor ihrem
+Klick. Die Werkzeugleiste liegt über Editor und Diagramm; Menüpunkte werden durch
+Maus-, Tastatur- und mobile Touch-Prüfungen abgesichert.

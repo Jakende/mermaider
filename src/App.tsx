@@ -8,7 +8,7 @@ import type { FlowSession } from './decision/flow'
 import { questionFromDiagram } from './decision/fromDiagram'
 import Toolbar, { ToolbarRef } from './components/Toolbar'
 import ChatPanel, { ChatPanelRef } from './components/ChatPanel'
-import TabBar from './components/TabBar'
+import DiagramSwitcher from './components/DiagramSwitcher'
 import ResizableSplitter from './components/ResizableSplitter'
 import NewDiagramModal from './components/NewDiagramModal'
 import { extractMermaidCode } from './utils/mermaidCodeBlock'
@@ -47,6 +47,54 @@ function AppContent() {
 
   const [error, setError] = useState<string | null>(null)
   const [isNewDiagramModalOpen, setIsNewDiagramModalOpen] = useState(false)
+
+  const [diagramSearchOpen, setDiagramSearchOpen] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [isDecisionPoppedOut, setIsDecisionPoppedOut] = useState(false)
+  const appRef = useRef<HTMLDivElement>(null)
+  const ownsFullscreen = useRef(false)
+  const ownsNativeFullscreen = useRef(false)
+  const focusModeRef = useRef(false)
+  const focusOrigin = useRef<HTMLElement | null>(null)
+  const exitFocus = () => {
+    focusModeRef.current = false
+    setFocusMode(false)
+    if (ownsNativeFullscreen.current) {
+      ownsNativeFullscreen.current = false
+      void import('@tauri-apps/api/window').then(({getCurrentWindow}) => getCurrentWindow().setFullscreen(false)).catch(() => {})
+    }
+    if (ownsFullscreen.current && document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+    ownsFullscreen.current = false
+    requestAnimationFrame(() => focusOrigin.current?.focus())
+  }
+  const enterFocus = () => {
+    focusOrigin.current = document.activeElement as HTMLElement
+    focusModeRef.current = true
+    setFocusMode(true)
+    // iPhone and embedded webviews may lack native fullscreen; the clean canvas still works.
+    if ((window as unknown as {__TAURI_INTERNALS__?: unknown}).__TAURI_INTERNALS__) {
+      ownsNativeFullscreen.current = true
+      void import('@tauri-apps/api/window').then(async ({getCurrentWindow}) => {
+        const nativeWindow = getCurrentWindow()
+        await nativeWindow.setFullscreen(true)
+        if (!focusModeRef.current) await nativeWindow.setFullscreen(false)
+      }).catch(() => { ownsNativeFullscreen.current = false })
+    } else if (document.fullscreenEnabled && appRef.current?.requestFullscreen) {
+      void appRef.current.requestFullscreen().catch(() => { ownsFullscreen.current = false })
+    }
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('.focus-controls button')?.focus())
+  }
+  useEffect(() => {
+    const changed = () => {
+      if (document.fullscreenElement === appRef.current) {
+        ownsFullscreen.current = true
+        if (!focusModeRef.current) void document.exitFullscreen().catch(() => {})
+      }
+      else if (ownsFullscreen.current) { ownsFullscreen.current = false; focusModeRef.current = false; setFocusMode(false); requestAnimationFrame(() => focusOrigin.current?.focus()) }
+    }
+    document.addEventListener('fullscreenchange', changed)
+    return () => document.removeEventListener('fullscreenchange', changed)
+  }, [])
 
   const [isDecisionsOpen, setIsDecisionsOpen] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth)
@@ -270,7 +318,7 @@ function AppContent() {
   const handleResizeEditor = (clientX: number) => {
     if (appContentRef.current) {
       const { left, width } = appContentRef.current.getBoundingClientRect()
-      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut && viewportWidth > 800 ? chatWidth : 0)
+      const availableWidth = width - (isDecisionsOpen ? viewportWidth>800&&!isDecisionPoppedOut?visibleDecisionWidth:0 : isChatOpen && !isChatPoppedOut && viewportWidth > 800 ? chatWidth : 0)
       if (availableWidth <= 0) return
 
       const newWidth = ((clientX - left) / availableWidth) * 100
@@ -300,11 +348,15 @@ function AppContent() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || document.querySelector('[role="dialog"][aria-modal="true"]')) return
+      if (e.defaultPrevented || document.querySelector('.modal-overlay')) return
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const modifier = isMac ? e.metaKey : e.ctrlKey
 
-      if (modifier && e.key === 'n') {
+      if (e.key === 'Escape' && focusMode) {
+        e.preventDefault(); exitFocus()
+      } else if (modifier && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setDiagramSearchOpen(true)
+      } else if (modifier && e.key === 'n') {
         e.preventDefault()
         handleNewTab()
       } else if (modifier && e.key === 't') {
@@ -350,7 +402,7 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeTabId, tabs.length, isDecisionsOpen])
+  }, [activeTabId, tabs.length, isDecisionsOpen, focusMode])
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -385,11 +437,12 @@ function AppContent() {
   }
 
   // If in Visual Edit mode, hide the editor regardless of isEditorVisible
-  const showEditor = isEditorVisible && !isVisualEditMode
+  const showEditor = isEditorVisible && !isVisualEditMode && !focusMode
 
   return (
     <div
-      className={`app ${theme}`}
+      ref={appRef}
+      className={`app ${theme} ${focusMode ? 'focus-mode' : ''}`}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -407,15 +460,25 @@ function AppContent() {
         onNewTab={handleNewTab}
         onToggleDecisions={() => setIsDecisionsOpen(!isDecisionsOpen)}
         isDecisionsOpen={isDecisionsOpen}
+        onEnterFullscreen={enterFocus}
       />
 
-      <TabBar
+      <DiagramSwitcher
+        open={diagramSearchOpen}
+        onOpen={setDiagramSearchOpen}
         tabs={tabs}
         activeTabId={activeTabId}
         onSelectTab={setActiveTabId}
         onCloseTab={handleCloseTab}
         onNewTab={handleNewTab}
       />
+
+      {focusMode && <nav className="focus-controls" aria-label="Fullscreen controls">
+        <button onClick={() => setDiagramSearchOpen(true)} title={activeTab.name}>Diagrams</button>
+        <button aria-pressed={isChatOpen && !isDecisionsOpen} onClick={() => { setIsDecisionsOpen(false); setIsChatOpen(isDecisionsOpen ? true : !isChatOpen) }}>Chat</button>
+        <button aria-pressed={isDecisionsOpen} onClick={() => setIsDecisionsOpen(!isDecisionsOpen)}>Decisions</button>
+        <button onClick={exitFocus} title="Exit fullscreen (Esc)">Exit fullscreen</button>
+      </nav>}
 
       <div className="app-content" ref={appContentRef}>
         <div style={{ display: 'flex', flex: 1, minWidth: 0, position: 'relative' }}>
@@ -442,61 +505,29 @@ function AppContent() {
               targetNodeId={selectedNodeId} 
               onNodeClick={decisionNodeClick}
               decisionHighlights={decisionHighlights}
-              autoFit={!!activeTab.decision?.linked || viewportWidth <= 700}
-              isVisualEditMode={isVisualEditMode}
+              autoFit={focusMode || !!activeTab.decision?.linked || viewportWidth <= 700}
+              isVisualEditMode={isVisualEditMode && !focusMode}
               onToggleVisualEdit={setIsVisualEditMode}
             />
           </div>
 
           </div>
 
-          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} width={visibleDecisionWidth} minWidth={decisionMinWidth} maxWidth={decisionMaxWidth} onResize={resizeDecision} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
+          {isDecisionsOpen && <DecisionWorkspace key={activeTab.id} floating={focusMode || isDecisionPoppedOut} onTogglePopout={focusMode ? exitFocus : () => setIsDecisionPoppedOut(!isDecisionPoppedOut)} width={visibleDecisionWidth} minWidth={decisionMinWidth} maxWidth={decisionMaxWidth} onResize={resizeDecision} session={decisionSession} focusedId={selectedNodeId} nodeProposal={nodeProposal} diagram={activeTab.code}
             onChange={updateDecision} onApplyPlan={applyDecisionPlan} onImportSession={openDecisionTab} onFocus={setSelectedNodeId} onClose={()=>setIsDecisionsOpen(false)} />}
 
-          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
-            <div className="chat-dock-splitter"><ResizableSplitter onResize={handleResizeChat} /></div>
-          )}
-
-          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && (
-            <div className="chat-dock" style={{ width: chatWidth, flexShrink:0 }}>
-              <ChatPanel
-                code={activeTab.code}
-                setCode={setCode}
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-                isPoppedOut={false}
-                onTogglePopout={() => setIsChatPoppedOut(true)}
-                messages={activeSession.messages}
-                onSendMessage={handleSendMessage}
-                sessions={activeTab.chatSessions}
-                activeSessionId={activeTab.activeChatSessionId}
-                onNewChat={handleNewChat}
-                onSwitchSession={handleSwitchSession}
-                onEditMessage={handleEditMessage}
-                ref={chatPanelRef}
-              />
-            </div>
-          )}
+          {isChatOpen && !isDecisionsOpen && !isChatPoppedOut && !focusMode && <div className="chat-dock-splitter"><ResizableSplitter onResize={handleResizeChat} /></div>}
+          {isChatOpen && <div hidden={isDecisionsOpen} className={`chat-host ${isChatPoppedOut || focusMode ? 'floating' : 'chat-dock'}`} style={isChatPoppedOut || focusMode ? undefined : {width:chatWidth,flexShrink:0}}>
+            <ChatPanel
+              code={activeTab.code} setCode={setCode} isOpen={isChatOpen && !isDecisionsOpen} onClose={() => setIsChatOpen(false)}
+              isPoppedOut={isChatPoppedOut || focusMode} onTogglePopout={focusMode ? exitFocus : () => setIsChatPoppedOut(!isChatPoppedOut)}
+              messages={activeSession.messages} onSendMessage={handleSendMessage} sessions={activeTab.chatSessions}
+              activeSessionId={activeTab.activeChatSessionId} onNewChat={handleNewChat} onSwitchSession={handleSwitchSession}
+              onEditMessage={handleEditMessage} ref={chatPanelRef}
+            />
+          </div>}
         </div>
 
-        {isChatOpen && !isDecisionsOpen && isChatPoppedOut && (
-          <ChatPanel
-            code={activeTab.code}
-            setCode={setCode}
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            isPoppedOut={true}
-            onTogglePopout={() => setIsChatPoppedOut(false)}
-            messages={activeSession.messages}
-            onSendMessage={handleSendMessage}
-            sessions={activeTab.chatSessions}
-            activeSessionId={activeTab.activeChatSessionId}
-            onNewChat={handleNewChat}
-            onSwitchSession={handleSwitchSession}
-            onEditMessage={handleEditMessage}
-            ref={chatPanelRef}
-          />
-        )}
       </div>
 
       <NewDiagramModal 

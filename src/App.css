@@ -29,6 +29,16 @@
   .editor-splitter { display:none; }
 }
 .diagram-workspace,.diagram-workspace>div { min-height:0; }
+.chat-host.floating { width:0; flex:none; }
+.focus-mode>.toolbar,.focus-mode>.diagram-switcher,.focus-mode .preview-header { display:none; }
+.focus-controls { position:fixed; top:calc(var(--app-top,0px) + 10px); left:50%; transform:translateX(-50%); display:flex; gap:4px; padding:5px; background:var(--surface); border:1px solid var(--border); box-shadow:0 4px 20px #0002; z-index:1100; max-width:calc(100vw - 16px); }
+.focus-controls button { font-size:10px; white-space:nowrap; padding:0 10px; }
+.focus-controls button[aria-pressed=true] { background:var(--ink); color:var(--surface); }
+.focus-mode .preview-viewport { flex:1; }
+.decision-workspace.floating { position:fixed; right:auto; bottom:auto; z-index:1000; height:min(700px,calc(var(--app-height,100dvh) - 76px)); max-width:calc(100vw - 16px); border:1px solid var(--border); box-shadow:0 8px 24px #0003; }
+.decision-window-actions { display:flex; gap:4px; margin-left:auto; }
+.decision-workspace.floating>header,.chat-panel.popped-out .chat-header { touch-action:none; cursor:move; }
+.chat-panel.popped-out { max-width:calc(100vw - 16px); min-width:min(300px,calc(100vw - 16px)); min-height:min(400px,calc(var(--app-height,100dvh) - 76px)); max-height:calc(var(--app-height,100dvh) - 76px); }
 
 .app { height:var(--app-height,100dvh); }
 .modal-overlay { top:var(--app-top,0px); bottom:auto; height:var(--app-height,100dvh); padding:12px 0; }
@@ -40,5 +50,12 @@
   .app input[type="text"],.app input[type="password"],.app input[type="number"],.app select { min-height:44px; }
   .app textarea { min-height:44px; }
   .app .toolbar button,.settings-modal button,.decision-workspace button { min-height:40px; }
-  .chat-panel.popped-out { top:calc(var(--app-top,0px) + 100px)!important; height:min(550px,calc(var(--app-height,100dvh) - 112px)); max-height:calc(var(--app-height,100dvh) - 112px); }
+  .chat-panel.popped-out { height:min(550px,calc(var(--app-height,100dvh) - 76px)); }
+  .focus-controls { gap:2px; padding:3px; }
+  .focus-controls button { padding:0 6px; min-height:36px; }
 }
+
+/* Modal dialogs stay above floating panels and fullscreen controls. */
+.app>.modal-overlay { z-index:2000; }
+
+.chat-host[hidden] { display:none; }

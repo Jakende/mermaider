@@ -24,6 +24,7 @@ interface ToolbarProps {
   onNewTab: () => void
   onToggleDecisions: () => void
   isDecisionsOpen: boolean
+  onEnterFullscreen: () => void
 }
 
 export interface ToolbarRef {
@@ -35,7 +36,7 @@ export interface ToolbarRef {
   handleAIFix: () => Promise<void>
 }
 
-const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isChatOpen, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen }, ref) => {
+const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, onToggleChat, isChatOpen, isEditorVisible, onToggleEditor, diagramName, onUpdateDiagramName, onNewTab, onToggleDecisions, isDecisionsOpen, onEnterFullscreen }, ref) => {
   const { theme, toggleTheme } = useTheme()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -604,6 +605,7 @@ const Toolbar = forwardRef<ToolbarRef, ToolbarProps>(({ code, setCode, error, on
           ]} />
           <button onClick={handleExportClick} className="toolbar-btn button-primary" title="Export Diagram (⌘S)">Export…</button>
           <ActionMenu label="View" align="end" actions={[
+            { label: 'Fullscreen workspace', onClick: onEnterFullscreen },
             { label: isEditorVisible ? 'Full preview' : 'Show editor', title: 'Toggle Editor / Full Preview', onClick: onToggleEditor },
             { label: theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme', title: 'Toggle Theme', onClick: toggleTheme },
             { label: 'Help & features…', title: 'App Documentation & Features (⌘/)', onClick: () => setShowHelp(true) },

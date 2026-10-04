@@ -2,6 +2,37 @@ import { test, expect } from '@playwright/test'
 
 test.use({ viewport: { width: 402, height: 874 }, isMobile: true, hasTouch: true })
 
+test('touch menus, searchable diagrams and fullscreen floating windows fit phone screens', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button',{name:'View',exact:true}).tap()
+  await page.getByRole('menuitem',{name:'Switch to light theme'}).tap()
+  await expect(page.locator('.app')).toHaveClass(/light/)
+  await page.getByRole('button',{name:'File',exact:true}).tap()
+  await page.getByRole('menuitem',{name:'Knowledge base / RAG…'}).tap()
+  await expect(page.locator('.kb-modal')).toBeVisible()
+  await page.locator('.kb-header .close-button').tap()
+  await page.getByRole('button',{name:/^Diagrams/}).tap()
+  await page.getByRole('searchbox',{name:'Search diagrams'}).fill('Action 1')
+  await expect(page.locator('.diagram-result-select')).toHaveCount(1)
+  await page.locator('.diagram-result-select').tap()
+  await page.getByRole('button',{name:'View',exact:true}).tap()
+  await page.getByRole('menuitem',{name:'Fullscreen workspace'}).tap()
+  const controls=page.getByRole('navigation',{name:'Fullscreen controls'})
+  await controls.getByRole('button',{name:'Chat',exact:true}).tap()
+  await expect(page.locator('.chat-panel')).toHaveClass(/popped-out/)
+  for(const selector of ['.focus-controls','.chat-panel']) {
+    const box=(await page.locator(selector).boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(402)
+    expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(874)
+  }
+  await controls.getByRole('button',{name:'Decisions',exact:true}).tap()
+  const box=(await page.locator('.decision-workspace').boundingBox())!
+  expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(402)
+  expect(box.y+box.height).toBeLessThanOrEqual(874)
+  await controls.getByRole('button',{name:'Exit fullscreen'}).tap()
+  await expect(page.getByRole('navigation',{name:'Workspace actions'})).toBeVisible()
+})
+
 test('iPhone-sized forms use safe text sizing and scroll independently of diagram zoom', async ({ page, browserName }) => {
   await page.goto('/')
   await expect(page.locator('.preview-content svg .node').first()).toBeVisible()

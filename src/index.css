@@ -22,8 +22,6 @@ body {
 /* Target specific UI components, NOT general content */
 button,
 .toolbar-btn,
-.tab-item,
-.tab-name,
 .settings-header h2,
 .settings-section h3,
 .help-modal h2,
