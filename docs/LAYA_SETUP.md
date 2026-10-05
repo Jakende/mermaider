@@ -60,3 +60,5 @@ praktische macOS-/Windows-Abnahme. Solange du diese Läufe nicht durchgeführt h
 bleiben diese Nachweise offen. Kalibrierung darf nicht aus Einzelwerten abgeleitet werden.
 
 Upstream-Vertrag: https://github.com/NandhaKishorM/laya/blob/6d942c92081fbc139e736bbd9ac0023223c29b7f/docs/http-api.md
+
+Jev-Befehl und Auswertung der Messwerte: [Modellprüfung](MODEL_BENCHMARK.md).

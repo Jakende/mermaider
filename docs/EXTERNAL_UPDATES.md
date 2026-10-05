@@ -41,7 +41,12 @@ in component memory. Fetching alone never applies the update.
 
 Only the configured browser origin is allowed (default hosted Mermaider). Set
 `MERMAIDER_UPDATES_ORIGIN` for a local development origin. Up to 100 sessions are
-queued in memory for 15 minutes; restart clears the queue. The service has no
+queued in memory for 15 minutes; POST bodies are capped at 20 KB and state text at 12,000 characters; restart clears the queue. The service has no
 provider credentials and does not connect to a model. Reports contain private
 facts you supplied, so inspect them before sharing. History retains at most 50
 events within a 750 KB character budget; older versions may lack snapshots.
+
+Snapshot restoration creates a new revision and uses the normal answer-invalidation
+rules: changing facts can clear old model choices and mark manual choices for review.
+The complete original choices remain in retained snapshots and exported reports;
+restoring does not claim that an older model result is newly verified.

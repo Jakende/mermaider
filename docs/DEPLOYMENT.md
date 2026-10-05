@@ -27,8 +27,8 @@ der absoluten Dokumentationspfade. `file://` ist keine unterstützte Startmethod
 
 Der neue [Build-Web-Workflow](../.github/workflows/build-web.yml) erzeugt bei PRs,
 Pushes auf `main` und manuellem Start ein `mermaider-web-<commit>`-Artefakt aus
-`dist/`, aufbewahrt für 14 Tage. Er benötigt keine Appwrite-Secrets. Die aktuellen erfolgreichen Läufe stehen im Release-Abschluss; wegen des
-ausgeschöpften Budgets wird für die letzte Toolbar-Anpassung kein Lauf gestartet.
+`dist/`, aufbewahrt für 14 Tage. Er benötigt keine Appwrite-Secrets. Das Budget ist seit 05.10.2026 wieder verfügbar. Neue Builds und das Deployment
+von 1.9.1 sind beauftragt; Nachweise stehen im aktuellen Release-Abschluss.
 
 ## Appwrite Sites
 

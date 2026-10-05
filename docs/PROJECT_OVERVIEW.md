@@ -1,26 +1,27 @@
 # Projektüberblick und aktueller Stand
 
-Stand: 04.10.2026. Mermaider 1.8.7 verbindet Mermaid-Bearbeitung, KI-Chat und
-interaktive Entscheidungen in einer Web-/Tauri-Anwendung. Der Nutzer hat die
-aktuellen macOS-ARM64- und Windows-x64-Installer praktisch abgenommen und die
-öffentliche MIT-Veröffentlichung autorisiert. Bestehende Fremdattribution bleibt.
+Stand: 05.10.2026. Die Roadmap-Implementierung ist als Mermaider 1.9.1 Preview
+veröffentlicht und im Web aktiv. MIT und die ursprüngliche Attribution bleiben erhalten.
+Die praktische Nutzerabnahme gilt für die unveränderten stabilen 1.8.7-Installer;
+für die neuen Dateien wird sie nicht behauptet.
 
 | Bereich | Aktueller belegter Stand |
 | --- | --- |
-| App / Website | https://mermaider.appwrite.network/ und `/website/` bereitgestellt |
-| Version / Lizenz | 1.8.7 / MIT |
-| Desktop | Beide CI-Builds erfolgreich, Dateien und Prüfsummen geprüft, Nutzerabnahme bestätigt; unsigniert |
-| Geprüfte Anwendung | `4108f4083e1e8311c37b7672d16f6426ac2bea48`; aktive Site `6ac262d4c945c1d52673` |
-| AI-Gateway | Aktiv, Health 200 und gesperrtes Ziel 403 geprüft |
-| Anbieter | OpenAI, Jev und Embeddings vom Nutzer geprüft; lokale Laya-Abnahme später |
-| Decisions | Choice, Score, Noul, Live-State, Entwürfe, Review, Verlauf und opt-in Automatik; weiterhin Preview |
-| Letzte Webänderung | Diagrammbibliothek in der oberen Toolbar, lokal gebaut und geprüft; Desktop-Dateien unverändert |
-| Öffentliche Distribution | Autorisiert; tatsächliche Ausführung benötigt konfigurierte API-Zugänge, siehe [Veröffentlichung](PUBLICATION_1.8.7.md) |
+| App / Website | https://mermaider.appwrite.network/; DE und EN mit persistentem Language Switcher |
+| Version / Lizenz | Web und neue Vorabversion 1.9.1 / MIT; stabile Downloads 1.8.7 |
+| Desktop | CI-geprüfte unsignierte ARM64-/Windows-x64-Dateien öffentlich; Intel-Mac/Linux als separate geprüfte Build-Kandidaten |
+| Quellstand | `3881c60dc41e8097b2a18b8586e32ca04b02b2ff`, unverändertes Tag `v1.9.1` |
+| Aktive Site / Gateway | `6ac3ab70a54e0e49d1ac` / `6ac3ab5e76d1cb6228ce`; Health, Allowlist und Live-App geprüft |
+| Anbieter | Historische OpenAI-/Jev-Abnahme; Laya-Server und reale Benchmarks vorbereitet, Einrichtung beim Nutzer |
+| Decisions | Kombinierte Voraussetzungen, retained Snapshots, Vergleich/Bericht, reviewbare MCP/API-Updates und Vorlagen; Preview |
+| Rendering / Bedienung | Lokal gebündelter Monaco-Worker, lazy Renderer/Editor, SVG-Cache, konfigurierbare Shortcuts |
+| Transport | Optionales lokales SSE-Relay mit 180 Sekunden; gehostetes Appwrite bleibt 50 Sekunden/gepuffert |
+| Verifikation | 62 Node-Tests, 53 Browserfälle vor Deployment, 54 live; 87 öffentliche Dateien bytegenau geprüft |
 
-Nachweise und Abnahmegrenzen: [Release-Abschluss](RELEASE_CLOSEOUT_1.8.7.md).
-Die [Bestandsaufnahme vom 30.09.2026](PROJECT_OVERVIEW_2026-09-30.md) und ihr
-[Statussnapshot](status-2026-09-30.json) bleiben als historische Referenz erhalten.
-Dort genannte ursprüngliche Fehler und offene Prüfungen sind kein aktueller Status.
+Nachweise: [Abschluss 1.9.1](RELEASE_CLOSEOUT_1.9.1.md),
+[Roadmap und externe Grenzen](ROADMAP.md), [nächste Sitzung](NEXT_SESSION_1.9.1.md).
+Historische Nachweise stehen im [1.8.7-Abschluss](RELEASE_CLOSEOUT_1.8.7.md) und
+[Überblick vom 30.09.2026](PROJECT_OVERVIEW_2026-09-30.md).
 
 ## Dateizusammenhänge
 
@@ -62,7 +63,7 @@ flowchart TD
 | `src/mcp-server.ts`, `utils/mcpService.ts`, `mermaidTemplates.ts` | Stdio-MCP und gemeinsamer Vorlagenkontext |
 | `website/`, `src/website/`, `public/website/` | Kleine Produktwebsite, Herkunft und geprüfte Downloadkonfiguration |
 | `tests/`, `scripts/` | Logik-/Browserprüfungen, Deploymentprüfung und budgetfreie Veröffentlichung |
-| `.github/workflows/` | Web-/Desktop-Builds und reguläre Deployments; für diesen Abschluss keine neuen Actions-Läufe |
+| `.github/workflows/` | Web-/Desktop-Builds und reguläre Deployments; Budget wieder verfügbar; manuelle Release-/Plattform-/Signierungsabläufe |
 
 150-ms-Eingabeverzögerung und verworfene veraltete Aufträge halten die Vorschau
 aktuell. Pan/Zoom und Entscheidungsmarkierungen ändern SVG ohne neues Mermaid-Layout.

@@ -1,0 +1,39 @@
+{
+  "sourceCommit": "3881c60dc41e8097b2a18b8586e32ca04b02b2ff",
+  "runId": 37319754064,
+  "runUrl": "https://github.com/Jakende/mermaider/actions/runs/37319754064",
+  "signed": false,
+  "deviceAcceptance": false,
+  "artifactRetentionDays": 30,
+  "artifacts": [
+    {
+      "platform": "intel-mac",
+      "target": "x86_64-apple-darwin",
+      "artifactId": 11349772324,
+      "installers": [
+        {
+          "file": "dmg/Mermaider_1.9.1_x64.dmg",
+          "bytes": 7475502,
+          "sha256": "112b1a7df6032dcd32ce15566c5967601b3833a9d6c40eb01dbc695d18864d30"
+        }
+      ]
+    },
+    {
+      "platform": "linux",
+      "target": "x86_64-unknown-linux-gnu",
+      "artifactId": 11349686597,
+      "installers": [
+        {
+          "file": "appimage/Mermaider_1.9.1_amd64.AppImage",
+          "bytes": 85862904,
+          "sha256": "827bdf3708704c6a216cfd206af34186973bba87d3dc20228eac4a75b8c48ac8"
+        },
+        {
+          "file": "deb/Mermaider_1.9.1_amd64.deb",
+          "bytes": 7752954,
+          "sha256": "9b8915d293416a8a5fcc76d85505bf02ec5d57856ec4a414144b3152f6be62e2"
+        }
+      ]
+    }
+  ]
+}

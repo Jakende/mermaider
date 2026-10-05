@@ -3,6 +3,8 @@
 Stand: 05.10.2026. Diese Datei liegt im Repository, damit eine neue
 Arbeitsumgebung sie ohne Zugriff auf frühere lokale Ordner laden kann.
 
+Aktuelle Übergabe nach der Roadmap-Implementierung: [NEXT_SESSION_1.9.1.md](NEXT_SESSION_1.9.1.md).
+
 ## Neue Freigabe nach Abschluss von 1.8.7 (05.10.2026)
 
 Der Nutzer hat das Actions-Budget angepasst und Builds sowie die gesamte Erweiterungs-

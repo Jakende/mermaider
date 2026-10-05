@@ -1,0 +1,22 @@
+{
+  "tag": "v1.9.1",
+  "sourceCommit": "3881c60dc41e8097b2a18b8586e32ca04b02b2ff",
+  "releaseId": 403763117,
+  "url": "https://github.com/Jakende/mermaider/releases/tag/v1.9.1",
+  "signed": false,
+  "anonymousDownloadVerified": true,
+  "installers": [
+    {
+      "file": "Mermaider_1.9.1_aarch64.dmg",
+      "bytes": 7328805,
+      "sha256": "27904b023cc3242c0eb3600c97faf7dc1eac8e36760a7446ecf6fab89ef95bec",
+      "assetId": 612730483
+    },
+    {
+      "file": "Mermaider_1.9.1_x64-setup.exe",
+      "bytes": 5717596,
+      "sha256": "579d875be346feca2ebb1b82f622f2b1ed7273036664b4c24da771a3a780cf14",
+      "assetId": 612730499
+    }
+  ]
+}
