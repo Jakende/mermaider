@@ -1,6 +1,6 @@
 [package]
 name = "mermaider"
-version = "1.8.7"
+version = "1.8.8"
 description = "Mermaider - A native macOS and Windows Mermaid diagram editor"
 authors = ["Jakob Endemann", "Dario Novoa Vergara"]
 license = "MIT"
