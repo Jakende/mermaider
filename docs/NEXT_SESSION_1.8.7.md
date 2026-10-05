@@ -8,7 +8,7 @@ Arbeitsumgebung sie ohne Zugriff auf frühere lokale Ordner laden kann.
 Der Nutzer hat das Actions-Budget angepasst und Builds sowie die gesamte Erweiterungs-
 Roadmap ausdrücklich beauftragt. Das frühere Build-Verbot unten ist historisch und
 gilt nicht mehr. Die bestehende 1.8.7-Veröffentlichung und ihr Tag bleiben unverändert.
-Neue Erweiterungen werden als 1.9.0 gebaut; aktueller Status: [Roadmap](ROADMAP.md).
+Neue Erweiterungen werden als 1.9.1 gebaut; aktueller Status: [Roadmap](ROADMAP.md).
 Apple-/Windows-Signierung ist noch nicht eingerichtet. Laya richtet der Nutzer selbst
 ein; Endpoint und Anleitung werden vorbereitet.
 

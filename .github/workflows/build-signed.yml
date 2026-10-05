@@ -51,7 +51,7 @@ jobs:
       - run: npm run tauri:build -- --ci --target aarch64-apple-darwin --bundles app,dmg -- --locked
       - name: Verify signature and notarization
         run: |
-          APP=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -maxdepth 1 -name '*.app' -print -quit)
+          APP=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/macos -name '*.app' -prune -print -quit)
           test -n "$APP"
           codesign --verify --deep --strict "$APP"
           spctl --assess --type execute --verbose "$APP"

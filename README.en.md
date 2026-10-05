@@ -71,7 +71,7 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 Visit [the web app](https://mermaider.appwrite.network/) to start creating diagrams immediately. No installation or sign-up is required.
 
 ### Desktop Application
-New 1.9.0 builds include the roadmap features; their CI checks do not replace device acceptance. The macOS Apple Silicon and Windows x64 installers for 1.8.7 have passed the project owner’s practical acceptance. These installers are unsigned. Release files and checksums belong to the [GitHub release](https://github.com/Jakende/mermaider/releases/tag/v1.8.7); the [publication handoff](docs/PUBLICATION_1.8.7.md) records the final distribution status. Installation:
+New 1.9.1 builds include the roadmap features; their CI checks do not replace device acceptance. The macOS Apple Silicon and Windows x64 installers for 1.8.7 have passed the project owner’s practical acceptance. These installers are unsigned. Release files and checksums belong to the [GitHub release](https://github.com/Jakende/mermaider/releases/tag/v1.8.7); the [publication handoff](docs/PUBLICATION_1.8.7.md) records the final distribution status. Installation:
 
 1. Download the installer from the [product website](https://mermaider.appwrite.network/website/).
 2. For Windows: Run the NSIS installer.
@@ -153,7 +153,7 @@ Use the release helper to synchronize versions, validate the build, commit, tag,
 node .agents/skills/auto-release/scripts/release.cjs patch
 ```
 
-Replace `patch` with `minor`, `major`, or an explicit version such as `1.9.0`. The helper runs `cargo check` and `npm run build`, creates a `chore: release vX.Y.Z` commit and tag, and pushes both to GitHub Actions.
+Replace `patch` with `minor`, `major`, or an explicit version such as `1.9.1`. The helper runs `cargo check` and `npm run build`, creates a `chore: release vX.Y.Z` commit and tag, and pushes both to GitHub Actions.
 
 ## License
 

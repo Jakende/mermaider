@@ -8,4 +8,5 @@ test('custom shortcuts preserve platform modifiers and reject collisions or typi
  assert.equal(shortcutAction({key:'d',ctrlKey:false,metaKey:false,altKey:false,shiftKey:true},false,mapping),undefined)
  assert.throws(()=>validateShortcuts({...mapping,save:mapping.open}),/different/)
  assert.throws(()=>validateShortcuts({...mapping,save:'s'}),/Use Mod/)
+ assert.equal(shortcutAction({key:'/',ctrlKey:true,metaKey:false,altKey:false,shiftKey:true},false,mapping),'help')
 })

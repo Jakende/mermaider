@@ -12,5 +12,6 @@ export function getShortcuts():Shortcuts{try{return validateShortcuts(JSON.parse
 export function shortcutAction(event:Pick<KeyboardEvent,'key'|'ctrlKey'|'metaKey'|'altKey'|'shiftKey'>,isMac:boolean,shortcuts=getShortcuts()):ShortcutAction|undefined {
  if(event.altKey||!(isMac?event.metaKey:event.ctrlKey)||isMac&&event.ctrlKey||!isMac&&event.metaKey)return
  const combination=`Mod+${event.shiftKey?'Shift+':''}${event.key.toLowerCase()}`
- return (Object.keys(shortcuts) as ShortcutAction[]).find(action=>shortcuts[action]===combination)
+ const actions=Object.keys(shortcuts) as ShortcutAction[]
+ return actions.find(action=>shortcuts[action]===combination)||(['/',','].includes(event.key)?actions.find(action=>shortcuts[action]===`Mod+${event.key}`):undefined)
 }
