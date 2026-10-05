@@ -66,3 +66,8 @@ ai-gateway-verification.json
 
 # Python publication tooling cache
 __pycache__/
+
+# Local model environment and generated measurements
+.venv-laya/
+decision-benchmark.json
+render-benchmark.json

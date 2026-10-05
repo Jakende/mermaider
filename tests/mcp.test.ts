@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import {templateSession} from '../src/decision/templates'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
@@ -20,5 +21,10 @@ test('MCP stdio exposes JSON schemas and reports entry-point validation honestly
     assert.equal(invalid.isError,true)
     const starter=await client.callTool({name:'get_diagram_template',arguments:{type:'flowcharts'}})
     assert.match((starter.content as any)[0].text,/graph|flowchart/)
+    const session=templateSession('release')
+    const update=await client.callTool({name:'create_decision_state_update',arguments:{session,state:'Approval revoked',source:'MCP test'}})
+    assert.equal(update.isError,undefined)
+    const envelope=JSON.parse((update.content as any)[0].text)
+    assert.equal(envelope.sessionId,session.id);assert.equal(envelope.expectedRevision,session.revision)
   } finally { await client.close() }
 })

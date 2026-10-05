@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
-import Editor from './components/Editor'
+const Editor=lazy(()=>import('./components/Editor'))
 import Preview from './components/Preview'
 import DecisionWorkspace from './components/DecisionWorkspace'
 import { newFlowSession, flowDiagram, flowId, flowPath, chooseFlow } from './decision/flow'
@@ -17,6 +17,7 @@ import { restoreWorkspace } from './utils/workspaceStorage'
 import type { Tab, ChatSession } from './types'
 import { useMobileViewport } from './hooks/useMobileViewport'
 import './App.css'
+import {shortcutAction} from './utils/shortcuts'
 
 const DEFAULT_CODE = 'graph TD\n    A[Start] --> B{Decision}\n    B -->|Yes| C[Action 1]\n    B -->|No| D[Action 2]\n    C --> E[End]\n    D --> E'
 
@@ -173,6 +174,7 @@ function AppContent() {
     openDecisionTab(next)
   }
   const decisionNodeClick = (nodeId:string) => {
+    let scrollTarget=nodeId
     const session = activeTab.decision
     if (session?.linked && session.plan) {
       const question=session.plan.questions.find(item=>item.id===nodeId||item.options.some(option=>`${item.id}__${option.id}`===nodeId))
@@ -180,13 +182,19 @@ function AppContent() {
         const path=flowPath(session)
         const blocked=path.questions.slice(0,path.questions.indexOf(question.id)).some(id=>session.selections[id]?.needsReview)
         setIsDecisionsOpen(true);setSelectedNodeId(blocked?path.review[0]:question.id)
+        if(blocked)scrollTarget=path.review[0]
         const option=question.options.find(item=>`${question.id}__${item.id}`===nodeId)
         if(option&&!blocked&&path.questions.includes(question.id))updateDecision(chooseFlow(session,question.id,option.id))
       }
     }
     if(!session?.linked&&questionFromDiagram(activeTab.code,nodeId)){setSelectedNodeId(nodeId);setIsDecisionsOpen(true)}
     setScrollToNodeId(null)
-    setTimeout(()=>setScrollToNodeId(nodeId),0)
+    setTimeout(()=>setScrollToNodeId(scrollTarget),0)
+  }
+  const editorNodeSelected = (nodeId:string|null) => {
+    const session=activeTab.decision
+    const question=session?.linked&&session.plan?.questions.find(item=>item.id===nodeId||item.options.some(option=>`${item.id}__${option.id}`===nodeId))
+    setSelectedNodeId(question?question.id:nodeId)
   }
 
   const setDiagramName = (newName: string) => {
@@ -198,11 +206,11 @@ function AppContent() {
       ...t,
       chatSessions: t.chatSessions.map(s => s.id === t.activeChatSessionId ? {
         ...s,
-        messages: [...s.messages, { 
-          role, 
-          content, 
+        messages: [...s.messages, {
+          role,
+          content,
           // Only store codeBefore for user messages to allow reverting
-          codeBefore: role === 'user' ? t.code : undefined 
+          codeBefore: role === 'user' ? t.code : undefined
         }]
       } : s)
     } : t))
@@ -220,20 +228,20 @@ function AppContent() {
 
     // 1. Revert code to the state before this message
     const revertedCode = messageToEdit.codeBefore || tab.code
-    
+
     // 2. Update session: remove this message and all subsequent ones
     // then we'll add the new one via handleSendMessage in the ChatPanel or here.
     // Actually, it's better to update the history here and then trigger the AI response.
-    
+
     setTabs(prev => prev.map(t => {
       if (t.id !== activeTabId) return t
-      
+
       return {
         ...t,
         code: revertedCode, // Revert the code
         chatSessions: t.chatSessions.map(s => {
           if (s.id !== t.activeChatSessionId) return s
-          
+
           // Truncate messages to before the edited one
           return {
             ...s,
@@ -351,50 +359,51 @@ function AppContent() {
       if (e.defaultPrevented || document.querySelector('.modal-overlay')) return
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const modifier = isMac ? e.metaKey : e.ctrlKey
+      const action=shortcutAction(e,isMac)
 
       if (e.key === 'Escape' && focusMode) {
         e.preventDefault(); exitFocus()
-      } else if (modifier && e.key.toLowerCase() === 'k') {
+      } else if (action === 'diagramLibrary') {
         e.preventDefault(); setDiagramSearchOpen(true)
-      } else if (modifier && e.key === 'n') {
+      } else if (action === 'newDiagram') {
         e.preventDefault()
         handleNewTab()
       } else if (modifier && e.key === 't') {
         e.preventDefault()
         handleNewTab()
-      } else if (modifier && e.key === 'o') {
+      } else if (action === 'open') {
         e.preventDefault()
         toolbarRef.current?.handleOpen()
-      } else if (modifier && e.key === 's') {
+      } else if (action === 'save') {
         e.preventDefault()
         toolbarRef.current?.handleSave()
-      } else if (modifier && e.key === 'w') {
+      } else if (action === 'close') {
         if (tabs.length > 1) {
           e.preventDefault()
           handleCloseTab(activeTabId)
         }
-      } else if (modifier && e.key === 'b') {
+      } else if (action === 'editor') {
         e.preventDefault()
         setIsEditorVisible(prev => !prev)
-      } else if (modifier && e.key === 'j') {
+      } else if (action === 'chat') {
         e.preventDefault()
         setIsDecisionsOpen(false)
         setIsChatOpen(prev => isDecisionsOpen ? true : !prev)
-      } else if (modifier && e.key === 'l') {
+      } else if (action === 'focusChat') {
         e.preventDefault()
         setIsDecisionsOpen(false)
         setIsChatOpen(true)
         setTimeout(() => chatPanelRef.current?.focusInput(), 100)
-      } else if (modifier && e.key === 'e') {
+      } else if (action === 'chatMode') {
         e.preventDefault()
         chatPanelRef.current?.toggleMode()
-      } else if (modifier && e.key === ',') {
+      } else if (action === 'settings') {
         e.preventDefault()
         toolbarRef.current?.handleSettings()
-      } else if (modifier && e.key === '/') {
+      } else if (action === 'help') {
         e.preventDefault()
         toolbarRef.current?.handleHelp()
-      } else if (modifier && e.shiftKey && e.key === 'R') {
+      } else if (action === 'undoAI') {
         e.preventDefault()
         handleUndoAI()
       }
@@ -486,23 +495,23 @@ function AppContent() {
           {showEditor && (
             <>
               <div className="diagram-editor" style={{ flex: `0 0 ${editorWidth}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Editor 
-                  code={activeTab.code} 
-                  setCode={setCode} 
-                  error={error} 
-                  onNodeSelected={setSelectedNodeId} 
+                <Suspense fallback={<div role="status">Loading editor…</div>}><Editor
+                  code={activeTab.code}
+                  setCode={setCode}
+                  error={error}
+                  onNodeSelected={editorNodeSelected}
                   scrollToNode={scrollToNodeId}
-                />
+                /></Suspense>
               </div>
               <div className="editor-splitter"><ResizableSplitter onResize={handleResizeEditor} /></div>
             </>
           )}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <Preview 
-              code={activeTab.code} 
-              setError={setError} 
-              onCodeChange={setCode} 
-              targetNodeId={selectedNodeId} 
+            <Preview
+              code={activeTab.code}
+              setError={setError}
+              onCodeChange={setCode}
+              targetNodeId={selectedNodeId}
               onNodeClick={decisionNodeClick}
               decisionHighlights={decisionHighlights}
               autoFit={focusMode || !!activeTab.decision?.linked || viewportWidth <= 700}
@@ -530,10 +539,10 @@ function AppContent() {
 
       </div>
 
-      <NewDiagramModal 
-        isOpen={isNewDiagramModalOpen} 
-        onClose={() => setIsNewDiagramModalOpen(false)} 
-        onSelect={handleCreateDiagramTab} 
+      <NewDiagramModal
+        isOpen={isNewDiagramModalOpen}
+        onClose={() => setIsNewDiagramModalOpen(false)}
+        onSelect={handleCreateDiagramTab}
       />
     </div>
   )

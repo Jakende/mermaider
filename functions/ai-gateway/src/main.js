@@ -12,7 +12,7 @@ export function allowedTarget(value) {
     return ROUTES[url.hostname]?.test(url.pathname) ? url : null
   } catch { return null }
 }
-export async function gatewayRequest(payload, fetchImpl = fetch) {
+export function validateGatewayPayload(payload) {
   if (!payload || typeof payload !== 'object') return error(400, 'Invalid provider request.')
   const target = allowedTarget(payload.url)
   if (!target) return error(403, 'Unsupported hosted provider endpoint.')
@@ -27,6 +27,12 @@ export async function gatewayRequest(payload, fetchImpl = fetch) {
     try { const body = JSON.parse(payload.body); if (!body || typeof body !== 'object' || Array.isArray(body)) return error(400, 'A JSON object is required.') }
     catch { return error(400, 'Invalid provider JSON.') }
   }
+  return {target,method,credential}
+}
+export async function gatewayRequest(payload, fetchImpl = fetch) {
+  const prepared=validateGatewayPayload(payload)
+  if(prepared.status)return prepared
+  const {target,method,credential}=prepared
   try {
     const response = await fetchImpl(target.href, {
       method, headers: { Authorization: credential, 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
@@ -61,4 +67,20 @@ export default async ({ req, res }) => {
   try { payload = JSON.parse(req.bodyText) } catch { return res.json({ error: { message: 'Invalid JSON.' } }, 400) }
   const response = await gatewayRequest(payload)
   return res.text(response.body, response.status, response.headers)
+}
+
+/** Optional relay transport: same allowlist, real SSE, 180-second bounded lifetime. */
+export async function streamingGatewayRequest(payload, fetchImpl=fetch, signal) {
+  const prepared=validateGatewayPayload(payload)
+  if(prepared.status)return new Response(prepared.body,{status:prepared.status,headers:prepared.headers})
+  const {target,method,credential}=prepared
+  try {
+    const timeout=AbortSignal.timeout(180000)
+    const response=await fetchImpl(target.href,{method,headers:{Authorization:credential,'Content-Type':'application/json',Accept:'application/json, text/event-stream'},...(method==='POST'?{body:payload.body}:{}),redirect:'error',signal:signal?AbortSignal.any([signal,timeout]):timeout})
+    if(!response.ok){await response.body?.cancel();return Response.json({error:{message:`Provider returned HTTP ${response.status}.`}},{status:response.status})}
+    if(!response.body)return new Response(null,{status:response.status})
+    const reader=response.body.getReader();let size=0
+    const stream=new ReadableStream({async pull(controller){try{const chunk=await reader.read();if(chunk.done){controller.close();reader.releaseLock();return}size+=chunk.value.byteLength;if(size>MAX_BYTES){await reader.cancel();reader.releaseLock();controller.error(new Error('Provider response exceeds 512 KB.'));return}controller.enqueue(chunk.value)}catch{reader.releaseLock();controller.error(new Error('Streaming provider response interrupted.'))}},async cancel(){await reader.cancel();reader.releaseLock()}})
+    return new Response(stream,{status:response.status,headers:{'Content-Type':response.headers.get('Content-Type')||'application/json','Cache-Control':'no-store'}})
+  }catch{return Response.json({error:{message:'Streaming provider request failed.'}},{status:502})}
 }

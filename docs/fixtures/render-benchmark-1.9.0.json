@@ -1,0 +1,387 @@
+{
+  "generatedAt": "2026-10-05T13:35:14.991Z",
+  "reference": {
+    "platform": "linux",
+    "architecture": "x64",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "browser": "151.0.7922.173",
+    "viewport": "1440×1000"
+  },
+  "limits": "Cloud reference measurements, not user device acceptance. Wall time includes the editor debounce and polling; render time includes Mermaid work only. Three correlated runs per size; no cross-device promise.",
+  "results": [
+    {
+      "nodes": 10,
+      "repetition": 0,
+      "cold": {
+        "renderMs": 201,
+        "cache": "miss",
+        "svgCharacters": 16469,
+        "wallMs": 439
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 16466,
+        "wallMs": 205
+      }
+    },
+    {
+      "nodes": 10,
+      "repetition": 1,
+      "cold": {
+        "renderMs": 131,
+        "cache": "miss",
+        "svgCharacters": 16469,
+        "wallMs": 315
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 16466,
+        "wallMs": 185
+      }
+    },
+    {
+      "nodes": 10,
+      "repetition": 2,
+      "cold": {
+        "renderMs": 84,
+        "cache": "miss",
+        "svgCharacters": 16468,
+        "wallMs": 261
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 16522,
+        "wallMs": 199
+      }
+    },
+    {
+      "nodes": 50,
+      "repetition": 0,
+      "cold": {
+        "renderMs": 331,
+        "cache": "miss",
+        "svgCharacters": 63434,
+        "wallMs": 558
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 63431,
+        "wallMs": 189
+      }
+    },
+    {
+      "nodes": 50,
+      "repetition": 1,
+      "cold": {
+        "renderMs": 560,
+        "cache": "miss",
+        "svgCharacters": 63450,
+        "wallMs": 905
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 63447,
+        "wallMs": 308
+      }
+    },
+    {
+      "nodes": 50,
+      "repetition": 2,
+      "cold": {
+        "renderMs": 802,
+        "cache": "miss",
+        "svgCharacters": 63450,
+        "wallMs": 1084
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 63447,
+        "wallMs": 221
+      }
+    },
+    {
+      "nodes": 200,
+      "repetition": 0,
+      "cold": {
+        "renderMs": 1314,
+        "cache": "miss",
+        "svgCharacters": 242498,
+        "wallMs": 1537
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 242494,
+        "wallMs": 205
+      }
+    },
+    {
+      "nodes": 200,
+      "repetition": 1,
+      "cold": {
+        "renderMs": 934,
+        "cache": "miss",
+        "svgCharacters": 242581,
+        "wallMs": 1150
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 242578,
+        "wallMs": 228
+      }
+    },
+    {
+      "nodes": 200,
+      "repetition": 2,
+      "cold": {
+        "renderMs": 883,
+        "cache": "miss",
+        "svgCharacters": 242697,
+        "wallMs": 1100
+      },
+      "warm": {
+        "renderMs": 0,
+        "cache": "hit",
+        "svgCharacters": 242694,
+        "wallMs": 205
+      }
+    }
+  ],
+  "assets": [
+    {
+      "file": "Editor-C-cSjkTJ.css",
+      "bytes": 104044
+    },
+    {
+      "file": "Editor-DrFmWecI.js",
+      "bytes": 2779282
+    },
+    {
+      "file": "Tableau10-B-NsZVaP.js",
+      "bytes": 188
+    },
+    {
+      "file": "app-C-uNw-AT.js",
+      "bytes": 1101994
+    },
+    {
+      "file": "app-CAnO_CnV.css",
+      "bytes": 67205
+    },
+    {
+      "file": "arc-BzWLexCf.js",
+      "bytes": 3470
+    },
+    {
+      "file": "array-BKyUJesY.js",
+      "bytes": 86
+    },
+    {
+      "file": "blockDiagram-868be97b-CnTeLDVT.js",
+      "bytes": 37823
+    },
+    {
+      "file": "c4Diagram-3f4bdde3-WXxvnCPJ.js",
+      "bytes": 68522
+    },
+    {
+      "file": "channel-DhrcVrHS.js",
+      "bytes": 115
+    },
+    {
+      "file": "classDiagram-f62afe4f-BFjPDaec.js",
+      "bytes": 9344
+    },
+    {
+      "file": "classDiagram-v2-604399ef-Dhf6T5ts.js",
+      "bytes": 5102
+    },
+    {
+      "file": "clone-BPqazGk-.js",
+      "bytes": 92
+    },
+    {
+      "file": "components-BHH-a8XQ.css",
+      "bytes": 2983
+    },
+    {
+      "file": "components-bAJSdv5V.js",
+      "bytes": 711
+    },
+    {
+      "file": "createText-aed3d8b3-w5f1A9Kd.js",
+      "bytes": 60227
+    },
+    {
+      "file": "edges-b2856ca0-Cb7JeMFM.js",
+      "bytes": 34429
+    },
+    {
+      "file": "editor.worker-BWmaw7oA.js",
+      "bytes": 277002
+    },
+    {
+      "file": "erDiagram-5d81789a-BWZgKqSN.js",
+      "bytes": 30772
+    },
+    {
+      "file": "flowDb-185abca5-Cv_zfDBF.js",
+      "bytes": 46810
+    },
+    {
+      "file": "flowDiagram-1629c991-BpJhrKq_.js",
+      "bytes": 22200
+    },
+    {
+      "file": "flowDiagram-v2-1d953310-C4BuSJfK.js",
+      "bytes": 835
+    },
+    {
+      "file": "flowchart-elk-definition-6df44142-B3hSsA_V.js",
+      "bytes": 1451801
+    },
+    {
+      "file": "ganttDiagram-3b0b3873-aFQmiwBR.js",
+      "bytes": 60561
+    },
+    {
+      "file": "gitGraphDiagram-f01e8bc2-BHi_h8lU.js",
+      "bytes": 38839
+    },
+    {
+      "file": "graph-BWHuigk0.js",
+      "bytes": 17616
+    },
+    {
+      "file": "html2canvas.esm-QH1iLAAe.js",
+      "bytes": 202379
+    },
+    {
+      "file": "index-9bae90f3-CXCP4iwQ.js",
+      "bytes": 12023
+    },
+    {
+      "file": "index.es-BOaB166B.js",
+      "bytes": 159746
+    },
+    {
+      "file": "infoDiagram-a29d40f1-BKHln4Cd.js",
+      "bytes": 8692
+    },
+    {
+      "file": "init-Gi6I4Gst.js",
+      "bytes": 147
+    },
+    {
+      "file": "journeyDiagram-95396277-Di2yMo6o.js",
+      "bytes": 21759
+    },
+    {
+      "file": "katex-C5jXJg4s.js",
+      "bytes": 261329
+    },
+    {
+      "file": "layout-CQ7VueDg.js",
+      "bytes": 29635
+    },
+    {
+      "file": "line-AHGFtXt5.js",
+      "bytes": 952
+    },
+    {
+      "file": "linear-Tr39V9Za.js",
+      "bytes": 9276
+    },
+    {
+      "file": "main-DWMlR-cg.js",
+      "bytes": 5396
+    },
+    {
+      "file": "main-HAO4Xv7t.css",
+      "bytes": 5821
+    },
+    {
+      "file": "mermaid.core-Bm96We3u.js",
+      "bytes": 200235
+    },
+    {
+      "file": "mindmap-definition-e4c1d938-CqKNge2G.js",
+      "bytes": 544087
+    },
+    {
+      "file": "ordinal-Cboi1Yqb.js",
+      "bytes": 1189
+    },
+    {
+      "file": "path-CbwjOpE9.js",
+      "bytes": 2282
+    },
+    {
+      "file": "pieDiagram-c941bede-DUNk1dwX.js",
+      "bytes": 15105
+    },
+    {
+      "file": "purify.es-DBIK8olT.js",
+      "bytes": 29400
+    },
+    {
+      "file": "quadrantDiagram-cf8b8fe0-7sepF5z-.js",
+      "bytes": 29520
+    },
+    {
+      "file": "requirementDiagram-53bda41b-Dd5u9Fdj.js",
+      "bytes": 24730
+    },
+    {
+      "file": "sankeyDiagram-c3ef121a-CS1Melnt.js",
+      "bytes": 21322
+    },
+    {
+      "file": "sequenceDiagram-82a5b84f-C6_mjlsa.js",
+      "bytes": 84218
+    },
+    {
+      "file": "stateDiagram-43e79a5f-D1m3ThZ8.js",
+      "bytes": 10228
+    },
+    {
+      "file": "stateDiagram-v2-2041ed4f-Cipm414-.js",
+      "bytes": 4966
+    },
+    {
+      "file": "styles-455b33cd-GfsXFqEg.js",
+      "bytes": 26442
+    },
+    {
+      "file": "styles-f932cba9-D7eq1BHa.js",
+      "bytes": 10093
+    },
+    {
+      "file": "styles-fcc2142b-DmQKaAbM.js",
+      "bytes": 37897
+    },
+    {
+      "file": "svgDrawCommon-148a3cd9-MvNVsNd1.js",
+      "bytes": 1341
+    },
+    {
+      "file": "timeline-definition-7545f45a-B_F22Y4G.js",
+      "bytes": 22719
+    },
+    {
+      "file": "window-rFoB19-a.js",
+      "bytes": 15287
+    },
+    {
+      "file": "xychartDiagram-3f383b91-KvGLd2_c.js",
+      "bytes": 37376
+    }
+  ]
+}

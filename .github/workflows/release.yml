@@ -91,6 +91,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: ${{ matrix.target }}
       - run: npm ci
       - run: npm run check:release
       - run: npm run lint
@@ -138,11 +142,18 @@ jobs:
           gh release download "$RELEASE_TAG" --dir release-assets --pattern '*.dmg' --pattern '*.exe'
           node --input-type=module -e 'const fs=await import("node:fs");const files=fs.readdirSync("release-assets");const version=JSON.parse(fs.readFileSync("package.json","utf8")).version;if(files.length!==2||!files.includes(`Mermaider_${version}_aarch64.dmg`)||!files.includes(`Mermaider_${version}_x64-setup.exe`))throw new Error("Expected macOS ARM64 and Windows x64 installers")'
           node scripts/installer-checksums.mjs release-assets
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const source=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+          const sums=fs.readFileSync('release-assets/SHA256SUMS.txt','utf8').trim().split('\n').map(line=>{const [sha256,file]=line.split(/  /);return {file,sha256}});
+          fs.writeFileSync('release-assets/BUILD_PROVENANCE.json',JSON.stringify({version:JSON.parse(fs.readFileSync('package.json','utf8')).version,desktopCommit:source,webSourceCommit:source,tag:process.env.RELEASE_TAG,runUrl:`https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,signed:false,deviceAcceptance:'Not yet repeated for this new build; version 1.8.7 remains the previously accepted baseline.',installers:sums,license:'MIT',attribution:'ATTRIBUTION.md'},null,2)+'\n');
+          JS
       - name: Attach checksums and refresh notes without publishing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
-          gh release upload "$RELEASE_TAG" release-assets/SHA256SUMS.txt --clobber
+          gh release upload "$RELEASE_TAG" release-assets/SHA256SUMS.txt release-assets/BUILD_PROVENANCE.json LICENSE ATTRIBUTION.md --clobber
           gh release edit "$RELEASE_TAG" --notes-file "docs/RELEASE_NOTES_${RELEASE_TAG#v}.md"

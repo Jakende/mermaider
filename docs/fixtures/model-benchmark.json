@@ -1,0 +1,128 @@
+[
+  {
+    "id": "en-1",
+    "language": "en",
+    "question": "Assess the current release approval",
+    "yes": "Approved",
+    "no": "Not approved",
+    "states": [
+      {
+        "text": "Publication is explicitly approved.",
+        "expected": "yes"
+      },
+      {
+        "text": "Publication approval was explicitly withdrawn.",
+        "expected": "no"
+      },
+      {
+        "text": "Publication is explicitly approved.",
+        "expected": "yes"
+      }
+    ]
+  },
+  {
+    "id": "en-2",
+    "language": "en",
+    "question": "Assess the current tests",
+    "yes": "Passed",
+    "no": "Failed",
+    "states": [
+      {
+        "text": "All required tests have passed.",
+        "expected": "yes"
+      },
+      {
+        "text": "One required test failed.",
+        "expected": "no"
+      },
+      {
+        "text": "All required tests have passed.",
+        "expected": "yes"
+      }
+    ]
+  },
+  {
+    "id": "en-3",
+    "language": "en",
+    "question": "Assess the current budget",
+    "yes": "Approved",
+    "no": "Rejected",
+    "states": [
+      {
+        "text": "The required budget has been approved.",
+        "expected": "yes"
+      },
+      {
+        "text": "The required budget was rejected.",
+        "expected": "no"
+      },
+      {
+        "text": "The required budget has been approved.",
+        "expected": "yes"
+      }
+    ]
+  },
+  {
+    "id": "de-1",
+    "language": "de",
+    "question": "Bewerte den aktuellen Stand: Veröffentlichungsfreigabe",
+    "yes": "Freigegeben",
+    "no": "Nicht freigegeben",
+    "states": [
+      {
+        "text": "Die Veröffentlichung ist ausdrücklich freigegeben.",
+        "expected": "yes"
+      },
+      {
+        "text": "Die Veröffentlichungsfreigabe wurde ausdrücklich zurückgezogen.",
+        "expected": "no"
+      },
+      {
+        "text": "Die Veröffentlichung ist ausdrücklich freigegeben.",
+        "expected": "yes"
+      }
+    ]
+  },
+  {
+    "id": "de-2",
+    "language": "de",
+    "question": "Bewerte den aktuellen Stand: Tests",
+    "yes": "Erfolgreich",
+    "no": "Fehlgeschlagen",
+    "states": [
+      {
+        "text": "Alle erforderlichen Tests sind erfolgreich.",
+        "expected": "yes"
+      },
+      {
+        "text": "Ein erforderlicher Test ist fehlgeschlagen.",
+        "expected": "no"
+      },
+      {
+        "text": "Alle erforderlichen Tests sind erfolgreich.",
+        "expected": "yes"
+      }
+    ]
+  },
+  {
+    "id": "de-3",
+    "language": "de",
+    "question": "Bewerte den aktuellen Stand: Budget",
+    "yes": "Freigegeben",
+    "no": "Abgelehnt",
+    "states": [
+      {
+        "text": "Das benötigte Budget wurde freigegeben.",
+        "expected": "yes"
+      },
+      {
+        "text": "Das benötigte Budget wurde abgelehnt.",
+        "expected": "no"
+      },
+      {
+        "text": "Das benötigte Budget wurde freigegeben.",
+        "expected": "yes"
+      }
+    ]
+  }
+]

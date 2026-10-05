@@ -25,7 +25,7 @@ export function parsePlannedFlow(response:string,original?:FlowPlan):FlowPlan {
   const plan=validateFlow(value)
   if(plan.questions.some(question=>!question.text.trim()||question.options.some(option=>!option.label.trim())))throw new Error('Generated questions and answers must have text.')
   if(original){
-    const structure=(flow:FlowPlan)=>({startId:flow.startId,questions:flow.questions.map(question=>({id:question.id,options:question.options.map(option=>({id:option.id,nextId:option.nextId})),evaluation:question.evaluation}))})
+    const structure=(flow:FlowPlan)=>({startId:flow.startId,questions:flow.questions.map(question=>({id:question.id,options:question.options.map(option=>({id:option.id,nextId:option.nextId})),evaluation:question.evaluation,requirements:question.requirements}))})
     if(JSON.stringify(structure(plan))!==JSON.stringify(structure(original)))throw new Error('Simplification changed the flow structure or evaluation rules. The previous draft is kept; retry or edit its wording manually.')
   }
   const reached=new Set<string>()

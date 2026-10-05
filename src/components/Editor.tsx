@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import EditorComponent, { loader } from '@monaco-editor/react'
+import * as monaco from 'monaco-editor/editor/editor.api.js'
+import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker'
 import { useTheme } from '../contexts/ThemeContext'
 import { extractMermaidCode } from '../utils/mermaidCodeBlock'
 import MermaidConfigPanel from './MermaidConfigPanel'
 import './Editor.css'
+
+// Serve the editor and its worker with the application, including offline/native builds.
+self.MonacoEnvironment = { getWorker: () => new EditorWorker() }
+loader.config({ monaco })
+Object.assign(window, { monaco })
 
 // Register Mermaid language
 // ... (rest of registration logic remains same)
@@ -320,4 +327,3 @@ export default function Editor({ code, setCode, error, onNodeSelected, scrollToN
     </div>
   )
 }
-

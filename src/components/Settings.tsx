@@ -16,6 +16,8 @@ import {
 import { getBlobMotion, setBlobMotion } from '../hooks/useBlobMotion'
 import UserBlob from './UserBlob'
 import './Settings.css'
+import ShortcutSettings from './ShortcutSettings'
+import StreamingSettings from './StreamingSettings'
 
 interface SettingsProps {
   isOpen: boolean
@@ -409,6 +411,7 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         </div>
         <div className="settings-content">
           <div id="settings-panel-connection" role="tabpanel" aria-labelledby="settings-tab-connection" hidden={section !== 'connection'}>
+            <StreamingSettings/>
 
           {/* ── Provider Selector ── */}
           <div className="settings-section">
@@ -964,6 +967,7 @@ Ollama Embeddings
           <div id="settings-panel-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance" hidden={section !== 'appearance'}>
             <div className="settings-section">
               <h3>Workspace appearance</h3>
+              <ShortcutSettings/>
               <p className="settings-description">Appearance changes take effect immediately and are saved on this device.</p>
               <div className="settings-field settings-toggle"><div><label>Color theme</label><p className="settings-hint">Current: {theme}</p></div><button onClick={toggleTheme}>Use {theme === 'dark' ? 'light' : 'dark'}</button></div>
               <div className="settings-field"><label htmlFor="settings-diagram-palette">Diagram palette</label><select id="settings-diagram-palette" value={mermaidTheme} onChange={event => setMermaidTheme(event.target.value as typeof mermaidTheme)}>{(['slate', 'earth', 'cosmic', 'sage', 'royal'] as const).map(palette => <option key={palette} value={palette}>{palette}</option>)}</select></div>

@@ -1,6 +1,6 @@
 {
   "name": "mermaider",
-  "version": "1.8.8",
+  "version": "1.9.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -14,7 +14,10 @@
     "test": "node scripts/test.mjs",
     "test:e2e": "playwright test",
     "check:release": "node scripts/check-release.mjs",
-    "lint": "eslint src tests playwright.config.ts scripts functions"
+    "lint": "eslint src tests playwright.config.ts scripts functions",
+    "decision-api": "tsx src/decision/updateApi.ts",
+    "benchmark:decisions": "node --import tsx scripts/evaluate-decisions.ts",
+    "gateway:local": "node scripts/local-streaming-gateway.mjs"
   },
   "dependencies": {
     "@blobatar/react": "2.7.0",
@@ -29,6 +32,7 @@
     "jspdf": "^4.2.0",
     "localforage": "^1.10.0",
     "mermaid": "^10.9.8",
+    "monaco-editor": "0.57.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zod": "^4.3.6"

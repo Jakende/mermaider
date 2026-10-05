@@ -38,8 +38,17 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 - **Auto AI Fix**: Optionally run AI syntax repair automatically whenever Mermaid reports a parsing error.
 - MCP Server Integration: Exposes Mermaider's curated diagram templates and code validation logic to external AI assistants (like Claude Desktop) via the Model Context Protocol (`npm run mcp`).
 
+### Decision workspace (Preview)
+- Combined all/any prerequisites use confirmed upstream answers.
+- Replay retained history, compare snapshots and export state reports.
+- Review versioned [MCP/API updates](docs/EXTERNAL_UPDATES.md) before applying.
+- Open release, incident and evidence-review examples in a new tab.
+- Set up [local Laya](docs/LAYA_SETUP.md) and run the bilingual A/B/A benchmark.
+
 ### Professional Editing
-- Monaco Editor: Full-featured code editor with syntax highlighting.
+- Monaco Editor: Bundled locally, including its worker, for offline editing.
+- Configurable shortcuts in Settings → Appearance.
+- Lazy Mermaid loading and a bounded in-memory SVG cache.
 - Live Preview: Real-time rendering with debounced updates for smooth performance.
 - Syntax Validation: Instant feedback on Mermaid syntax errors.
 - Multiple Themes: Support for Slate, Earth, Cosmic, Sage, and Royal Mermaid themes.
@@ -62,13 +71,15 @@ Mermaider is designed for developers and technical teams who value privacy, spee
 Visit [the web app](https://mermaider.appwrite.network/) to start creating diagrams immediately. No installation or sign-up is required.
 
 ### Desktop Application
-The macOS Apple Silicon and Windows x64 installers for 1.8.7 have passed the project owner’s practical acceptance. These installers are unsigned. Release files and checksums belong to the [GitHub release](https://github.com/Jakende/mermaider/releases/tag/v1.8.7); the [publication handoff](docs/PUBLICATION_1.8.7.md) records the final distribution status. Installation:
+New 1.9.0 builds include the roadmap features; their CI checks do not replace device acceptance. The macOS Apple Silicon and Windows x64 installers for 1.8.7 have passed the project owner’s practical acceptance. These installers are unsigned. Release files and checksums belong to the [GitHub release](https://github.com/Jakende/mermaider/releases/tag/v1.8.7); the [publication handoff](docs/PUBLICATION_1.8.7.md) records the final distribution status. Installation:
 
 1. Download the installer from the [product website](https://mermaider.appwrite.network/website/).
 2. For Windows: Run the NSIS installer.
 3. For macOS: Open the DMG file and move Mermaider to your Applications folder.
 
 Unsigned installers may show an unknown-developer warning. Check the source and SHA-256 before opening them. macOS: Finder → right-click the installed app → Open, or review Privacy & Security in System Settings. Windows: review the publisher warning and proceed only after verifying the file. There is no Intel-Mac or Linux installer in this release.
+
+Signing setup is documented [here](docs/SIGNING_SETUP.md). Intel Mac/Linux remain separate build candidates until device acceptance. The optional [local streaming relay](docs/STREAMING_TRANSPORT.md) is opt-in.
 
 ## Technical Stack
 

@@ -7,6 +7,8 @@ import {
 import { z } from "zod";
 import { readFileSync } from "node:fs";
 import { validateMermaidSyntax } from "./utils/mcpService.js";
+import { restoreFlow } from './decision/flow'
+import { stateUpdate } from './decision/exchange'
 
 // We import the templates directly from Mermaider's codebase
 import { MERMAID_TEMPLATES } from "./utils/mermaidTemplates.js";
@@ -51,6 +53,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: z.toJSONSchema(z.object({
           code: z.string().describe("The Mermaid JS code to validate"),
         })),
+      },
+      {
+        name: 'create_decision_state_update',
+        description: 'Create a versioned update for a supplied decision session. The user reviews it in Mermaider before application; this tool does not change a running app.',
+        inputSchema: z.toJSONSchema(z.object({session:z.record(z.string(),z.unknown()),state:z.string().min(1).max(12000),source:z.string().max(100).optional()})),
       }
     ],
   };
@@ -58,6 +65,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   switch (request.params.name) {
+    case 'create_decision_state_update': {
+      const args=z.object({session:z.record(z.string(),z.unknown()),state:z.string().min(1).max(12000),source:z.string().max(100).optional()}).parse(request.params.arguments)
+      const session=restoreFlow(args.session)
+      if(!session)throw new Error('Provide a valid decision session with its current ID and revision.')
+      return {content:[{type:'text',text:JSON.stringify(stateUpdate(session,args.state,args.source),null,2)}]}
+    }
     case "get_diagram_types": {
       const types = MERMAID_TEMPLATES.map((t) => ({
         id: t.id,

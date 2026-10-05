@@ -1,33 +1,23 @@
-# Roadmap nach dem Abschluss von Mermaider 1.8.7
+# Erweiterungs-Roadmap: Umsetzungsstand 1.9.0
 
-Stand: 04.10.2026. Web-App, Website, Diagrammbearbeitung, Hosted-Provider,
-Diagrammsuche und Vollbild-Arbeitsbereich sind implementiert. Der Nutzer hat die
-aktuellen macOS- und Windows-Installer praktisch abgenommen und Repository sowie
-Installer zur öffentlichen MIT-Veröffentlichung freigegeben. Verteilung und
-aktueller Uploadstand: [Veröffentlichung](PUBLICATION_1.8.7.md).
+Stand: 05.10.2026. Der Nutzer hat neue Builds und die gesamte Roadmap beauftragt.
+Das frühere Actions-Budgetverbot ist aufgehoben. Die öffentlich abgenommenen
+unsignierten 1.8.7-Dateien und ihr Tag bleiben unverändert erhalten.
 
-Die folgenden Punkte sind Erweiterungen. Sie sind keine ausstehenden Abnahmen
-für die bereits geprüften unsignierten Installer.
-
-| Priorität | Erweiterung | Konkretes nächstes Ergebnis |
+| Erweiterung | Implementiert | Noch benötigter Nachweis |
 | --- | --- | --- |
-| 1 | Signierung und Notarisierung | Developer-ID-/Apple-Notarisierung und Windows-Herausgebersignierung einrichten, danach neue signierte Dateien prüfen. |
-| 1 | Lokales Laya | Reproduzierbarer lokaler Server, macOS-/Windows- und Browser-CORS-Abnahme sowie reale Fälle A–F mit Laya dokumentieren. |
-| 1 | Breitere Entscheidungsqualität | Deutsche und englische Praxisfälle, mehrfache Läufe, Zustandsfolge A → B → A, Latenz und Fehlerrouten messen; keine Kalibrierung aus Einzelwerten ableiten. |
-| 2 | Komplexere Entscheidungen | Kombinierte Bedingungen und nachvollziehbare Abhängigkeiten mit einer weiterhin einfachen Decide-Ansicht. |
-| 2 | Verlauf und Kommunikation | Vollständige Wiedergabe eines Entscheidungsverlaufs, Vergleiche und teilbare Zustandsberichte ohne Schlüssel. |
-| 2 | Ereignisse über MCP/API | Externe Zustandsupdates in versionierte Entscheidungssitzungen übernehmen; sichtbare Review-Schritte erhalten. |
-| 2 | Rendering und Bundle | Kleine/mittlere/große Diagramme auf einem Referenzgerät messen; schwere Diagrammtypen bedarfsgerecht laden und Cache-/Worker-Möglichkeiten prüfen. |
-| 3 | Gehosteter Transport | SSE-Streaming und längere Anfragen nach Messung ergänzen; derzeit 50 Sekunden/512 KB und gepufferte SSE. |
-| 3 | Weitere Plattformen | Intel-Mac und Linux erst nach eigenen Builds und Geräteabnahme anbieten. |
-| 3 | Weitere Komfortfunktionen | Nutzbare Import-/Exportvorlagen, konfigurierbare Shortcuts und zusätzliche Zugänglichkeitsprüfungen. |
+| Signierung/Notarisierung | Manueller Apple-/Windows-Workflow mit Secret-Vorprüfung, Signatur-/Stapling-Prüfungen und Kandidatenartefakten; [Einrichtung](SIGNING_SETUP.md). | Der Nutzer hat noch keine Zertifikate eingerichtet. Signierte Dateien und Geräteinstallation sind offen. |
+| Laya lokal | Pinned echter Server, Loopback-Endpoint, Browser-CORS, Health-/Modelltest und [Mac-/Windows-Anleitung](LAYA_SETUP.md). | Nutzer richtet Laya ein; reale Inferenz und praktische Browser-/Desktop-Abnahme folgen dort. |
+| Modellqualität | Sechs DE/EN-Fälle, je A → B → A und drei Wiederholungen; Export von Richtigkeit, Brier-Score, Konsistenz, Latenz und Fehlern. Dry-run validiert 54 geplante Anfragen. | Ohne realen Modellzugang keine neuen Qualitäts-/Kalibrierungsbehauptungen. Vorherige qualitative Jev-Abnahme bleibt historisch gültig. |
+| Kombinierte Entscheidungen | All/any-Voraussetzungen, validierte vorgelagerte Antworten, Erkennung unmöglicher All-Kombinationen, Review-Sperren und Dateiformat v4. | Neue Unit-/Browser-Prüfungen bestehen; weitere Nutzung bleibt Preview. |
+| Verlauf/Berichte | Volle retained Snapshots, Replay als neue Revision, Zustandsvergleich und teilbarer Bericht ohne Providerkonfiguration. | Höchstens 50 Ereignisse innerhalb eines 750.000-Zeichen-Budgets; ältere Versionen können Snapshots vermissen. |
+| MCP/API-Ereignisse | Strenges v1-Envelope, Sitzungs-/Revisionsschutz, lokale tokenpflichtige Queue und sichtbare Übernahme; [Anleitung](EXTERNAL_UPDATES.md). | Keine automatische Übernahme oder öffentliche Mehrbenutzer-API. |
+| Rendering/Bundle | Editor lokal gebündelt mit Worker, Editor/Mermaid lazy geladen, begrenzter SVG-LRU-Cache und [Referenzmessung](RENDERING_BENCHMARK.md). | Mermaid benötigt DOM-Messungen; Worker-Auslagerung wurde deshalb nicht als Verbesserung behauptet. Große Chunks bleiben sichtbar dokumentiert. |
+| SSE/längere Anfragen | Optionaler lokaler Relay: echtes SSE, 180 Sekunden, Allowlist, Abbruch und Größenlimit; [Anleitung](STREAMING_TRANSPORT.md). | Standard-Appwrite bleibt 50 Sekunden/gepuffert. Keine Tokenanzeige im Chat und kein neuer gehosteter SSE-Dienst behauptet. |
+| Intel-Mac/Linux | Eigener manueller Build mit Prüfsummen und getrennten Kandidatenartefakten. | Geräteabnahme offen; keine regulären Website-Downloads vor Abnahme. Buildstatus im Abschlussbericht. |
+| Komfort/Zugänglichkeit | Drei importierbare Beispiele, Ex-/Import v1–v4, konfigurierbare Shortcuts, beschriftete Review-/Replay-Steuerelemente und Browser-Regressionsprüfung. | Kein formales WCAG-Audit behauptet. |
 
-Jev, OpenAI und Embeddings wurden mit echten persönlichen Zugängen geprüft.
-Wiederholte Jev-Fälle A–F und die vereinfachte Planung sind qualitativ bestätigt.
-Die Entscheidungs-Engine bleibt Preview; automatische Übernahme ist opt-in.
-Details: [Modellabnahme](DECISION_ACCEPTANCE.md), [Entscheidungsarchitektur](DYNAMIC_DECISIONS.md).
-
-GitHub Actions werden für diesen Abschluss nicht erneut ausgeführt. Die
-abgenommenen Installer werden unverändert weiterverwendet. Die kleine
-Toolbar-Anpassung wird als lokal geprüfter Web-Build übergeben; sie ist erst in
-einem späteren nativen Build enthalten.
+Automatisierte Tests prüfen Verträge und Bedienabläufe. Sie ersetzen keine
+Zertifikatsausstellung, reale Modellmessung oder Installation auf Nutzergeräten.
+Decisions bleibt Preview; automatische Auswahl ist opt-in. Die historischen
+1.8.7-Nachweise stehen in [PUBLICATION_1.8.7.md](PUBLICATION_1.8.7.md).

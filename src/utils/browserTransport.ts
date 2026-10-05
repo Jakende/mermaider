@@ -1,3 +1,4 @@
+import {getStreamingGateway} from './streamingGateway'
 /** Browser transport: local providers stay local; hosted providers use Appwrite. */
 export const HOSTED_AI = {
   endpoint: 'https://fra.cloud.appwrite.io/v1',
@@ -13,6 +14,8 @@ export async function browserProviderFetch(url: string, options: RequestInit): P
   try {
     if (!hosted) return await fetch(url, { ...options, credentials: 'omit' })
     const authorization = new Headers(options.headers).get('authorization') || ''
+    const relay=getStreamingGateway()
+    if(relay)return await fetch(relay+'/request',{method:'POST',credentials:'omit',signal:options.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({url,method:options.method||'GET',authorization,body:options.body||undefined})})
     const response = await fetch(`${HOSTED_AI.endpoint}/functions/${HOSTED_AI.functionId}/executions`, {
       method: 'POST', credentials: 'omit', signal: options.signal,
       headers: { 'X-Appwrite-Project': HOSTED_AI.project, 'Content-Type': 'application/json' },

@@ -72,3 +72,5 @@
 .flow-review-notice p { color:var(--muted); margin-bottom:0; }
 .decision-workspace .flow-answer-cards button { flex-wrap:wrap; }
 .flow-answer-next { display:block; flex-basis:100%; color:var(--muted); font-weight:normal; font-size:11px; line-height:1.5; overflow-wrap:anywhere; }
+.flow-settings pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; font: .8rem/1.5 var(--font-mono); }
+.flow-settings code { overflow-wrap: anywhere; }

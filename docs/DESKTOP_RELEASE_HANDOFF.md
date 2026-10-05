@@ -1,3 +1,12 @@
+# Neue Builds ab 1.9.0
+
+Das Actions-Budget ist wieder verfügbar. Der Nutzer hat neue Builds und die
+Erweiterungs-Roadmap beauftragt. Die historische Übergabe unten beschreibt 1.8.7;
+deren Dateien bleiben unverändert. Neue CI-geprüfte Installer enthalten Toolbar,
+bilinguale Website und die 1.9.0-Erweiterungen. Eine neue Geräteabnahme wird nicht
+behauptet. Installation: [Anleitung](DESKTOP_INSTALL.md). Signierung:
+[Einrichtung](SIGNING_SETUP.md). Intel-Mac/Linux werden separat gebaut.
+
 # Desktop-Übergabe Mermaider 1.8.7
 
 Die aktuellen macOS-/Windows-Installer wurden am 04.10.2026 vom Nutzer praktisch

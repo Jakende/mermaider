@@ -1,3 +1,4 @@
+import {getStreamingGateway} from '../utils/streamingGateway'
 import { fetch as nativeFetch } from '@tauri-apps/plugin-http'
 import { invoke } from '@tauri-apps/api/core'
 import { browserProviderFetch } from '../utils/browserTransport'
@@ -68,11 +69,24 @@ export async function evaluateDecision(config: DecisionConfig, input: DecisionRe
   if (endpoint.username || endpoint.password || endpoint.hash || endpoint.search) throw new Error('Invalid decision endpoint.')
   if (config.provider === 'jev' && !config.apiKey?.trim()) throw new Error('Enter your TypeSafe API key.')
   const started = performance.now()
-  const timeout = AbortSignal.timeout(50000)
+  const timeout = AbortSignal.timeout(config.provider==='jev'&&!native()&&getStreamingGateway()?180000:50000)
   const options: RequestInit = { method: 'POST', signal: signal ? AbortSignal.any([signal, timeout]) : timeout, headers: { 'Content-Type': 'application/json', ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}) }, body: JSON.stringify({ ...input, ...(config.model.trim() ? { model: config.model.trim() } : {}) }) }
   const response = await (native() ? nativeFetch(endpoint.href, options) : browserProviderFetch(endpoint.href, options))
   if (!response.ok) throw new Error(`Decision provider returned HTTP ${response.status}. Check credentials, model and provider availability.`)
   const data = await response.json()
   const answers = normalizeDecisionResult(data, input)
   return { id: crypto.randomUUID(), provider: config.provider, requestedModel: config.model, model: data.model, input, answers, routing: data.routing, timestamp: Date.now(), elapsedMs: Math.round(performance.now() - started) }
+}
+export async function testLocalDecisionConnection(config:DecisionConfig):Promise<string> {
+  const endpoint=new URL(config.endpoint.trim())
+  if(config.provider!=='laya'||!['localhost','127.0.0.1','[::1]'].includes(endpoint.hostname)||!['http:','https:'].includes(endpoint.protocol)||endpoint.username||endpoint.password||endpoint.search||endpoint.hash||!['','/'].includes(endpoint.pathname))throw new Error('Use a loopback Laya base URL, for example http://127.0.0.1:8000.')
+  const transport=native()?nativeFetch:browserProviderFetch
+  const headers:Record<string,string>=config.apiKey?{Authorization:`Bearer ${config.apiKey}`}:{ }
+  const options={signal:AbortSignal.timeout(10000),headers}
+  for(const path of ['/health','/v1/models']){
+    const response=await transport(endpoint.origin+path,options)
+    if(!response.ok)throw new Error(`Laya ${path} returned HTTP ${response.status}.`)
+    await response.json()
+  }
+  return 'Laya health and model list are reachable. Evaluate a real question to check inference.'
 }

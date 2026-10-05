@@ -5,7 +5,8 @@ import { evaluationSchema, evidenceSchema, ruleDescription } from './rules'
 import type { FlowEvidence } from './rules'
 const id = z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,47}$/).refine(value => !['constructor', 'prototype'].includes(value))
 const optionSchema = z.object({ id, label: z.string().max(300), nextId: id.nullish().transform(value => value || undefined) })
-export const flowSchema = z.object({ title: z.string().max(200), startId: id, questions: z.array(z.object({ id, text: z.string().max(1000), options: z.array(optionSchema).min(2).max(12), evaluation:evaluationSchema.optional() })).min(1).max(20) })
+const requirementsSchema=z.object({mode:z.enum(['all','any']),answers:z.array(z.object({questionId:id,optionId:id})).min(1).max(12)})
+export const flowSchema = z.object({ title: z.string().max(200), startId: id, questions: z.array(z.object({ id, text: z.string().max(1000), options: z.array(optionSchema).min(2).max(12), evaluation:evaluationSchema.optional(),requirements:requirementsSchema.optional() })).min(1).max(20) })
 export type FlowPlan = z.infer<typeof flowSchema>
 export type FlowQuestion = FlowPlan['questions'][number]
 export interface FlowSelection { optionId: string; source: 'manual' | 'model'; probability?: number; evidence?:FlowEvidence; needsReview?:boolean }
@@ -14,6 +15,7 @@ export interface FlowSnapshot { plan: FlowPlan | null; goal: string; context: st
 export interface FlowEvent {
   id:string; timestamp:number; revision:number; note:string; context:string
   question?:string; answer?:string; goal?:string; rule?:string; source?:'manual'|'model'; evidence?:FlowEvidence
+  snapshot?:Omit<FlowSnapshot,'note'>
 }
 export interface FlowSession {
   version: 1; id: string; revision: number; goal: string; context: string; plan: FlowPlan | null
@@ -30,6 +32,9 @@ export function validateFlow(value: unknown): FlowPlan {
   const nodeIds = plan.questions.flatMap(question => [question.id, ...question.options.map(option => `${question.id}__${option.id}`)])
   if (new Set(nodeIds).size !== nodeIds.length) throw new Error('Question and answer IDs must produce unique diagram nodes.')
   for (const question of plan.questions) {
+    for(const prerequisite of question.requirements?.answers||[]){
+      if(prerequisite.questionId===question.id||!plan.questions.find(item=>item.id===prerequisite.questionId)?.options.some(option=>option.id===prerequisite.optionId))throw new Error('Requirements must refer to answers of another defined question.')
+    }
     const rule=question.evaluation
     if(rule&&rule.type!=='choice'){
       if(rule.low>=rule.high||rule.type==='score'&&rule.high>rule.rubric.length-1)throw new Error('Rules need low < high within the model scale.')
@@ -48,7 +53,37 @@ export function validateFlow(value: unknown): FlowPlan {
     visiting.delete(questionId); visited.add(questionId)
   }
   for (const question of plan.questions) visit(question.id)
+  const reaches=(start:string|undefined,target:string,seen=new Set<string>()):boolean=>{
+    if(!start||seen.has(start))return false
+    if(start===target)return true
+    seen.add(start)
+    return plan.questions.find(item=>item.id===start)!.options.some(option=>reaches(option.nextId,target,seen))
+  }
+  for(const question of plan.questions){
+    const requirements=question.requirements
+    if(requirements?.mode==='all'&&new Set(requirements.answers.map(item=>item.questionId)).size!==requirements.answers.length)throw new Error('All requirements must use distinct preceding questions.')
+    for(const item of requirements?.answers||[])if(!reaches(plan.questions.find(question=>question.id===item.questionId)!.options.find(option=>option.id===item.optionId)!.nextId,question.id))throw new Error('Requirements must be possible on a preceding answer path.')
+    if(requirements?.mode==='all'){
+      const full=(1<<requirements.answers.length)-1,seen=new Set<string>()
+      const possible=(current:string,mask:number):boolean=>{
+        if(current===question.id)return mask===full
+        const key=`${current}:${mask}`;if(seen.has(key))return false;seen.add(key)
+        return plan.questions.find(item=>item.id===current)!.options.some(option=>{
+          if(!option.nextId)return false
+          const index=requirements.answers.findIndex(item=>item.questionId===current&&item.optionId===option.id)
+          return possible(option.nextId,index<0?mask:mask|(1<<index))
+        })
+      }
+      if(!possible(plan.startId,0))throw new Error('All required answers must be possible together on one path.')
+    }
+  }
   return plan
+}
+export function requirementsMet(session:Pick<FlowSession,'plan'|'selections'>,question:FlowQuestion):boolean {
+  const requirements=question.requirements
+  if(!requirements)return true
+  const values=requirements.answers.map(item=>session.selections[item.questionId]?.optionId===item.optionId&&!session.selections[item.questionId]?.needsReview)
+  return requirements.mode==='all'?values.every(Boolean):values.some(Boolean)
 }
 export function flowPath(session: Pick<FlowSession,'plan'|'selections'>) {
   const questions: string[] = []; const options: string[] = []; const edges: [string,string][] = []
@@ -57,6 +92,7 @@ export function flowPath(session: Pick<FlowSession,'plan'|'selections'>) {
     const question: FlowQuestion | undefined = session.plan?.questions.find(item => item.id === current)
     if (!question) break
     questions.push(current)
+    if(!requirementsMet(session,question))break
     const option = question.options.find(item => item.id === session.selections[current!]?.optionId)
     if (!option) break
     const optionNode = `${question.id}__${option.id}`
@@ -64,7 +100,7 @@ export function flowPath(session: Pick<FlowSession,'plan'|'selections'>) {
     if (option.nextId) edges.push([optionNode, option.nextId])
     current = option.nextId
   }
-  const pending = questions.find(questionId => !session.selections[questionId])
+  const pending = questions.find(questionId => !session.selections[questionId]||!requirementsMet(session,session.plan!.questions.find(question=>question.id===questionId)!))
   const review=questions.filter(id=>session.selections[id]?.needsReview)
   return { questions, options, edges, pending, review }
 }
@@ -76,7 +112,7 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
   for (const [questionId, selection] of Object.entries(selections)) {
     const before = session.plan?.questions.find(question => question.id === questionId)
     const after = plan?.questions.find(question => question.id === questionId)
-    if (!after?.options.some(option => option.id === selection.optionId) || (patch.plan !== undefined && JSON.stringify(before && {text:before.text,evaluation:before.evaluation,options:before.options.map(({id,label})=>({id,label}))}) !== JSON.stringify(after && {text:after.text,evaluation:after.evaluation,options:after.options.map(({id,label})=>({id,label}))})) || ((context !== session.context || patch.goal !== undefined && patch.goal !== session.goal) && selection.source === 'model')) delete selections[questionId]
+    if (!after?.options.some(option => option.id === selection.optionId) || (patch.plan !== undefined && JSON.stringify(before && {text:before.text,evaluation:before.evaluation,requirements:before.requirements,options:before.options.map(({id,label})=>({id,label}))}) !== JSON.stringify(after && {text:after.text,evaluation:after.evaluation,requirements:after.requirements,options:after.options.map(({id,label})=>({id,label}))})) || ((context !== session.context || patch.goal !== undefined && patch.goal !== session.goal) && selection.source === 'model')) delete selections[questionId]
   }
   // A converging branch can still reach the same question with different facts.
   // Model decisions depend on the preceding answers, not just reachability.
@@ -98,6 +134,7 @@ export function changeFlow(session: FlowSession, patch: Partial<Pick<FlowSession
 }
 export function chooseFlow(session: FlowSession, questionId: string, optionId: string, source: FlowSelection['source'] = 'manual', probability?: number, evidence?:FlowEvidence) {
   if (!flowPath(session).questions.includes(questionId) || !session.plan?.questions.find(question => question.id === questionId)?.options.some(option => option.id === optionId)) throw new Error('Only a reachable, defined answer can select the path.')
+  if(!requirementsMet(session,session.plan!.questions.find(question=>question.id===questionId)!))throw new Error('Confirm the required preceding answers before continuing.')
   const preceding=flowPath(session).questions.slice(0,flowPath(session).questions.indexOf(questionId))
   if(preceding.some(id=>session.selections[id]?.needsReview))throw new Error('Review preceding answers before continuing.')
   const next=changeFlow(session, { selections:{ ...session.selections, [questionId]:{ optionId, source, probability, evidence } } }, 'Selected answer')
@@ -123,7 +160,11 @@ export function redoFlow(session: FlowSession): FlowSession {
 export function recordFlowEvent(session:FlowSession,note:string,detail:Partial<Pick<FlowEvent,'question'|'answer'|'source'|'evidence'|'rule'>>={}):FlowSession {
   const event:FlowEvent={id:flowId('event'),timestamp:Date.now(),revision:session.revision,note:note.slice(0,100),context:session.context.slice(0,1000),goal:session.goal.slice(0,1000),...detail}
   const coalesce=['Updated state','Updated goal'].includes(note)&&session.events[session.events.length-1]?.note===note
-  return {...session,events:[...(coalesce?session.events.slice(0,-1):session.events),event].slice(-50)}
+  event.snapshot={plan:session.plan,goal:session.goal,context:session.context,selections:session.selections}
+  const events=[...(coalesce?session.events.slice(0,-1):session.events),event].slice(-50)
+  // Bound local storage while keeping each retained snapshot complete.
+  while(events.length>1&&JSON.stringify(events).length>750000)events.shift()
+  return {...session,events}
 }
 const eventSchema=z.object({id,timestamp:z.number().nonnegative(),revision:z.number().int().nonnegative(),note:z.string().max(100),context:z.string().max(1000),goal:z.string().max(1000).optional(),rule:z.string().max(2000).optional(),question:z.string().max(1000).optional(),answer:z.string().max(300).optional(),source:z.enum(['manual','model']).optional(),evidence:evidenceSchema.optional()})
 export function restoreFlow(value: unknown): FlowSession | undefined {
@@ -139,12 +180,13 @@ export function restoreFlow(value: unknown): FlowSession | undefined {
       return checked ? [{plan:checked.plan, goal:checked.goal, context:checked.context, selections:checked.selections,note:typeof snapshot.note==='string'?snapshot.note.slice(0,100):'Changed flow'}] : []
     }) : []
     const stored=value as FlowSession
-    return { ...parsed, plan, selections, history:restoreSnapshots(stored.history), future:restoreSnapshots(stored.future), events:Array.isArray(stored.events)?stored.events.slice(-50).flatMap(event=>{const parsed=eventSchema.safeParse(event);return parsed.success?[parsed.data]:[]}):[], suggestions:{} }
+    return { ...parsed, plan, selections, history:restoreSnapshots(stored.history), future:restoreSnapshots(stored.future), events:Array.isArray(stored.events)?stored.events.slice(-50).flatMap(event=>{const checked=eventSchema.safeParse(event);if(!checked.success)return [];const snapshot=event.snapshot&&restoreFlow({...parsed,...event.snapshot,events:[],history:[],future:[]});return [{...checked.data,...(snapshot?{snapshot:{plan:snapshot.plan,goal:snapshot.goal,context:snapshot.context,selections:snapshot.selections}}:{})}]}):[], suggestions:{} }
   } catch { return undefined }
 }
 export function flowRequest(session: FlowSession, questionId: string): DecisionRequest {
   const question = session.plan?.questions.find(item => item.id === questionId)
   if (!question || !question.text.trim() || question.options.some(option => !option.label.trim())) throw new Error('Finish the question and answer texts before evaluating.')
+  if(!requirementsMet(session,question))throw new Error('Confirm the required preceding answers before evaluating.')
   const rule=question.evaluation
   if(rule?.type==='score'&&rule.rubric.some(level=>!level.trim()))throw new Error('Finish the rubric texts before evaluating.')
   const definition = !rule||rule.type==='choice'?{type:'choice' as const,instructions:question.text,criteria:Object.fromEntries(question.options.map(option=>[option.id,option.label]))}:rule.type==='score'?{type:'score' as const,instructions:question.text,criteria:rule.rubric}:{type:'noul' as const,instructions:question.text}

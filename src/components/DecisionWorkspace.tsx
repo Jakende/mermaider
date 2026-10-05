@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow, redoFlow, recordFlowEvent } from '../decision/flow'
+import { changeFlow, chooseFlow, flowId, flowPath, flowRequest, undoFlow, redoFlow, recordFlowEvent, requirementsMet } from '../decision/flow'
 import type { FlowPlan, FlowQuestion, FlowSession } from '../decision/flow'
-import { decisionDefaults, evaluateDecision, loadDecisionKey, saveDecisionKey } from '../decision/service'
+import { decisionDefaults, evaluateDecision, loadDecisionKey, saveDecisionKey, testLocalDecisionConnection } from '../decision/service'
 import type { DecisionConfig, DecisionProvider } from '../decision/types'
 import { planChanges } from '../decision/planChanges'
 import { planFlow, simplifyFlow } from '../decision/planner'
@@ -12,6 +12,9 @@ import DecisionResizeHandle from './DecisionResizeHandle'
 import { exportFlow, importFlow, MAX_FLOW_FILE_BYTES } from '../decision/sessionFile'
 import { useFloatingPanel } from '../hooks/useFloatingPanel'
 import './DecisionWorkspace.css'
+import DecisionExchange from './DecisionExchange'
+import DecisionRequirements from './DecisionRequirements'
+import {decisionTemplates,templateSession} from '../decision/templates'
 interface Props {
   floating?:boolean; onTogglePopout?:()=>void
   width:number; minWidth:number; maxWidth:number; onResize:(width:number)=>void
@@ -37,6 +40,7 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
   const [autoAdapt,setAutoAdapt]=useState(false)
   const [busy,setBusy]=useState<'plan'|'evaluate'|'simplify'|null>(null)
   const [error,setError]=useState('')
+  const [connectionStatus,setConnectionStatus]=useState('')
   const [draft,setDraft]=useState<FlowPlan|null>(null)
   const context=session.context
   const latest=useRef(session);latest.current=session
@@ -200,6 +204,7 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
         {mode!=='manual'&&<button onClick={()=>{cancel();setMode('manual');setAutoAdapt(false)}}>Pause automation</button>}
         {currentId&&<button className="flow-jump" onClick={()=>navigate(currentId,true)}>Go to current question</button>}
       </nav>}
+      <label>Example flow<select aria-label="Example flow" value="" onChange={event=>{if(event.target.value){cancel();setMode('manual');onImportSession(templateSession(event.target.value as keyof typeof decisionTemplates))}}}><option value="">Open an example in a new tab</option>{Object.entries(decisionTemplates).map(([id,plan])=><option key={id} value={id}>{plan.title}</option>)}</select></label>
       {!session.plan&&<section className="flow-start" aria-label="Start a decision flow"><strong>One decision at a time.</strong><p>Describe your goal and the current facts below. Generate a draft with your chat provider, or start by adding a question yourself.</p><button disabled={!!busy} onClick={()=>addQuestion()}>Start manually</button></section>}
       {path.review.length>0&&<section className="flow-review-notice" aria-label="Answers awaiting review"><strong>The decision basis has changed.</strong><p>Previous choices are kept for reference. Review them in order before continuing or using them in a model evaluation. Automation is paused.</p></section>}
       <label htmlFor="flow-goal">Goal</label><textarea id="flow-goal" rows={2} maxLength={12000} value={session.goal} placeholder="Describe the decision or process…" onChange={event=>onChange(changeFlow(session,{goal:event.target.value},'Updated goal'))}/>
@@ -210,6 +215,7 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
         <input ref={fileInput} type="file" accept=".json,application/json" aria-label="Decision JSON file" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void importSession(file)}}/>
         <p>Includes goal, current state, questions and selected answers. Import opens a new tab.</p>
       </details>
+      <DecisionExchange key={session.id} session={session} onChange={onChange} pause={()=>{cancel();setMode('manual');setAutoAdapt(false);setDraft(null)}}/>
       <label className="flow-toggle"><input type="checkbox" checked={autoAdapt} disabled={path.review.length>0} onChange={event=>{lastAdapt.current='';setAutoAdapt(event.target.checked)}}/>Suggest question updates automatically</label>
       <details className="flow-settings"><summary>Provider connection</summary>
         <label htmlFor="decision-provider">Decision provider</label><select id="decision-provider" value={config.provider} onChange={event=>setConfig(decisionDefaults(event.target.value as DecisionProvider))}><option value="jev">Jev · TypeSafe (hosted)</option><option value="laya">Laya (local)</option></select>
@@ -217,6 +223,7 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
         <label htmlFor="decision-model">Model</label><input id="decision-model" value={config.model} onChange={event=>setConfig({...config,model:event.target.value})}/>
         <label htmlFor="decision-key">{config.provider==='jev'?'TypeSafe API key':'Laya key (optional)'}</label><input id="decision-key" type="password" autoComplete="off" value={apiKey} onChange={event=>{keyEdited.current=true;setApiKey(event.target.value)}}/>
         <button onClick={()=>void persistConfig().then(()=>setError('')).catch(()=>setError('Provider settings could not be saved.'))}>Save provider</button>
+        {config.provider==='laya'&&<><button disabled={!!busy} onClick={()=>{setConnectionStatus('');void testLocalDecisionConnection({...config,apiKey}).then(setConnectionStatus).catch(failure=>setError(failure instanceof Error?failure.message:'Laya connection failed.'))}}>Test local connection</button>{connectionStatus&&<p role="status">{connectionStatus}</p>}<p><a href="https://github.com/Jakende/mermaider/blob/main/docs/LAYA_SETUP.md" target="_blank" rel="noreferrer">Local Laya setup instructions</a></p></>}
         <p>Question generation uses your chat provider from Settings. Jev/Laya evaluates the answers.
           {config.provider==='laya'?' Browser Laya needs server CORS and local-network permission.':' Browser Jev sends the state and personal key through Mermaider to TypeSafe.'}</p>
       </details>
@@ -228,14 +235,15 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
       {!session.plan&&<p className="flow-hint">Start from a goal or add your first question. A new flow opens in its own tab and preserves the current diagram.</p>}
       {session.plan&&!session.linked&&<p className="flow-hint">This diagram was edited separately. <button onClick={()=>onApplyPlan(session)}>Open managed flow in new tab</button></p>}
       {session.plan&&<div className="flow-questions">{session.plan.questions.map(question=>{
-        const reachable=path.questions.includes(question.id);const selected=session.selections[question.id];const suggestion=session.suggestions[question.id];const current=currentId===question.id;const blocked=path.questions.slice(0,path.questions.indexOf(question.id)).some(id=>session.selections[id]?.needsReview)
+        const reachable=path.questions.includes(question.id);const selected=session.selections[question.id];const suggestion=session.suggestions[question.id];const current=currentId===question.id;const blocked=!requirementsMet(session,question)||path.questions.slice(0,path.questions.indexOf(question.id)).some(id=>session.selections[id]?.needsReview)
         return <section key={question.id} id={`question-card-${question.id}`} tabIndex={-1} className={`flow-question ${current?'current':''} ${focused?.id===question.id?'focused':''}`} aria-label={`Question: ${question.text}`}>
+          {question.requirements&&<p className="flow-hint">{question.requirements.mode==='all'?'All':'Any'} required answers: {requirementsMet(session,question)?'confirmed':'not yet confirmed'}</p>}
           <div className="flow-question-heading"><span>{selected?.needsReview?'REVIEW':current?'CURRENT':selected?'DECIDED':reachable?'AVAILABLE':'FOLLOW-UP'}</span><button onClick={()=>onFocus(question.id)} aria-label="Locate question in diagram">↗</button>{session.plan!.questions.length>1&&<button onClick={()=>removeQuestion(question.id)} aria-label="Delete question">×</button>}</div>
           {!editing&&<><h3 className="flow-question-title">{question.text||'Untitled question'}</h3><p className="flow-hint">{question.evaluation?.type==='score'?'Score · review required':question.evaluation?.type==='noul'?'Noul · statement probability':'Choose an answer'}{!reachable?' · Choose the preceding answers to reach this question.':''}</p>{question.evaluation&&question.evaluation.type!=='choice'&&<details><summary>How this answer is evaluated</summary><p className="flow-hint">{ruleDescription(question)}</p>{question.evaluation.type==='score'&&<ol start={0}>{question.evaluation.rubric.map((level,index)=><li key={index}>{level}</li>)}</ol>}</details>}<div className="flow-answer-cards">{question.options.map(option=><button key={option.id} className={selected?.optionId===option.id?'chosen':''} aria-label={`Choose ${option.label}`} aria-pressed={selected?.optionId===option.id} disabled={!reachable||blocked} onClick={()=>select(question.id,option.id)}><span aria-hidden="true">{selected?.optionId===option.id?'●':'○'}</span><span>{option.label||'Untitled answer'}</span><small>{option.nextId?'Follow-up':'End of branch'}</small><span className="flow-answer-next">{option.nextId?`Next: ${session.plan!.questions.find(item=>item.id===option.nextId)?.text}`:'Completes this branch'}</span></button>)}</div></>}
           {selected&&<div className="flow-selection-summary"><span>{selected.needsReview?'Previous choice · review required':selected.source==='manual'?'Your choice':'Adopted model answer'}: <strong>{question.options.find(option=>option.id===selected.optionId)?.label}</strong></span>{selected.needsReview&&<button disabled={blocked} onClick={()=>select(question.id,selected.optionId)}>Confirm previous answer</button>}<button aria-label={`Clear answer for ${question.text}`} onClick={()=>{cancel();setMode('manual');setAutoAdapt(false);const selections={...session.selections};delete selections[question.id];onChange(changeFlow(session,{selections},'Cleared answer',{question:question.text}));navigate(question.id,true)}}>Clear answer</button>{!editing&&!selected.needsReview&&!blocked&&!question.options.find(option=>option.id===selected.optionId)?.nextId&&session.plan!.questions.length<20&&<button onClick={()=>addQuestion(question.id,selected.optionId)}>Add next question</button>}</div>}
           {editing&&<>
           <input className="flow-question-text" aria-label="Question text" maxLength={1000} value={question.text} onChange={event=>editQuestion({...question,text:event.target.value})}/>
-          <DecisionRuleEditor question={question} onChange={editQuestion}/>
+          <DecisionRuleEditor question={question} onChange={editQuestion}/><DecisionRequirements plan={session.plan!} question={question} onChange={editQuestion}/>
           {question.options.map(option=><div className={`flow-option ${selected?.optionId===option.id?'chosen':''}`} key={option.id}><button aria-label={`Choose ${option.label}`} aria-pressed={selected?.optionId===option.id} disabled={!reachable||blocked} onClick={()=>select(question.id,option.id)}>{selected?.optionId===option.id?'●':'○'}</button><input aria-label="Answer text" maxLength={300} value={option.label} onChange={event=>editQuestion({...question,options:question.options.map(item=>item.id===option.id?{...item,label:event.target.value}:item)})}/><button aria-label="Remove answer" disabled={question.options.length<=2||!!(question.evaluation&&question.evaluation.type!=='choice'&&[question.evaluation.lowId,question.evaluation.highId,question.evaluation.uncertainId].includes(option.id))} onClick={()=>editQuestion({...question,options:question.options.filter(item=>item.id!==option.id)})}>×</button></div>)}
           <button onClick={()=>editQuestion({...question,options:[...question.options,{id:flowId('a'),label:'New answer',nextId:undefined}]})} disabled={question.options.length>=12}>+ Answer</button>
           <details><summary>Follow-ups</summary>{question.options.map(option=><label key={option.id}>{option.label}<select aria-label={`Follow-up for ${option.label}`} value={option.nextId||''} onChange={event=>editQuestion({...question,options:question.options.map(item=>item.id===option.id?{...item,nextId:event.target.value||undefined}:item)})}><option value="">End this branch</option>{session.plan!.questions.filter(item=>item.id!==question.id).map(item=><option value={item.id} key={item.id}>{item.text}</option>)}</select><button disabled={session.plan!.questions.length>=20} onClick={()=>addQuestion(question.id,option.id)}>+ Follow-up</button></label>)}</details>
