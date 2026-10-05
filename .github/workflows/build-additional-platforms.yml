@@ -41,7 +41,19 @@ jobs:
       - run: npm ci
       - run: npm run check:release && npm test
       - run: npm run tauri:build -- --ci --no-sign --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
-      - run: node scripts/installer-checksums.mjs src-tauri/target/${{ matrix.target }}/release/bundle
+      - name: Record checksums, source and license notices
+        env:
+          TARGET: ${{ matrix.target }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+        run: |
+          node scripts/installer-checksums.mjs src-tauri/target/${{ matrix.target }}/release/bundle
+          cp LICENSE ATTRIBUTION.md src-tauri/target/${{ matrix.target }}/release/bundle/
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const root=`src-tauri/target/${process.env.TARGET}/release/bundle`;
+          fs.writeFileSync(`${root}/BUILD_PROVENANCE.json`,JSON.stringify({version:JSON.parse(fs.readFileSync('package.json','utf8')).version,sourceCommit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),sourceRef:process.env.SOURCE_REF,target:process.env.TARGET,signed:false,deviceAcceptance:false,runUrl:`https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`},null,2)+'\n');
+          JS
       - uses: actions/upload-artifact@v4
         with:
           name: mermaider-additional-${{ matrix.target }}-${{ inputs.source_ref }}
@@ -50,5 +62,8 @@ jobs:
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
             src-tauri/target/${{ matrix.target }}/release/bundle/SHA256SUMS.txt
+            src-tauri/target/${{ matrix.target }}/release/bundle/BUILD_PROVENANCE.json
+            src-tauri/target/${{ matrix.target }}/release/bundle/LICENSE
+            src-tauri/target/${{ matrix.target }}/release/bundle/ATTRIBUTION.md
           if-no-files-found: error
           retention-days: 30
