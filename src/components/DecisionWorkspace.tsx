@@ -28,6 +28,12 @@ const defaultConfig=()=>{
 }
 export default function DecisionWorkspace({floating=false,onTogglePopout,width,minWidth,maxWidth,onResize,session,focusedId,nodeProposal,diagram,onChange,onApplyPlan,onImportSession,onFocus,onClose}:Props){
   const { panelRef, position, headerProps } = useFloatingPanel<HTMLElement>(floating, { x: Math.max(0, window.innerWidth - width - 20), y: 64 })
+  useEffect(() => {
+    if (floating || !panelRef.current) return
+    // Native corner resizing writes inline dimensions; restore the docked layout.
+    panelRef.current.style.width = `${width}px`
+    panelRef.current.style.removeProperty('height')
+  }, [floating, width, panelRef])
   const [view,setView]=useState<'decide'|'edit'>(()=>{try{return localStorage.getItem('mermaider-decision-view')==='edit'?'edit':'decide'}catch{return 'decide'}})
   const scrollRef=useRef<HTMLDivElement>(null)
   const navigationRef=useRef(false)
@@ -190,7 +196,7 @@ export default function DecisionWorkspace({floating=false,onTogglePopout,width,m
     }catch(failure){if(token===operation.current)setError(failure instanceof Error?failure.message:'Could not import the flow')}
   }
   return <aside ref={panelRef} id="decision-workspace" className={`decision-workspace ${floating ? 'floating' : ''}`} aria-label="Decision workspace" style={{width, ...(floating ? {left:position.x,top:position.y} : {})}}>
-    <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>
+    {!floating && <DecisionResizeHandle width={width} min={minWidth} max={maxWidth} onResize={onResize}/>}
     <header {...headerProps} aria-label={floating ? "Move decision window (arrow keys or drag)" : undefined}><UserBlob busy={!!busy}/><strong>DECISIONS</strong><span className="flow-preview-label">Preview</span><div className="decision-window-actions">{onTogglePopout&&<button onClick={onTogglePopout} aria-label={floating ? "Dock decisions" : "Pop out decisions"}>{floating ? '↙' : '↗'}</button>}<button onClick={onClose} aria-label="Close decision workspace">×</button></div></header>
     {(error||busy)&&<div className="flow-feedback">{error&&<p role="alert">{error}</p>}{busy&&<div role="status">{busy==='plan'?'Drafting questions…':busy==='simplify'?'Simplifying wording…':'Evaluating current state…'} <button onClick={cancel}>Cancel</button></div>}</div>}
     <div className="decision-scroll" ref={scrollRef}>

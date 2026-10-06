@@ -105,6 +105,11 @@ bei Fenster- und Tastaturänderungen erreichbar. Decisions lässt sich zusätzli
 im normalen Arbeitsbereich auskoppeln und wieder andocken. Chat-Entwürfe bleiben
 beim Andocken, Auskoppeln und Wechsel in den Vollbildmodus erhalten.
 
+Schwebende Chat- und Decisions-Fenster verwenden denselben Griff unten rechts,
+um Breite und Höhe zu ändern. Das angedockte Decisions-Panel behält seinen
+seitlichen Griff. Beim erneuten Andocken werden dessen normale Breite und volle
+Arbeitsbereichshöhe wiederhergestellt.
+
 Menüs schließen bei einem tatsächlichen Klick oder Fokus außerhalb. Ein kurzzeitig
 fehlendes Fokusziel beim Anklicken einer Aktion entfernt diese nicht vor ihrem
 Klick. Die Werkzeugleiste liegt über Editor und Diagramm; Menüpunkte werden durch

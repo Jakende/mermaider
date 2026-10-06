@@ -35,10 +35,10 @@
 .focus-controls button { font-size:10px; white-space:nowrap; padding:0 10px; }
 .focus-controls button[aria-pressed=true] { background:var(--ink); color:var(--surface); }
 .focus-mode .preview-viewport { flex:1; }
-.decision-workspace.floating { position:fixed; right:auto; bottom:auto; z-index:1000; height:min(700px,calc(var(--app-height,100dvh) - 76px)); max-width:calc(100vw - 16px); border:1px solid var(--border); box-shadow:0 8px 24px #0003; }
+.decision-workspace.floating { position:fixed; right:auto; bottom:auto; z-index:1000; height:min(700px,calc(var(--app-height,100dvh) - 76px)); resize:both; overflow:hidden; border:1px solid var(--border); box-shadow:0 8px 24px #0003; }
 .decision-window-actions { display:flex; gap:4px; margin-left:auto; }
 .decision-workspace.floating>header,.chat-panel.popped-out .chat-header { touch-action:none; cursor:move; }
-.chat-panel.popped-out { max-width:calc(100vw - 16px); min-width:min(300px,calc(100vw - 16px)); min-height:min(400px,calc(var(--app-height,100dvh) - 76px)); max-height:calc(var(--app-height,100dvh) - 76px); }
+.chat-panel.popped-out,.decision-workspace.floating { max-width:calc(100vw - 16px); min-width:min(300px,calc(100vw - 16px)); min-height:min(400px,calc(var(--app-height,100dvh) - 76px)); max-height:calc(var(--app-height,100dvh) - 76px); }
 
 .app { height:var(--app-height,100dvh); }
 .modal-overlay { top:var(--app-top,0px); bottom:auto; height:var(--app-height,100dvh); padding:12px 0; }
