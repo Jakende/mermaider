@@ -12,6 +12,13 @@ EN-Website: https://mermaider.appwrite.network/website/en/
 DE-Website: https://mermaider.appwrite.network/website/
 Vollständige Run-/Artefakt-IDs und Prüfgrenzen: [Abschluss](RELEASE_CLOSEOUT_1.9.1.md).
 
+Webupdate vom 06.10.2026: Die schwebenden Decisions-Fenster haben jetzt wie der
+Chat den Eckgriff unten rechts. Implementierung `cc2eba4`, Deployment-Marker
+`1711ee4` mit identischem Dateibaum; aktive Site `6ac5544014dbc849be51`.
+Die Pipeline und 54 Live-Browserfälle (2 vorgesehene Skips) bestehen. Diese
+Webänderung gehört nicht zu den bereits gebauten Desktop-Dateien.
+Nachweis: [Webrollout](DEPLOYMENT_FLOATING_DECISIONS_2026-10-06.md).
+
 ## Für den Nutzer vorbereitet
 
 1. [Laya einrichten](LAYA_SETUP.md): echter lokaler Server auf `http://127.0.0.1:8000`,
