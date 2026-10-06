@@ -13,7 +13,7 @@ Arbeitsbereichshöhe wiederhergestellt; Entscheidungszustände bleiben erhalten.
 | Deployment-Commit | `1711ee4f6b1a66d989b8ab427d286dbb1acd4223` auf `feature/appwrite-sites`; identischer Dateibaum, nur zusätzlicher Deployment-Marker |
 | GitHub-Pipeline | [37523075218](https://github.com/Jakende/mermaider/actions/runs/37523075218), erfolgreich |
 | Aktives Appwrite-Deployment | `6ac5544014dbc849be51`, bereit und aktiv |
-| Öffentliche App | https://mermaider.appwrite.network/, HTTP 200, erwartete JS-Assets bestätigt |
+| Öffentliche App | https://mermaider.appwrite.network/, HTTP 200, App-HTML mit JS-Asset-Verweisen bestätigt |
 | Browserprüfung vor Deployment | 53 bestanden, 3 vorgesehene Skips |
 | Live-Browserprüfung | 54 bestanden, 2 vorgesehene Skips |
 
