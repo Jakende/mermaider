@@ -93,3 +93,26 @@ besteht.
 - Deutsch: https://mermaider.appwrite.network/website/
 - English: https://mermaider.appwrite.network/website/en/
 - English README: https://github.com/Jakende/mermaider/blob/main/README.en.md
+
+## SEO und Website-Icons (06.10.2026)
+
+App und beide Produktseiten verwenden das aktuelle schwarz-weiße Diagrammlogo
+aus `public/icon.svg`. Die alten PNG-/ICO-Inhalte wurden ersetzt: Favicons mit
+16/32 Pixeln, ICO mit 16/32/48 Pixeln und Apple-Touch-Icon mit 180 Pixeln.
+Alle Einstiegspunkte binden die Icons mit `?v=2` ein, damit bisherige Browser-Caches
+die neuen Dateien abrufen. `public/mermaider-social.png` enthält dasselbe Logo
+mit 512 Pixeln für Linkvorschauen.
+
+Die Seiten enthalten eigene Beschreibungen und Canonical-URLs, Open-Graph- und
+Twitter-Metadaten mit lokalem Vorschaubild. Die Produktseiten ergänzen die
+bestehenden DE/EN-Sprachverweise um `x-default` sowie strukturierte
+SoftwareApplication-Daten ohne unbelegte Bewertungen. Die Theme-Farbe der App
+entspricht jetzt dem schwarzen Standarddesign. Robots-Datei und Sitemap
+verweisen weiterhin auf die drei gültigen öffentlichen Seiten.
+
+Dieser Stand ist über das direkte Appwrite-Deployment `6ac52cb69f75f9228e9b`
+veröffentlicht, bereit und aktiv. App, beide Sprachseiten, alle referenzierten
+JS-/CSS-Dateien, SVG-/PNG-/ICO-Icons und das Downloadmanifest wurden anonym mit
+aktivierter TLS-Prüfung bytegenau gegen `dist/` geprüft. TypeScript/Vite-Build,
+alle vier Chromium-Websitefälle, Metadaten-/JSON-LD-Prüfung und Icon-Größenprüfung
+bestanden. Die Veröffentlichung verwendet den lokal geprüften statischen Build.
